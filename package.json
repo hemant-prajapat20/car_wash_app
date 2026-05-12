@@ -1,0 +1,19 @@
+{
+  "name": "carwash-saas-monorepo",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "mobile-frontend",
+    "web-frontend",
+    "shared"
+  ],
+  "scripts": {
+    "backend": "npm run dev -w backend",
+    "web": "npm run dev -w web-frontend",
+    "mobile": "npm run start -w mobile-frontend"
+  },
+  "overrides": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0"
+  }
+}
