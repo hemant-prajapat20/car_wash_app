@@ -34,7 +34,19 @@ export const getPlatformStats = asyncHandler(async (req: Request, res: Response)
   const totalBookings = await Booking.countDocuments();
   const totalCustomers = await User.countDocuments({ role: 'customer' });
   
-  // Aggregate revenue (simplified)
+  // New metrics for enterprise oversight
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const todayRegistrations = await User.countDocuments({ 
+    role: 'vendor', 
+    createdAt: { $gte: startOfToday } 
+  });
+  const pendingRequests = await User.countDocuments({ 
+    role: 'vendor', 
+    isActive: false 
+  });
+
+  // Aggregate revenue
   const revenueData = await Booking.aggregate([
     { $match: { status: 'Completed' } },
     { $group: { _id: null, total: { $sum: '$totalAmount' } } }
@@ -48,7 +60,9 @@ export const getPlatformStats = asyncHandler(async (req: Request, res: Response)
         activeVendors,
         totalBookings,
         totalCustomers,
-        totalRevenue: revenueData[0]?.total || 0
+        totalRevenue: revenueData[0]?.total || 0,
+        todayRegistrations,
+        pendingRequests
       },
       recentRegistrations: await User.find({ role: 'vendor' }).sort({ createdAt: -1 }).limit(5)
     }

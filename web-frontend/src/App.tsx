@@ -17,6 +17,9 @@ function App() {
   const { user } = useSelector((state: RootState) => state.auth);
   const isAuthenticated = !!user;
 
+  // Diagnostic Log for Visibility Debugging
+  console.log('[Auth Monitor]', { isAuthenticated, role: user?.role, path: window.location.pathname });
+
   const getHomeRedirect = () => {
     if (!user) return '/';
     switch (user.role) {
