@@ -12,7 +12,7 @@ export const SignupPage: React.FC = () => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    phoneNumber: '',
+    phone: '',
     password: '',
     confirmPassword: ''
   });
@@ -33,23 +33,26 @@ export const SignupPage: React.FC = () => {
       return;
     }
 
+    if (!/^\d{10}$/.test(formData.phone)) {
+      const msg = "Phone number must be exactly 10 digits.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const response = await authService.signup({
         fullName: formData.fullName,
         email: formData.email,
-        phoneNumber: formData.phoneNumber,
+        phone: formData.phone,
         password: formData.password
       });
       
       if (response.success) {
-        toast.success("Account created successfully!");
-        dispatch(setCredentials({ 
-          user: response.data.user, 
-          token: response.data.token 
-        }));
-        navigate('/customer/dashboard');
+        toast.success("Account created successfully! Please log in.");
+        navigate('/login');
       }
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Registration failed. Check your details.';
@@ -108,9 +111,10 @@ export const SignupPage: React.FC = () => {
             </div>
             <input
               type="tel"
-              value={formData.phoneNumber}
-              onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
-              placeholder="+1 (234) 567-890"
+              value={formData.phone}
+              onChange={(e) => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})}
+              placeholder="9876543210"
+              maxLength={10}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-300 outline-none ring-0 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all focus:bg-white"
               required
             />

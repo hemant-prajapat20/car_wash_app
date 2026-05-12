@@ -7,8 +7,8 @@ export const authService = {
     return response.data;
   },
 
-  async adminLogin(secretKey: string) {
-    const response = await axiosInstance.post('/admin/login', { secretKey });
+  async adminLogin(credentials: any) {
+    const response = await axiosInstance.post('/auth/admin-login', credentials);
     return response.data;
   },
 

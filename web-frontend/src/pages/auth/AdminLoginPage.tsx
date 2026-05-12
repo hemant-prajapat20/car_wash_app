@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { ShieldAlert, Loader2, ArrowRight, KeyRound } from 'lucide-react';
+import { Mail, ShieldAlert, Loader2, ArrowRight, KeyRound } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { PasswordInput } from '../../components/auth/PasswordInput';
 import { authService } from '../../services/authService';
-import { setCredentials } from '@shared/store/authSlice';
+import { setCredentials } from '../../store/authSlice';
 
 export const AdminLoginPage: React.FC = () => {
-  const [secretKey, setSecretKey] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    secretKey: ''
+  });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -21,17 +25,18 @@ export const AdminLoginPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await authService.adminLogin(secretKey);
+      const response = await authService.adminLogin(formData);
       
       if (response.success) {
+        const userData = response.data;
         dispatch(setCredentials({ 
-          user: response.data.user, 
-          token: response.data.token 
+          user: userData, 
+          token: userData.token 
         }));
         navigate('/admin/dashboard');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Access Denied. Invalid Secret Key.');
+      setError(err.response?.data?.message || 'Access Denied. Check credentials and secret key.');
     } finally {
       setIsSubmitting(false);
     }
@@ -57,18 +62,41 @@ export const AdminLoginPage: React.FC = () => {
           </div>
         )}
 
-        <div className="space-y-2">
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Administrator Secret Key</label>
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Admin Email</label>
+          <div className="relative group">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
+              <Mail size={16} />
+            </div>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              placeholder="admin@chakachak.com"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium text-slate-900 placeholder:text-slate-300 outline-none ring-0 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all focus:bg-white"
+              required
+            />
+          </div>
+        </div>
+
+        <PasswordInput 
+          label="Administrator Password"
+          value={formData.password}
+          onChange={(e) => setFormData({...formData, password: e.target.value})}
+        />
+
+        <div className="space-y-1.5 pt-2">
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">System Secret Key</label>
           <div className="relative group">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
               <KeyRound size={16} />
             </div>
             <input
               type="password"
-              value={secretKey}
-              onChange={(e) => setSecretKey(e.target.value)}
-              placeholder="Enter Access Key"
-              className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium text-slate-900 placeholder:text-slate-300 outline-none ring-0 focus:border-blue-500 focus:ring-blue-500 transition-all focus:bg-white"
+              value={formData.secretKey}
+              onChange={(e) => setFormData({...formData, secretKey: e.target.value})}
+              placeholder="••••••••••••"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium text-slate-900 placeholder:text-slate-300 outline-none ring-0 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all focus:bg-white"
               required
             />
           </div>

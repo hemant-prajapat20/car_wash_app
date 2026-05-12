@@ -45,7 +45,12 @@ export interface IUser extends Document {
 const UserSchema: Schema = new Schema({
   fullName: { type: String, required: true },
   email: { type: String, required: true, unique: true, lowercase: true },
-  phone: { type: String, required: true },
+  phone: { 
+    type: String, 
+    required: true, 
+    unique: true, 
+    match: [/^\d{10}$/, 'Please provide a valid 10-digit phone number'] 
+  },
   password: { type: String, required: true, select: false },
   role: { type: String, enum: ['customer', 'vendor', 'admin', 'superAdmin'], default: 'customer' },
   isActive: { type: Boolean, default: true },

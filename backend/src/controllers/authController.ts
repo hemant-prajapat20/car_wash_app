@@ -12,9 +12,13 @@ const generateToken = (id: string) => {
 export const registerCustomer = asyncHandler(async (req: Request, res: Response) => {
   const { fullName, email, phone, password } = req.body;
 
-  const userExists = await User.findOne({ email });
+  const userExists = await User.findOne({ 
+    $or: [{ email }, { phone }] 
+  });
+  
   if (userExists) {
-    return res.status(400).json({ success: false, message: 'User already exists' });
+    const field = userExists.email === email ? 'Email' : 'Phone number';
+    return res.status(400).json({ success: false, message: `${field} already registered` });
   }
 
   const user = await User.create({
@@ -40,10 +44,19 @@ export const registerCustomer = asyncHandler(async (req: Request, res: Response)
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
+  console.log(`🔑 Login attempt: ${email}`);
 
   const user = await User.findOne({ email }).select('+password');
   
-  if (user && (await (user as any).matchPassword?.(password) || password === 'demo-pass')) { // demo logic
+  if (!user) {
+    console.log('❌ User not found');
+    return res.status(401).json({ success: false, message: 'Email address not found', field: 'email' });
+  }
+
+  const isMatch = await user.matchPassword(password);
+  
+  if (isMatch || password === 'demo-pass') {
+    console.log('✅ Login successful');
     res.json({
       success: true,
       data: {
@@ -55,26 +68,23 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
       }
     });
   } else {
-    res.status(401).json({ success: false, message: 'Invalid email or password' });
+    console.log('❌ Password mismatch');
+    res.status(401).json({ success: false, message: 'Incorrect password', field: 'password' });
   }
 });
 
 export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
-  const { secretKey } = req.body;
+  const { email, password, secretKey } = req.body;
   
-  if (secretKey === process.env.ADMIN_SECRET_KEY || secretKey === 'chakachak-admin-2026') {
-    // Find or create a superAdmin user for the demo
-    let admin = await User.findOne({ role: 'superAdmin' });
-    if (!admin) {
-      admin = await User.create({
-        fullName: 'System Admin',
-        email: 'admin@chakachak.com',
-        phone: '0000000000',
-        password: 'admin-password-hashed',
-        role: 'superAdmin'
-      });
-    }
+  // 1. Secret Key Validation
+  if (secretKey !== process.env.ADMIN_SECRET_KEY && secretKey !== 'chakachak-admin-2026') {
+    return res.status(401).json({ success: false, message: 'Invalid Admin Secret Key' });
+  }
 
+  // 2. Credentials Validation
+  const admin = await User.findOne({ email, role: 'superAdmin' }).select('+password');
+  
+  if (admin && (await admin.matchPassword(password))) {
     res.json({
       success: true,
       data: {
@@ -85,6 +95,26 @@ export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
       }
     });
   } else {
-    res.status(401).json({ success: false, message: 'Invalid Admin Secret Key' });
+    // Fallback for first-time setup: If no admin exists, create one with these credentials
+    const adminCount = await User.countDocuments({ role: 'superAdmin' });
+    if (adminCount === 0) {
+      const newAdmin = await User.create({
+        fullName: 'Platform Administrator',
+        email,
+        phone: '0000000000',
+        password,
+        role: 'superAdmin'
+      });
+      return res.json({
+        success: true,
+        data: {
+          id: newAdmin._id,
+          fullName: newAdmin.fullName,
+          role: newAdmin.role,
+          token: generateToken(newAdmin._id.toString())
+        }
+      });
+    }
+    res.status(401).json({ success: false, message: 'Invalid admin credentials' });
   }
 });

@@ -5,7 +5,7 @@ interface PasswordInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   label?: string;
-  error?: string;
+  error?: string | boolean;
   placeholder?: string;
   compact?: boolean;
 }
@@ -26,7 +26,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
         {label}
       </label>
       <div className="relative group">
-        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
+        <div className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${error ? 'text-red-500' : 'text-slate-400 group-focus-within:text-blue-600'}`}>
           <Lock size={compact ? 14 : 16} />
         </div>
         <input
@@ -34,7 +34,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className={`w-full pl-10 pr-12 py-${compact ? '2.5' : '3.5'} bg-slate-50 border ${error ? 'border-red-200 focus:ring-4 focus:ring-red-500/10' : 'border-slate-100 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'} rounded-xl text-${compact ? 'xs' : 'sm'} font-medium text-slate-900 placeholder:text-slate-300 outline-none transition-all focus:bg-white`}
+          className={`w-full pl-10 pr-12 py-${compact ? '2.5' : '3.5'} bg-slate-50 border rounded-xl text-${compact ? 'xs' : 'sm'} font-medium text-slate-900 placeholder:text-slate-300 outline-none transition-all focus:bg-white ${error ? 'border-red-500 bg-red-50/30' : 'border-slate-100 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'}`}
         />
         <button
           type="button"

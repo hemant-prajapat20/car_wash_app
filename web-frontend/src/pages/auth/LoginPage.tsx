@@ -11,8 +11,8 @@ import { setCredentials } from '@shared/store/authSlice';
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorField, setErrorField] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
@@ -21,26 +21,31 @@ export const LoginPage: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setErrorField(null);
     setIsSubmitting(true);
 
     try {
       const response = await authService.login({ email, password });
       
       if (response.success) {
-        toast.success(`Welcome back, ${response.data.user.fullName || 'User'}!`);
+        const userData = response.data;
+        toast.success(`Welcome back, ${userData.fullName || 'User'}!`);
+        
         dispatch(setCredentials({ 
-          user: response.data.user, 
-          token: response.data.token 
+          user: userData, 
+          token: userData.token 
         }));
 
-        const role = response.data.user.role;
+        const role = userData.role;
         if (role === 'admin' || role === 'superAdmin') navigate('/admin/dashboard');
         else if (role === 'vendor') navigate('/vendor/dashboard');
         else navigate('/customer/dashboard');
       }
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Invalid credentials.';
+      const field = err.response?.data?.field || null;
       setError(msg);
+      setErrorField(field);
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -63,15 +68,18 @@ export const LoginPage: React.FC = () => {
         <div className="space-y-1.5">
           <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
           <div className="relative group">
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
+            <div className={`absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${errorField === 'email' ? 'text-red-500' : 'text-slate-400 group-focus-within:text-blue-600'}`}>
               <Mail size={14} />
             </div>
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (errorField === 'email') setErrorField(null);
+              }}
               placeholder="name@company.com"
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-300 outline-none ring-0 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all focus:bg-white"
+              className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-300 outline-none ring-0 transition-all focus:bg-white ${errorField === 'email' ? 'border-red-500 bg-red-50/30' : 'border-slate-100 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'}`}
               required
             />
           </div>
@@ -79,20 +87,15 @@ export const LoginPage: React.FC = () => {
 
         <PasswordInput 
           value={password} 
-          onChange={(e) => setPassword(e.target.value)} 
+          onChange={(e) => {
+            setPassword(e.target.value);
+            if (errorField === 'password') setErrorField(null);
+          }} 
+          error={errorField === 'password'}
           compact
         />
 
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer group">
-            <input 
-              type="checkbox" 
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-slate-200 text-blue-600 focus:ring-blue-500 transition-all" 
-            />
-            <span className="text-[11px] font-medium text-slate-500 group-hover:text-slate-700 transition-colors">Remember me</span>
-          </label>
+        <div className="flex items-center justify-end">
           <Link to="/forgot-password" className="text-[11px] font-bold text-blue-600 hover:text-blue-700 transition-colors">
             Forgot password?
           </Link>
