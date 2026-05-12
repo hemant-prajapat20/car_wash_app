@@ -14,7 +14,8 @@ import { VendorDemoLogin } from './pages/auth/VendorDemoLogin';
 const ADMIN_SECRET_PATH = import.meta.env.VITE_ADMIN_SECRET_PATH || '/admin-portal-login';
 
 function App() {
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const isAuthenticated = !!user;
 
   const getHomeRedirect = () => {
     if (!user) return '/';

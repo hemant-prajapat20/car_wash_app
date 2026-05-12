@@ -1,76 +1,98 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+export type UserRole = 'customer' | 'vendor' | 'admin' | 'superAdmin';
+
 export interface IUser extends Document {
-  userId: string;
-  vendorId?: string; 
+  id: string;
   fullName: string;
   email: string;
-  phoneNumber: string;
-  password: string;
-  role: 'customer' | 'vendor' | 'admin' | 'superAdmin';
+  phone: string;
+  password?: string;
+  role: UserRole;
+  isActive: boolean;
+  matchPassword(password: string): Promise<boolean>;
+  
+  // Vendor Specific Fields
+  vendorId?: string;
   companyName?: string;
   businessLocation?: string;
-  profileImage: string;
-  isActive: boolean;
-  isVerified: boolean;
-  loyaltyPoints: number;
-  comparePassword: (password: string) => Promise<boolean>;
+  serviceArea?: string;
+  services?: Array<{
+    name: string;
+    price: number;
+    duration: string;
+    description: string;
+  }>;
+  
+  // Customer Specific Fields
+  vehicles?: Array<{
+    make: string;
+    model: string;
+    year: number;
+    plateNumber: string;
+  }>;
+  addresses?: Array<{
+    label: string;
+    address: string;
+    city: string;
+  }>;
+  
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const userSchema = new Schema<IUser>(
-  {
-    userId: { type: String, unique: true },
-    vendorId: { 
-      type: String, 
-      unique: true, 
-      sparse: true, 
-      index: true 
-    },
-    fullName: { type: String, required: true },
-    email: { type: String, required: true, unique: true, lowercase: true },
-    phoneNumber: { type: String, required: true },
-    password: { type: String, required: true, select: false },
-    role: { 
-      type: String, 
-      enum: ['customer', 'vendor', 'admin', 'superAdmin'], 
-      default: 'customer' 
-    },
-    companyName: { type: String },
-    businessLocation: { type: String },
-    profileImage: { type: String, default: '' },
-    isActive: { type: Boolean, default: true },
-    isVerified: { type: Boolean, default: false },
-    loyaltyPoints: { type: Number, default: 0 },
-  },
-  { timestamps: true }
-);
+const UserSchema: Schema = new Schema({
+  fullName: { type: String, required: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  phone: { type: String, required: true },
+  password: { type: String, required: true, select: false },
+  role: { type: String, enum: ['customer', 'vendor', 'admin', 'superAdmin'], default: 'customer' },
+  isActive: { type: Boolean, default: true },
+  
+  // Vendor Fields
+  vendorId: { type: String, unique: true, sparse: true },
+  companyName: { type: String },
+  businessLocation: { type: String },
+  serviceArea: { type: String },
+  services: [{
+    name: String,
+    price: Number,
+    duration: String,
+    description: String
+  }],
+  
+  // Customer Fields
+  vehicles: [{
+    make: String,
+    model: String,
+    year: Number,
+    plateNumber: String
+  }],
+  addresses: [{
+    label: String,
+    address: String,
+    city: String
+  }]
+}, { timestamps: true });
 
-// Hash password before saving - Using async without 'next' to avoid SaveOptions conflict
-userSchema.pre('save', async function () {
+// Hash password before saving
+UserSchema.pre('save', async function(this: any) {
   if (!this.isModified('password')) return;
-  this.password = await bcrypt.hash(this.password, 10);
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password as string, salt);
 });
 
-// Auto-generate Sequential userId only - Using async without 'next'
-userSchema.pre('save', async function () {
-  if (this.isNew && !this.userId) {
-    const UserModel = this.constructor as any;
-    const lastUser = await UserModel.findOne({ userId: { $regex: /^USR-/ } }).sort({ createdAt: -1 });
-    let nextUserNum = 1001;
-    if (lastUser && lastUser.userId) {
-      const match = lastUser.userId.match(/-(\d+)/);
-      if (match) {
-        nextUserNum = parseInt(match[1]) + 1;
-      }
-    }
-    this.userId = `USR-${nextUserNum}`;
+// Compare password
+UserSchema.methods.matchPassword = async function(enteredPassword: string) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Auto-generate VendorId for vendors
+UserSchema.pre('save', async function(this: any) {
+  if (this.role === 'vendor' && !this.vendorId) {
+    this.vendorId = `CHK-VND-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
   }
 });
 
-// Compare password method
-userSchema.methods.comparePassword = async function (password: string) {
-  return await bcrypt.compare(password, this.password);
-};
-
-export default mongoose.model<IUser>('User', userSchema);
+export default mongoose.model<IUser>('User', UserSchema);

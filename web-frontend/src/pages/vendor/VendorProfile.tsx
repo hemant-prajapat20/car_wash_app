@@ -1,111 +1,110 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   User, ShieldCheck, MapPin, 
   Settings, Camera, Lock, 
   Mail, Phone, Globe, Edit2,
-  ArrowRight
+  ArrowRight, CheckCircle2, Loader2
 } from 'lucide-react';
+import api from '../../services/axiosConfig';
 
 export const VendorProfile: React.FC = () => {
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/vendor/profile');
+        if (res.data.success) setProfile(res.data.data);
+      } catch (err) {
+        console.error('Fetch profile failed');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleUpdate = async (field: string, value: string) => {
+    setSaving(true);
+    try {
+      const updated = { ...profile, [field]: value };
+      const res = await api.put('/vendor/profile', updated);
+      if (res.data.success) setProfile(res.data.data);
+    } catch (err) {
+      alert('Update failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-5xl">
-      <div>
-        <h1 className="text-lg font-semibold text-slate-900 tracking-tight">Business Profile</h1>
-        <p className="text-[11px] font-medium text-slate-500 mt-0.5 uppercase tracking-wider">Manage company and account settings</p>
+    <div className="space-y-4 animate-in fade-in duration-500 max-w-4xl font-inter">
+      <div className="flex items-center justify-between px-1">
+        <div>
+          <h1 className="text-[15px] font-bold text-slate-900 tracking-tight">Business Profile</h1>
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Account & company settings</p>
+        </div>
+        <div className="flex items-center gap-2">
+           {saving && <Loader2 size={14} className="animate-spin text-blue-600" />}
+           <button className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase hover:bg-blue-600 transition-all">
+            Save Changes
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-6">
-          {/* Identity Card */}
-          <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-sm text-center">
-            <div className="relative group mx-auto w-24 h-24 mb-4">
-              <div className="w-full h-full bg-slate-100 rounded-[1.5rem] flex items-center justify-center text-slate-400 overflow-hidden border-2 border-white shadow-md">
-                <Globe size={40} />
-              </div>
-              <button className="absolute -bottom-1 -right-1 p-2 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition-all">
-                <Camera size={14} />
-              </button>
-            </div>
-            <h3 className="text-md font-semibold text-slate-900">Elite Auto Spa</h3>
-            <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest mt-1">Verified Vendor</p>
-            
-            <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-around">
-               <div className="text-center">
-                 <p className="text-[14px] font-bold text-slate-900">4.8</p>
-                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Rating</p>
-               </div>
-               <div className="w-px h-8 bg-slate-100" />
-               <div className="text-center">
-                 <p className="text-[14px] font-bold text-slate-900">1.2k</p>
-                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Orders</p>
-               </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Profile Identity Small Box */}
+        <div className="md:col-span-1 bg-white border border-slate-100 rounded-2xl p-4 shadow-sm text-center">
+          <div className="relative mx-auto w-16 h-16 mb-3">
+            <div className="w-full h-full bg-slate-50 rounded-xl flex items-center justify-center text-slate-300 border-2 border-white shadow-sm overflow-hidden">
+              {profile?.companyName?.charAt(0) || <Globe size={24} />}
             </div>
           </div>
-
-          <div className="bg-slate-900 text-white rounded-[1.5rem] p-5 shadow-xl shadow-slate-200">
-            <div className="flex items-center gap-3 mb-3">
-              <ShieldCheck size={18} className="text-emerald-400" />
-              <h4 className="text-[13px] font-bold">Platform Status</h4>
-            </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-medium">Your account is in good standing. All premium features are unlocked.</p>
+          <h3 className="text-[13px] font-bold text-slate-900">{profile?.companyName}</h3>
+          <div className="flex items-center justify-center gap-1 mt-1">
+            <CheckCircle2 size={10} className="text-emerald-500" />
+            <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Verified Vendor</span>
           </div>
         </div>
 
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-sm">
-             <div className="flex items-center justify-between mb-6">
-               <h3 className="text-[14px] font-semibold text-slate-900">Company Information</h3>
-               <button className="text-[11px] font-bold text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1">
-                 <Edit2 size={12} /> Edit Details
-               </button>
-             </div>
-             
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Company Name</p>
-                  <p className="text-[12.5px] font-semibold text-slate-700">Elite Auto Spa Services Ltd.</p>
+        {/* Company Info Box */}
+        <div className="md:col-span-2 bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+           <div className="flex items-center justify-between mb-4">
+             <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Business Details</h3>
+           </div>
+           
+           <div className="grid grid-cols-2 gap-2.5">
+              {[
+                { label: 'Company', val: profile?.companyName, field: 'companyName' },
+                { label: 'Business ID', val: profile?.vendorId, mono: true, readOnly: true },
+                { label: 'Email', val: profile?.email, field: 'email' },
+                { label: 'Phone', val: profile?.phone, field: 'phone' },
+              ].map((item, i) => (
+                <div key={i} className="p-2 bg-slate-50 rounded-xl min-w-0 group relative">
+                  <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mb-0.5">{item.label}</p>
+                  <p className={`text-[11px] font-bold text-slate-700 truncate ${item.mono ? 'font-mono' : ''}`}>{item.val}</p>
+                  {!item.readOnly && (
+                    <button className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Edit2 size={10} className="text-blue-600" />
+                    </button>
+                  )}
                 </div>
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Business ID</p>
-                  <p className="text-[12.5px] font-semibold text-slate-700 font-mono">AW-VND-2024-882</p>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Email</p>
-                  <p className="text-[12.5px] font-semibold text-slate-700">contact@eliteautospa.com</p>
-                </div>
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Phone</p>
-                  <p className="text-[12.5px] font-semibold text-slate-700">+1 (555) 123-4567</p>
-                </div>
-                <div className="sm:col-span-2 p-3 bg-slate-50 rounded-xl">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Service Location</p>
-                  <p className="text-[12.5px] font-semibold text-slate-700 flex items-center gap-1">
-                    <MapPin size={14} className="text-rose-500" />
-                    123 Automotive Plaza, Suite 400, Los Angeles, CA
+              ))}
+              <div className="col-span-2 p-2 bg-slate-50 rounded-xl group relative">
+                  <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mb-0.5">Location</p>
+                  <p className="text-[11px] font-bold text-slate-700 truncate flex items-center gap-1">
+                    <MapPin size={10} className="text-rose-500" /> 
+                    {profile?.businessLocation}
                   </p>
-                </div>
-             </div>
-          </div>
-
-          <div className="bg-white border border-slate-100 rounded-[1.5rem] p-6 shadow-sm">
-             <h3 className="text-[14px] font-semibold text-slate-900 mb-6">Security Settings</h3>
-             <div className="space-y-3">
-               <button className="w-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all group">
-                 <div className="flex items-center gap-3">
-                   <Lock size={16} className="text-slate-400 group-hover:text-blue-600 transition-colors" />
-                   <span className="text-[12.5px] font-semibold text-slate-700">Update Access Password</span>
-                 </div>
-                 <ArrowRight size={14} className="text-slate-300" />
-               </button>
-               <button className="w-full flex items-center justify-between p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all group">
-                 <div className="flex items-center gap-3">
-                   <ShieldCheck size={16} className="text-slate-400 group-hover:text-emerald-600 transition-colors" />
-                   <span className="text-[12.5px] font-semibold text-slate-700">Two-Factor Authentication</span>
-                 </div>
-                 <div className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-bold uppercase rounded">Enabled</div>
-               </button>
-             </div>
-          </div>
+                  <button className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Edit2 size={10} className="text-blue-600" />
+                  </button>
+              </div>
+           </div>
         </div>
       </div>
     </div>

@@ -1,76 +1,50 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
-
-// Initialize dotenv FIRST
-dotenv.config();
-
 import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import cookieParser from 'cookie-parser';
-import connectDB from './config/db';
-import authRoutes from './routes/authRoutes';
-import adminRoutes from './routes/adminRoutes';
-import { errorHandler } from './middleware/errorMiddleware';
+import mongoose from 'mongoose';
+import apiRoutes from './routes/apiRoutes';
 
-// Connect to Database
-connectDB();
+dotenv.config();
 
 const app = express();
 
-// Middlewares
-app.use(helmet()); 
-// app.use(morgan('dev'));  // Disabled as per user request for clean terminal
-app.use(cookieParser());
-app.use(express.json({ limit: '16kb' }));
-app.use(express.urlencoded({ extended: true, limit: '16kb' }));
+// MIDDLEWARE
+app.use(cors());
+app.use(express.json());
 
-// Debugging middleware
-app.use((req: any, res: any, next: any) => {
-  console.log(`${req.method} ${req.url}`);
-  next();
-});
+// DATABASE CONNECTION
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/chakachak');
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+  } catch (error: any) {
+    console.error(`❌ Error: ${error.message}`);
+    process.exit(1);
+  }
+};
 
-// CORS Configuration
-const allowedOrigins = [
-  process.env.CORS_ORIGIN || 'http://localhost:8081',
-  'http://localhost:19006',
-];
+// API ROUTES
+app.use('/api', apiRoutes);
 
-app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      return callback(null, true); 
-    }
-    return callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
-}));
-
-// Routes
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'AquaWash API is LIVE' });
-});
-
-app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
-
-app.use(express.static('public'));
-
-// Test Route
+// BASE ROUTE
 app.get('/', (req, res) => {
-  res.send('AquaWash SaaS API is running...');
+  res.send('Chakachak API is running...');
 });
 
-// Centralized Error Handling
-app.use(errorHandler);
+// GLOBAL ERROR HANDLER
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  res.status(statusCode).json({
+    success: false,
+    message: err.message,
+    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+  });
+});
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`\x1b[36m%s\x1b[0m`, `🚀 AquaWash API is LIVE`);
-  console.log(`\x1b[33m%s\x1b[0m`, `🔗 Backend running at: http://localhost:${PORT}`);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
 });

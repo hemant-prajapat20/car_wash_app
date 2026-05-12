@@ -1,58 +1,67 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Calendar, Clock, Star, 
-  ChevronRight, MessageSquare 
+  ChevronRight, Loader2, AlertCircle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import api from '../../services/axiosConfig';
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
-const BOOKINGS = [
-  {
-    id: 'BK-7701', vendor: 'Elite Auto Spa Luxury Center', service: 'Premium Detail',
-    date: 'May 14', time: '10:30', status: 'Confirmed', 
-    price: '$85', vehicle: 'Tesla Model 3'
-  },
-  {
-    id: 'BK-7685', vendor: 'QuickWash Express', service: 'Ext Wash',
-    date: 'May 10', time: '02:15', status: 'Completed', 
-    price: '$25', vehicle: 'BMW X5', reviewed: false
-  },
-  {
-    id: 'BK-7640', vendor: 'Platinum Care Hub', service: 'Int Clean',
-    date: 'May 05', time: '11:00', status: 'Cancelled', 
-    price: '$45', vehicle: 'Tesla Model 3'
-  }
-];
+function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
 
 const StatusBadge = ({ status }: { status: string }) => {
   const styles: Record<string, string> = {
     'Pending': 'text-slate-400 bg-slate-50',
     'Confirmed': 'text-blue-600 bg-blue-50',
+    'In Progress': 'text-indigo-600 bg-indigo-50',
     'Completed': 'text-emerald-600 bg-emerald-50',
     'Cancelled': 'text-rose-500 bg-rose-50',
   };
   return (
-    <span className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest ${styles[status]}`}>
+    <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest", styles[status])}>
       {status}
     </span>
   );
 };
 
 export const MyBookings: React.FC = () => {
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMyBookings = async () => {
+      try {
+        const res = await api.get('/customer/my-bookings');
+        if (res.data.success) setBookings(res.data.data);
+      } catch (err) {
+        console.error('Failed to fetch my bookings');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMyBookings();
+  }, []);
+
+  if (loading) return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
+
   return (
     <div className="space-y-4 animate-in fade-in duration-500 max-w-4xl font-inter">
       <div className="px-1">
         <h1 className="text-[15px] font-bold text-slate-900 tracking-tight">Booking History</h1>
-        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Your past and upcoming services</p>
+        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Track your service status</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {BOOKINGS.map((booking, i) => (
+        {bookings.length > 0 ? bookings.map((booking, i) => (
           <motion.div 
-            key={booking.id}
+            key={booking._id}
             initial={{ opacity: 0, x: -5 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.03 }}
-            className="bg-white border border-slate-100 rounded-2xl p-3 shadow-sm hover:shadow-md hover:border-blue-100 transition-all group cursor-pointer"
+            transition={{ delay: i * 0.05 }}
+            className="bg-white border border-slate-100 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all group"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5 min-w-0">
@@ -60,8 +69,8 @@ export const MyBookings: React.FC = () => {
                   <Calendar size={16} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-[12px] font-bold text-slate-900 truncate leading-tight">{booking.vendor}</h3>
-                  <p className="text-[10px] font-medium text-slate-400 truncate">{booking.service}</p>
+                  <h3 className="text-[12px] font-bold text-slate-900 truncate leading-tight">{booking.vendor?.companyName}</h3>
+                  <p className="text-[10px] font-medium text-slate-400 truncate">{booking.service?.name}</p>
                 </div>
               </div>
               <StatusBadge status={booking.status} />
@@ -71,12 +80,12 @@ export const MyBookings: React.FC = () => {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1 text-slate-400">
                   <Clock size={10} />
-                  <span className="text-[10px] font-bold">{booking.date} • {booking.time}</span>
+                  <span className="text-[10px] font-bold">{new Date(booking.slot?.date).toLocaleDateString()} • {booking.slot?.time}</span>
                 </div>
-                <span className="text-[10px] font-bold text-blue-600">{booking.price}</span>
+                <span className="text-[10px] font-bold text-blue-600">${booking.totalAmount}</span>
               </div>
               <div className="flex items-center gap-2">
-                 {booking.status === 'Completed' && !booking.reviewed && (
+                 {booking.status === 'Completed' && (
                    <button className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-100">
                      <Star size={10} className="fill-white" />
                    </button>
@@ -85,7 +94,12 @@ export const MyBookings: React.FC = () => {
               </div>
             </div>
           </motion.div>
-        ))}
+        )) : (
+          <div className="col-span-full py-16 text-center text-slate-300">
+            <AlertCircle size={32} className="mx-auto mb-2 opacity-20" />
+            <p className="text-[10px] font-bold uppercase tracking-widest">No bookings found</p>
+          </div>
+        )}
       </div>
     </div>
   );

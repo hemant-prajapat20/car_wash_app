@@ -13,12 +13,11 @@ export const VendorDemoLogin: React.FC = () => {
     const timer = setTimeout(() => {
       dispatch(setCredentials({
         user: {
-          _id: 'DEMO_VENDOR_ID',
+          id: 'DEMO_VENDOR_ID',
           fullName: 'Elite Auto Spa (Demo)',
           email: 'vendor@demo.com',
           role: 'vendor',
           isActive: true,
-          companyName: 'Elite Auto Spa'
         },
         token: 'demo-vendor-jwt-token'
       }));
