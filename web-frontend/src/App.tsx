@@ -4,14 +4,14 @@ import { RootState } from './store';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
-import { AdminLoginPage } from './pages/auth/AdminLoginPage';
+import { AdminAccessPage } from './pages/auth/AdminAccessPage';
 import { CustomerRoutes } from './routes/CustomerRoutes';
 import { AdminRoutes } from './routes/AdminRoutes';
 import { VendorRoutes } from './routes/VendorRoutes';
 import { VendorDemoLogin } from './pages/auth/VendorDemoLogin';
 
 // Secret path from environment variables
-const ADMIN_SECRET_PATH = import.meta.env.VITE_ADMIN_SECRET_PATH || '/admin-portal-login';
+const ADMIN_ACCESS_PATH = '/admin-access';
 
 function App() {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -36,7 +36,7 @@ function App() {
       <Route path="/vendor-demo" element={<VendorDemoLogin />} />
       
       {/* Secret Admin Login Route */}
-      <Route path={ADMIN_SECRET_PATH} element={isAuthenticated ? <Navigate to="/admin/dashboard" /> : <AdminLoginPage />} />
+      <Route path={ADMIN_ACCESS_PATH} element={isAuthenticated ? <Navigate to="/admin/dashboard" /> : <AdminAccessPage />} />
       
       {/* Customer Panel Routes (Nested) */}
       <Route 
@@ -53,7 +53,7 @@ function App() {
       {/* SuperAdmin Panel Routes (Nested & Protected) */}
       <Route 
         path="/admin/*" 
-        element={isAuthenticated && (user?.role === 'admin' || user?.role === 'superAdmin') ? <AdminRoutes /> : <Navigate to={ADMIN_SECRET_PATH} />} 
+        element={isAuthenticated && (user?.role === 'admin' || user?.role === 'superAdmin') ? <AdminRoutes /> : <Navigate to={ADMIN_ACCESS_PATH} />} 
       />
       
       <Route path="*" element={<Navigate to="/" />} />

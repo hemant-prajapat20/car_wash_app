@@ -11,6 +11,10 @@ export const authService = {
     const response = await axiosInstance.post('/auth/admin-login', credentials);
     return response.data;
   },
+  async adminAccess(secretKey: string) {
+    const response = await axiosInstance.post('/auth/admin-access', { secretKey });
+    return response.data;
+  },
 
   async signup(userData: any) {
     const response = await axiosInstance.post(API_ENDPOINTS.AUTH.SIGNUP, userData);

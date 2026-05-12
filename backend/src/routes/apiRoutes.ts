@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerCustomer, login, adminLogin } from '../controllers/authController';
+import { registerCustomer, login, adminLogin, adminAccess } from '../controllers/authController';
 import { registerVendor, getPlatformStats, getAllVendors, toggleVendorStatus } from '../controllers/adminController';
 import { getVendorDashboard, updateBookingStatus, manageSlots, updateVendorProfile } from '../controllers/vendorController';
 import { searchVendors, createBooking, getMyBookings, submitReview } from '../controllers/customerController';
@@ -11,6 +11,7 @@ const router = express.Router();
 router.post('/auth/signup', registerCustomer);
 router.post('/auth/login', login);
 router.post('/auth/admin-login', adminLogin);
+router.post('/auth/admin-access', adminAccess);
 
 // ADMIN ROUTES (Protected)
 router.post('/admin/register-vendor', protect, authorize('superAdmin'), registerVendor);
