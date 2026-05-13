@@ -29,9 +29,26 @@ const VENDOR_MENU_ITEMS = [
   { id: 'profile', label: 'Vendor Profile', icon: UserCircle, path: '/vendor/profile' },
 ];
 
-export const VendorSidebar: React.FC = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+interface VendorSidebarProps {
+  isOpen?: boolean;
+  setIsOpen?: (isOpen: boolean) => void;
+  isCollapsed?: boolean;
+  setIsCollapsed?: (isCollapsed: boolean) => void;
+}
+
+export const VendorSidebar: React.FC<VendorSidebarProps> = ({ 
+  isOpen, 
+  setIsOpen, 
+  isCollapsed: externalIsCollapsed, 
+  setIsCollapsed: externalSetIsCollapsed 
+}) => {
+  const [localIsCollapsed, setLocalIsCollapsed] = useState(false);
+  
+  const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : localIsCollapsed;
+  const setIsCollapsed = externalSetIsCollapsed || setLocalIsCollapsed;
+  
+  const isMobileOpen = isOpen || false;
+  const setIsMobileOpen = setIsOpen || (() => {});
   const navigate = useNavigate();
   const dispatch = useDispatch();
 

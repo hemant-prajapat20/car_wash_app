@@ -1,7 +1,23 @@
 import express from 'express';
 import { registerCustomer, login, adminLogin, adminAccess } from '../controllers/authController';
 import { registerVendor, getPlatformStats, getAllVendors, toggleVendorStatus } from '../controllers/adminController';
-import { getVendorDashboard, updateBookingStatus, manageSlots, updateVendorProfile } from '../controllers/vendorController';
+import { 
+  getVendorDashboard, 
+  updateBookingStatus, 
+  manageSlots, 
+  updateVendorProfile,
+  getVendorProfile,
+  addService, 
+  getServices, 
+  updateService, 
+  deleteService,
+  addWorker, 
+  getWorkers, 
+  updateWorker, 
+  deleteWorker,
+  updateSlot, 
+  deleteSlot
+} from '../controllers/vendorController';
 import { searchVendors, createBooking, getMyBookings, submitReview } from '../controllers/customerController';
 import { protect, authorize } from '../middleware/auth';
 
@@ -22,10 +38,31 @@ router.patch('/admin/vendors/:id/toggle', protect, authorize('superAdmin'), togg
 // VENDOR ROUTES (Protected)
 router.get('/vendor/dashboard', protect, authorize('vendor'), getVendorDashboard);
 router.patch('/vendor/bookings/:id/status', protect, authorize('vendor'), updateBookingStatus);
+
+router.route('/vendor/profile')
+  .get(protect, authorize('vendor'), getVendorProfile)
+  .put(protect, authorize('vendor'), updateVendorProfile);
+
 router.route('/vendor/slots')
   .get(protect, authorize('vendor'), manageSlots)
   .post(protect, authorize('vendor'), manageSlots);
-router.put('/vendor/profile', protect, authorize('vendor'), updateVendorProfile);
+router.route('/vendor/slots/:id')
+  .put(protect, authorize('vendor'), updateSlot)
+  .delete(protect, authorize('vendor'), deleteSlot);
+
+router.route('/vendor/services')
+  .get(protect, authorize('vendor'), getServices)
+  .post(protect, authorize('vendor'), addService);
+router.route('/vendor/services/:id')
+  .put(protect, authorize('vendor'), updateService)
+  .delete(protect, authorize('vendor'), deleteService);
+
+router.route('/vendor/workers')
+  .get(protect, authorize('vendor'), getWorkers)
+  .post(protect, authorize('vendor'), addWorker);
+router.route('/vendor/workers/:id')
+  .put(protect, authorize('vendor'), updateWorker)
+  .delete(protect, authorize('vendor'), deleteWorker);
 
 // CUSTOMER ROUTES (Protected)
 router.get('/customer/search', protect, searchVendors);

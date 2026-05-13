@@ -1,24 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-// Slot Model
-export interface ISlot extends Document {
-  vendor: mongoose.Types.ObjectId;
-  date: Date;
-  time: string;
-  capacity: number;
-  booked: number;
-  isActive: boolean;
-}
-
-const SlotSchema: Schema = new Schema({
-  vendor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  date: { type: Date, required: true },
-  time: { type: String, required: true },
-  capacity: { type: Number, default: 1 },
-  booked: { type: Number, default: 0 },
-  isActive: { type: Boolean, default: true }
-}, { timestamps: true });
-
 // Notification Model
 export interface INotification extends Document {
   user: mongoose.Types.ObjectId;
@@ -53,6 +34,5 @@ const ReviewSchema: Schema = new Schema({
   comment: { type: String }
 }, { timestamps: true });
 
-export const Slot = mongoose.model<ISlot>('Slot', SlotSchema);
 export const Notification = mongoose.model<INotification>('Notification', NotificationSchema);
 export const Review = mongoose.model<IReview>('Review', ReviewSchema);

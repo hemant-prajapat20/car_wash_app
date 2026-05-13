@@ -21,9 +21,15 @@ const MENU_ITEMS = [
   { id: 'profile', label: 'Profile Settings', icon: User, path: '/customer/profile' },
 ];
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  setIsOpen?: (isOpen: boolean) => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const isMobileOpen = isOpen || false;
+  const setIsMobileOpen = setIsOpen || (() => {});
   const navigate = useNavigate();
   const dispatch = useDispatch();
 

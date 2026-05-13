@@ -3,8 +3,8 @@ import { Navbar } from '../components/Navbar';
 import { Hero } from '../sections/Hero';
 import { Features } from '../sections/Features';
 import { Statistics } from '../sections/Statistics';
-import { 
-  Users, Store, ShieldAlert, CheckCircle2, 
+import {
+  Users, Store, ShieldAlert, CheckCircle2,
   Mail, Phone, MapPin, Twitter, Linkedin, Facebook, Globe,
   Clock, Zap, CreditCard, ShieldCheck
 } from 'lucide-react';
@@ -20,25 +20,25 @@ const Solutions: React.FC = () => (
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { 
-            icon: Clock, 
-            problem: 'Long Wait Times', 
-            solution: 'Instant booking with real-time slot availability sync.' 
+          {
+            icon: Clock,
+            problem: 'Long Wait Times',
+            solution: 'Instant booking with real-time slot availability sync.'
           },
-          { 
-            icon: ShieldCheck, 
-            problem: 'Unverified Shops', 
-            solution: 'Strict verification process ensures 100% premium service.' 
+          {
+            icon: ShieldCheck,
+            problem: 'Unverified Shops',
+            solution: 'Strict verification process ensures 100% premium service.'
           },
-          { 
-            icon: Zap, 
-            problem: 'Manual Management', 
-            solution: 'Automated staff scheduling and AI-powered reporting.' 
+          {
+            icon: Zap,
+            problem: 'Manual Management',
+            solution: 'Automated staff scheduling and AI-powered reporting.'
           },
-          { 
-            icon: CreditCard, 
-            problem: 'Payment Friction', 
-            solution: 'Secure digital payments and flexible subscription models.' 
+          {
+            icon: CreditCard,
+            problem: 'Payment Friction',
+            solution: 'Secure digital payments and flexible subscription models.'
           }
         ].map((s, i) => (
           <div key={i} className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 hover:shadow-xl hover:shadow-blue-500/5 transition-all">
@@ -69,22 +69,22 @@ const About: React.FC = () => (
         <p className="text-slate-500 font-medium text-sm mb-6 leading-relaxed">
           Chakachak is a leading SaaS provider dedicated to transforming the car wash industry. Our platform bridges the gap between premium vendors and busy customers through data-driven scheduling and automated business intelligence.
         </p>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-           {[
-             { title: 'Scalable SaaS', desc: 'Enterprise-grade architecture.' },
-             { title: 'Customer Trust', desc: 'Secure payments & verified shops.' },
-             { title: 'Business Goals', desc: 'Optimize revenue & growth.' },
-             { title: 'Verified Shops', desc: 'Highest quality standards.' }
-           ].map((item, i) => (
-             <div key={i} className="flex items-start gap-3">
-               <div className="mt-1"><CheckCircle2 size={16} className="text-emerald-500" /></div>
-               <div>
-                 <div className="text-sm font-bold text-slate-900 leading-none mb-1">{item.title}</div>
-                 <div className="text-[11px] font-medium text-slate-400">{item.desc}</div>
-               </div>
-             </div>
-           ))}
+          {[
+            { title: 'Scalable SaaS', desc: 'Enterprise-grade architecture.' },
+            { title: 'Customer Trust', desc: 'Secure payments & verified shops.' },
+            { title: 'Business Goals', desc: 'Optimize revenue & growth.' },
+            { title: 'Verified Shops', desc: 'Highest quality standards.' }
+          ].map((item, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div className="mt-1"><CheckCircle2 size={16} className="text-emerald-500" /></div>
+              <div>
+                <div className="text-sm font-bold text-slate-900 leading-none mb-1">{item.title}</div>
+                <div className="text-[11px] font-medium text-slate-400">{item.desc}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
       <div className="flex-1 grid grid-cols-2 gap-4">
@@ -116,7 +116,7 @@ const Footer: React.FC = () => (
         <div>
           <div className="flex items-center gap-2 mb-4">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-               <span className="font-bold text-white text-sm">A</span>
+              <span className="font-bold text-white text-sm">A</span>
             </div>
             <span className="text-lg font-bold tracking-tight">Chakachak</span>
           </div>
@@ -124,31 +124,31 @@ const Footer: React.FC = () => (
             The intelligent operating system for professional car wash services.
           </p>
           <div className="flex items-center gap-3">
-             {[Twitter, Linkedin, Facebook].map((Icon, i) => (
-               <button key={i} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
-                 <Icon size={16} className="text-slate-300" />
-               </button>
-             ))}
+            {[Twitter, Linkedin, Facebook].map((Icon, i) => (
+              <button key={i} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+                <Icon size={16} className="text-slate-300" />
+              </button>
+            ))}
           </div>
         </div>
-        
+
         <div>
           <h4 className="text-sm font-bold mb-5 tracking-wider uppercase">Platform</h4>
           <ul className="space-y-3 text-slate-400 font-medium text-xs">
-             <li className="hover:text-blue-500 cursor-pointer transition-colors">Dashboard</li>
-             <li className="hover:text-blue-500 cursor-pointer transition-colors">Vendor Portal</li>
-             <li className="hover:text-blue-500 cursor-pointer transition-colors">Subscription</li>
-             <li className="hover:text-blue-500 cursor-pointer transition-colors">API Docs</li>
+            <li className="hover:text-blue-500 cursor-pointer transition-colors">Dashboard</li>
+            <li className="hover:text-blue-500 cursor-pointer transition-colors">Vendor Portal</li>
+            <li className="hover:text-blue-500 cursor-pointer transition-colors">Subscription</li>
+            <li className="hover:text-blue-500 cursor-pointer transition-colors">API Docs</li>
           </ul>
         </div>
 
         <div>
           <h4 className="text-sm font-bold mb-5 tracking-wider uppercase">Company</h4>
           <ul className="space-y-3 text-slate-400 font-medium text-xs">
-             <li className="hover:text-blue-500 cursor-pointer transition-colors">About Us</li>
-             <li className="hover:text-blue-500 cursor-pointer transition-colors">Careers</li>
-             <li className="hover:text-blue-500 cursor-pointer transition-colors">Privacy</li>
-             <li className="hover:text-blue-500 cursor-pointer transition-colors">Terms</li>
+            <li className="hover:text-blue-500 cursor-pointer transition-colors">About Us</li>
+            <li className="hover:text-blue-500 cursor-pointer transition-colors">Careers</li>
+            <li className="hover:text-blue-500 cursor-pointer transition-colors">Privacy</li>
+            <li className="hover:text-blue-500 cursor-pointer transition-colors">Terms</li>
           </ul>
         </div>
 

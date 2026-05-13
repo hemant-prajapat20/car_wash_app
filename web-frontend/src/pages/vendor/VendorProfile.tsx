@@ -42,7 +42,7 @@ export const VendorProfile: React.FC = () => {
   if (loading) return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-500 max-w-4xl font-inter">
+    <div className="space-y-4 animate-in fade-in duration-500 w-full font-inter">
       <div className="flex items-center justify-between px-1">
         <div>
           <h1 className="text-[15px] font-bold text-slate-900 tracking-tight">Business Profile</h1>

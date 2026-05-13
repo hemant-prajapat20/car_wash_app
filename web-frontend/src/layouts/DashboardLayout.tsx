@@ -1,22 +1,27 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../components/customer/Sidebar';
-import { Bell, Search, User } from 'lucide-react';
+import { Bell, Search, User, Menu } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
 export const DashboardLayout: React.FC = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const { user } = useSelector((state: any) => state.auth);
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-inter text-slate-900 overflow-x-hidden">
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:pl-64">
         {/* Top Header */}
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
-          {/* Mobile Spacer (for hamburger button) */}
-          <div className="w-10 lg:hidden" />
+          <button 
+            className="p-2 -ml-2 text-slate-400 lg:hidden hover:bg-slate-50 rounded-xl transition-all"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu size={24} />
+          </button>
 
           <div className="flex items-center gap-4 flex-1 max-w-xl mx-4">
             <div className="relative w-full group hidden md:block">

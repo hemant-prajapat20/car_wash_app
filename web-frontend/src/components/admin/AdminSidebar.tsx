@@ -34,6 +34,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { name: 'Register Vendor', icon: UserPlus, path: '/admin/register-vendor' },
     { name: 'Vendors Profile', icon: Users, path: '/admin/vendors' },
     { name: 'Notifications', icon: Bell, path: '/admin/notifications' },
+    { name: 'Admin Profile', icon: UserCircle, path: '/admin/profile' },
   ];
 
   return (
@@ -95,21 +96,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
         </nav>
 
         {/* Footer Actions */}
-        <div className="p-4 mt-auto border-t border-slate-50 space-y-1">
-          <NavLink
-            to="/admin/profile"
-            onClick={() => setIsOpen(false)}
-            className={({ isActive }) => `
-              flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 group
-              ${isActive 
-                ? 'bg-slate-100 text-slate-900' 
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}
-            `}
-          >
-            <UserCircle size={18} className="text-slate-400 group-hover:text-slate-600" />
-            <span className="text-xs font-bold tracking-wide">Admin Profile</span>
-          </NavLink>
-
+        <div className="p-4 mt-auto border-t border-slate-50">
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all group"

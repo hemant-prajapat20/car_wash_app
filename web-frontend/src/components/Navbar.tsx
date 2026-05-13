@@ -52,11 +52,10 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-inter ${
-      scrolled ? 'bg-white/80 backdrop-blur-lg shadow-sm py-4' : 'bg-transparent py-6'
-    }`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 font-inter ${scrolled ? 'bg-white/80 backdrop-blur-lg shadow-sm py-4' : 'bg-transparent py-6'
+      }`}>
       <div className="max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
-        <div 
+        <div
           onClick={() => scrollToSection('home')}
           className="flex items-center gap-2 cursor-pointer group"
         >
@@ -72,11 +71,10 @@ export const Navbar: React.FC = () => {
             <button
               key={item.id}
               onClick={() => scrollToSection(item.id)}
-              className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
-                activeSection === item.id 
-                ? 'bg-white text-blue-600 shadow-sm shadow-slate-200' 
-                : 'text-slate-500 hover:text-slate-900'
-              }`}
+              className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${activeSection === item.id
+                  ? 'bg-white text-blue-600 shadow-sm shadow-slate-200'
+                  : 'text-slate-500 hover:text-slate-900'
+                }`}
             >
               {item.label}
             </button>
@@ -85,7 +83,7 @@ export const Navbar: React.FC = () => {
 
         <div className="hidden lg:flex items-center gap-3">
           {isAuthenticated ? (
-            <button 
+            <button
               onClick={() => navigate(getDashboardPath())}
               className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-semibold shadow-lg shadow-slate-200 flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95"
             >
@@ -94,13 +92,13 @@ export const Navbar: React.FC = () => {
             </button>
           ) : (
             <>
-              <button 
+              <button
                 onClick={() => navigate('/login')}
                 className="px-6 py-2.5 text-slate-600 font-semibold hover:text-slate-900 transition-colors"
               >
                 Login
               </button>
-              <button 
+              <button
                 onClick={() => navigate('/signup')}
                 className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
               >
@@ -124,21 +122,20 @@ export const Navbar: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className={`text-left px-4 py-3 rounded-xl font-semibold ${
-                  activeSection === item.id ? 'bg-blue-50 text-blue-600' : 'text-slate-600'
-                }`}
+                className={`text-left px-4 py-3 rounded-xl font-semibold ${activeSection === item.id ? 'bg-blue-50 text-blue-600' : 'text-slate-600'
+                  }`}
               >
                 {item.label}
               </button>
             ))}
             <div className="h-px bg-slate-100 my-2" />
-            
+
             {isAuthenticated ? (
-              <button 
+              <button
                 onClick={() => {
                   navigate(getDashboardPath());
                   setIsOpen(false);
-                }} 
+                }}
                 className="py-3 bg-slate-900 text-white font-semibold rounded-xl shadow-lg flex items-center justify-center gap-2"
               >
                 <LayoutDashboard size={18} />

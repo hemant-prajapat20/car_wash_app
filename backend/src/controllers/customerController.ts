@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
 import Booking from '../models/Booking';
-import { Slot, Review } from '../models/Others';
+import Slot from '../models/Slot';
+import { Review } from '../models/Others';
 import { asyncHandler, AuthRequest } from '../middleware/auth';
 
 export const searchVendors = asyncHandler(async (req: Request, res: Response) => {
@@ -20,8 +21,8 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
   const { vendorId, vehicle, service, slot } = req.body;
 
   // 1. Check slot availability
-  const slotDoc = await Slot.findOne({ vendor: vendorId, date: slot.date, time: slot.time });
-  if (slotDoc && slotDoc.booked >= slotDoc.capacity) {
+  const slotDoc = await Slot.findOne({ vendorId: vendorId, startTime: slot.time });
+  if (slotDoc && slotDoc.currentBookings >= slotDoc.maxBookings) {
     return res.status(400).json({ success: false, message: 'Slot is full' });
   }
 
@@ -38,7 +39,7 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
 
   // 3. Update Slot counter
   if (slotDoc) {
-    slotDoc.booked += 1;
+    slotDoc.currentBookings += 1;
     await slotDoc.save();
   }
 

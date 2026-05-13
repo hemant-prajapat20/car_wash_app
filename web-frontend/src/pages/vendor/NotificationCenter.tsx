@@ -12,7 +12,7 @@ const NOTIFICATIONS = [
 
 export const NotificationCenter: React.FC = () => {
   return (
-    <div className="space-y-4 animate-in fade-in duration-500 max-w-2xl font-inter">
+    <div className="space-y-4 animate-in fade-in duration-500 w-full font-inter">
       <div className="flex items-center justify-between px-1">
         <div>
           <h1 className="text-[15px] font-bold text-slate-900 tracking-tight">Activity Alerts</h1>
@@ -21,7 +21,7 @@ export const NotificationCenter: React.FC = () => {
         <button className="text-[9px] font-bold text-blue-600 uppercase tracking-widest hover:underline">Clear All</button>
       </div>
 
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 gap-2.5">
         {NOTIFICATIONS.map((notif) => (
           <div key={notif.id} className={`p-3 border rounded-xl flex items-center gap-3 group transition-all cursor-pointer ${
             notif.read ? 'bg-white border-slate-100' : 'bg-blue-50/20 border-blue-100'

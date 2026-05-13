@@ -1,21 +1,33 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { VendorSidebar } from '../components/vendor/VendorSidebar';
-import { Bell, Search, User } from 'lucide-react';
+import { Bell, Search, User, Menu } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
 export const VendorLayout: React.FC = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const [isCollapsed, setIsCollapsed] = React.useState(false);
   const { user } = useSelector((state: any) => state.auth);
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-inter text-slate-900 overflow-x-hidden">
-      <VendorSidebar />
+      <VendorSidebar 
+        isOpen={isSidebarOpen} 
+        setIsOpen={setIsSidebarOpen} 
+        isCollapsed={isCollapsed} 
+        setIsCollapsed={setIsCollapsed} 
+      />
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:pl-64">
+      <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isCollapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
         {/* Vendor Top Header */}
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
-          <div className="w-10 lg:hidden" />
+          <button 
+            className="p-2 -ml-2 text-slate-400 lg:hidden hover:bg-slate-50 rounded-xl transition-all"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu size={24} />
+          </button>
 
           <div className="flex items-center gap-4 flex-1 max-w-xl mx-4">
             <div className="relative w-full group hidden md:block">
@@ -53,7 +65,7 @@ export const VendorLayout: React.FC = () => {
         </header>
 
         {/* Vendor Content Container */}
-        <main className="p-4 md:p-8 lg:p-10 w-full max-w-screen-2xl mx-auto">
+        <main className="p-4 md:p-8 lg:p-10 w-full max-w-[1600px] mx-auto">
           <Outlet />
         </main>
       </div>
