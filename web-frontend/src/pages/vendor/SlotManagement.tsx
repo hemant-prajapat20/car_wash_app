@@ -99,7 +99,7 @@ export const SlotManagement: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 w-full font-inter">
+    <div className="space-y-4 animate-in fade-in duration-500 w-full font-inter">
       <div className="flex items-center justify-between px-1">
         <div>
           <h1 className="text-[17px] font-bold text-slate-900 tracking-tight">Availability Slots</h1>
@@ -129,35 +129,35 @@ export const SlotManagement: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 key={slot._id} 
-                className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm hover:shadow-md hover:border-blue-100 transition-all group"
+                className="bg-white border border-slate-100 rounded-[24px] p-5 shadow-sm hover:shadow-md hover:border-blue-100 transition-all group"
               >
-                <div className="flex items-start justify-between mb-6">
-                  <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
-                    <Clock size={24} />
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
+                    <Clock size={20} />
                   </div>
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => openEditModal(slot)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={14}/></button>
-                    <button onClick={() => handleDelete(slot._id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"><Trash2 size={14}/></button>
+                    <button onClick={() => openEditModal(slot)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={12}/></button>
+                    <button onClick={() => handleDelete(slot._id)} className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"><Trash2 size={12}/></button>
                   </div>
                 </div>
 
-                <div className="mb-6">
-                  <h3 className="text-[16px] font-bold text-slate-900 leading-none mb-2">{slot.startTime} - {slot.endTime}</h3>
+                <div className="mb-4">
+                  <h3 className="text-[14px] font-bold text-slate-900 leading-none mb-2">{slot.startTime} - {slot.endTime}</h3>
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest px-2 py-1 bg-blue-50 rounded-lg">
+                    <span className="text-[8px] font-bold text-blue-600 uppercase tracking-widest px-1.5 py-0.5 bg-blue-50 rounded-md">
                       {slot.dayOfWeek}
                     </span>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                     <span>Capacity Utilization</span>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                     <span>Utilization</span>
                      <span className={slot.currentBookings < slot.maxBookings ? 'text-emerald-500' : 'text-rose-500'}>
-                        {slot.currentBookings}/{slot.maxBookings} Filled
+                        {slot.currentBookings}/{slot.maxBookings}
                      </span>
                   </div>
-                  <div className="h-1.5 bg-slate-50 rounded-full overflow-hidden">
+                  <div className="h-1 bg-slate-50 rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${(slot.currentBookings / slot.maxBookings) * 100}%` }}
@@ -230,9 +230,9 @@ export const SlotManagement: React.FC = () => {
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Max Bookings</label>
               <input
                 type="number"
-                min="1"
-                value={formData.maxBookings}
-                onChange={(e) => setFormData({...formData, maxBookings: Math.max(1, parseInt(e.target.value) || 0)})}
+                placeholder="Capacity"
+                value={formData.maxBookings === 0 ? '' : formData.maxBookings}
+                onChange={(e) => setFormData({...formData, maxBookings: e.target.value === '' ? 0 : parseInt(e.target.value)})}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-50 rounded-2xl text-[12px] font-semibold text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all"
                 required
               />

@@ -11,18 +11,18 @@ export const VendorLayout: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-inter text-slate-900 overflow-x-hidden">
-      <VendorSidebar 
-        isOpen={isSidebarOpen} 
-        setIsOpen={setIsSidebarOpen} 
-        isCollapsed={isCollapsed} 
-        setIsCollapsed={setIsCollapsed} 
+      <VendorSidebar
+        isOpen={isSidebarOpen}
+        setIsOpen={setIsSidebarOpen}
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
       />
-      
+
       {/* Main Content Area */}
       <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${isCollapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
         {/* Vendor Top Header */}
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
-          <button 
+          <button
             className="p-2 -ml-2 text-slate-400 lg:hidden hover:bg-slate-50 rounded-xl transition-all"
             onClick={() => setIsSidebarOpen(true)}
           >
@@ -32,9 +32,9 @@ export const VendorLayout: React.FC = () => {
           <div className="flex items-center gap-4 flex-1 max-w-xl mx-4">
             <div className="relative w-full group hidden md:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={16} />
-              <input 
-                type="text" 
-                placeholder="Search bookings or customers..." 
+              <input
+                type="text"
+                placeholder="Search bookings or customers..."
                 className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-10 pr-4 py-2 text-[13px] focus:ring-2 focus:ring-blue-600/10 focus:bg-white transition-all outline-none"
               />
             </div>
@@ -45,9 +45,9 @@ export const VendorLayout: React.FC = () => {
               <Bell size={18} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white" />
             </button>
-            
+
             <div className="h-6 w-px bg-slate-100 mx-1 hidden sm:block" />
-            
+
             <div className="flex items-center gap-2 md:gap-3 group cursor-pointer">
               <div className="flex flex-col items-end hidden sm:flex">
                 <span className="text-[11px] font-semibold text-slate-900 leading-none mb-1">{user?.fullName || 'Vendor Name'}</span>
@@ -65,7 +65,7 @@ export const VendorLayout: React.FC = () => {
         </header>
 
         {/* Vendor Content Container */}
-        <main className="p-4 md:p-8 lg:p-10 w-full max-w-[1600px] mx-auto">
+        <main className="p-4 md:p-6 lg:p-6 w-full max-w-[1600px] mx-auto">
           <Outlet />
         </main>
       </div>

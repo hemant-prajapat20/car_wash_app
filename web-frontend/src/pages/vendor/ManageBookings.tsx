@@ -90,7 +90,10 @@ export const ManageBookings: React.FC = () => {
                 <h3 className="text-[12px] font-bold text-slate-900 truncate leading-tight">{booking.customer?.fullName}</h3>
                 <p className="text-[10px] font-medium text-slate-400 truncate tracking-tight">{booking.service?.name}</p>
               </div>
-              <StatusBadge status={booking.status} />
+              <div className="flex flex-col items-end shrink-0">
+                <StatusBadge status={booking.status} />
+                <span className="text-[11px] font-bold text-slate-900 mt-1">₹{booking.totalAmount}</span>
+              </div>
             </div>
 
             <div className="space-y-2 mb-4 pt-3 border-t border-slate-50">

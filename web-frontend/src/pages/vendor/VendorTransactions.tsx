@@ -5,10 +5,10 @@ import {
 } from 'lucide-react';
 
 const TRANSACTIONS = [
-  { id: 'TX-7K9W2M4P1L', cust: 'John Doe', amt: '+$85', date: 'May 12, 2026', time: '10:30 AM', status: 'Success' },
-  { id: 'TX-3B8V5N9Q0X', cust: 'Sarah Smith', amt: '+$35', date: 'May 11, 2026', time: '02:15 PM', status: 'Success' },
-  { id: 'TX-1M4L7P2D8G', cust: 'Mike Ross', amt: '-$15', date: 'May 10, 2026', time: '09:00 AM', status: 'Refund' },
-  { id: 'TX-9R3T6Y1H5J', cust: 'Harvey Specter', amt: '+$120', date: 'May 09, 2026', time: '11:45 AM', status: 'Success' },
+  { id: 'TX-7K9W2M4P1L', cust: 'John Doe', amt: '+₹85', date: 'May 12, 2026', time: '10:30 AM', status: 'Success' },
+  { id: 'TX-3B8V5N9Q0X', cust: 'Sarah Smith', amt: '+₹35', date: 'May 11, 2026', time: '02:15 PM', status: 'Success' },
+  { id: 'TX-1M4L7P2D8G', cust: 'Mike Ross', amt: '-₹15', date: 'May 10, 2026', time: '09:00 AM', status: 'Refund' },
+  { id: 'TX-9R3T6Y1H5J', cust: 'Harvey Specter', amt: '+₹120', date: 'May 09, 2026', time: '11:45 AM', status: 'Success' },
 ];
 
 export const VendorTransactions: React.FC = () => {

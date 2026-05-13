@@ -42,7 +42,7 @@ export const VendorDashboard: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 w-full font-inter">
+    <div className="space-y-4 animate-in fade-in duration-500 w-full font-inter">
       <div className="px-1 flex items-center justify-between">
         <div>
           <h1 className="text-[17px] font-bold text-slate-900 tracking-tight">Performance Overview</h1>
@@ -57,7 +57,7 @@ export const VendorDashboard: React.FC = () => {
       {/* Main Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
         {[
-          { label: 'Revenue', val: `$${stats?.revenue || 0}`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Revenue', val: `₹${stats?.revenue || 0}`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { label: 'Orders', val: stats?.totalBookings || 0, icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
           { label: 'Completed', val: stats?.completedBookings || 0, icon: CheckCircle2, color: 'text-indigo-600', bg: 'bg-indigo-50' },
           { label: 'Staff', val: stats?.totalWorkers || 0, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
@@ -122,7 +122,7 @@ export const VendorDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-[12px] font-bold text-slate-900 mb-1">${bk.totalAmount}</p>
+                  <p className="text-[12px] font-bold text-slate-900 mb-1">₹{bk.totalAmount}</p>
                   <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-1 rounded-md ${
                     bk.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
                   }`}>
@@ -169,7 +169,7 @@ export const VendorDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-[11px] font-bold text-amber-400">${customer.totalSpent}</p>
+                  <p className="text-[11px] font-bold text-amber-400">₹{customer.totalSpent}</p>
                 </div>
               </div>
             )) : (
