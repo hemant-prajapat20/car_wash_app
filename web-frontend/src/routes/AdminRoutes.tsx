@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AdminLayout } from '../components/admin/AdminLayout';
+import { AdminLayout } from '../layouts/AdminLayout';
 import { AdminDashboard } from '../pages/admin/AdminDashboard';
 import { VendorRegistration } from '../pages/admin/VendorRegistration';
 import { VendorManagement } from '../pages/admin/VendorManagement';

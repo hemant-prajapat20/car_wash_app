@@ -1,21 +1,27 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
-import { Bell, Search, ShieldCheck } from 'lucide-react';
+import { Bell, Search, ShieldCheck, Menu } from 'lucide-react';
 import { useSelector } from 'react-redux';
 
 export const AdminLayout: React.FC = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const { user } = useSelector((state: any) => state.auth);
 
   return (
     <div className="flex min-h-screen bg-slate-50 font-inter text-slate-900 overflow-x-hidden">
-      <AdminSidebar />
+      <AdminSidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:pl-64">
+      <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:pl-[260px]">
         {/* Admin Top Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
-          <div className="w-10 lg:hidden" />
+          <button 
+            className="p-2 -ml-2 text-slate-400 lg:hidden hover:bg-slate-50 rounded-xl transition-all"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu size={24} />
+          </button>
 
           <div className="flex items-center gap-4 flex-1 max-w-xl mx-4">
             <div className="relative w-full group hidden md:block">

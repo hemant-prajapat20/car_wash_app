@@ -39,7 +39,7 @@ function App() {
       <Route path="/vendor-demo" element={<VendorDemoLogin />} />
       
       {/* Secret Admin Login Route */}
-      <Route path={ADMIN_ACCESS_PATH} element={isAuthenticated ? <Navigate to="/admin/dashboard" /> : <AdminAccessPage />} />
+      <Route path={ADMIN_ACCESS_PATH} element={isAuthenticated ? <Navigate to={getHomeRedirect()} /> : <AdminAccessPage />} />
       
       {/* Customer Panel Routes (Nested) */}
       <Route 
@@ -56,7 +56,7 @@ function App() {
       {/* SuperAdmin Panel Routes (Nested & Protected) */}
       <Route 
         path="/admin/*" 
-        element={isAuthenticated && (user?.role === 'admin' || user?.role === 'superAdmin') ? <AdminRoutes /> : <Navigate to={ADMIN_ACCESS_PATH} />} 
+        element={isAuthenticated && (user?.role === 'admin' || user?.role === 'superAdmin') ? <AdminRoutes /> : <Navigate to={isAuthenticated ? getHomeRedirect() : ADMIN_ACCESS_PATH} />} 
       />
       
       <Route path="*" element={<Navigate to="/" />} />
