@@ -1,54 +1,70 @@
-import { Tabs } from 'expo-router';
-import { Home, Search, Calendar, User } from 'lucide-react-native';
+import { Drawer } from 'expo-router/drawer';
+import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { useDispatch } from 'react-redux';
+import { logout } from '../../store/authSlice';
+import { router } from 'expo-router';
+import { 
+  Home, Search, CalendarCheck, History, User, LogOut 
+} from 'lucide-react-native';
+
+function CustomDrawerContent(props: any) {
+  const dispatch = useDispatch();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    router.replace('/');
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
+      <DrawerContentScrollView {...props}>
+        <DrawerItemList {...props} />
+      </DrawerContentScrollView>
+      <View style={{ padding: 20, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
+        <TouchableOpacity 
+          onPress={handleLogout}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
+        >
+          <LogOut size={22} color="#f43f5e" />
+          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#f43f5e' }}>Logout</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
 
 export default function CustomerLayout() {
   return (
-    <Tabs screenOptions={{ 
-      headerShown: false,
-      tabBarActiveTintColor: '#2563eb',
-      tabBarInactiveTintColor: '#94a3b8',
-      tabBarStyle: {
-        borderTopWidth: 1,
-        borderTopColor: '#f1f5f9',
-        height: 60,
-        paddingBottom: 8,
-        paddingTop: 8,
-      },
-      tabBarLabelStyle: {
-        fontSize: 10,
-        fontWeight: '700',
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-      }
-    }}>
-      <Tabs.Screen 
-        name="home" 
-        options={{ 
-          title: 'Home',
-          tabBarIcon: ({ color }) => <Home size={22} color={color} />
-        }} 
-      />
-      <Tabs.Screen 
+    <Drawer 
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      screenOptions={{ 
+        headerShown: true,
+        headerStyle: { backgroundColor: '#ffffff' },
+        headerTintColor: '#0f172a',
+        headerTitleStyle: { fontWeight: 'bold' },
+        drawerActiveBackgroundColor: '#eff6ff',
+        drawerActiveTintColor: '#2563eb',
+        drawerInactiveTintColor: '#64748b',
+        drawerLabelStyle: { fontWeight: 'bold' }
+      }}
+    >
+      <Drawer.Screen 
         name="search" 
-        options={{ 
-          title: 'Search',
-          tabBarIcon: ({ color }) => <Search size={22} color={color} />
-        }} 
+        options={{ title: 'Search Vendors', drawerIcon: ({ color }) => <Search size={22} color={color} /> }} 
       />
-      <Tabs.Screen 
+      <Drawer.Screen 
+        name="book" 
+        options={{ title: 'Book Service', drawerIcon: ({ color }) => <CalendarCheck size={22} color={color} /> }} 
+      />
+      <Drawer.Screen 
         name="bookings" 
-        options={{ 
-          title: 'Bookings',
-          tabBarIcon: ({ color }) => <Calendar size={22} color={color} />
-        }} 
+        options={{ title: 'My Bookings', drawerIcon: ({ color }) => <History size={22} color={color} /> }} 
       />
-      <Tabs.Screen 
+      <Drawer.Screen 
         name="profile" 
-        options={{ 
-          title: 'Profile',
-          tabBarIcon: ({ color }) => <User size={22} color={color} />
-        }} 
+        options={{ title: 'Profile Settings', drawerIcon: ({ color }) => <User size={22} color={color} /> }} 
       />
-    </Tabs>
+    </Drawer>
   );
 }

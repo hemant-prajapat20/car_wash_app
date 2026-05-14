@@ -6,7 +6,7 @@ import { AppDispatch, RootState } from '../../store';
 import { login, clearError } from '../../store/authSlice';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { ShieldCheck, Mail, Lock } from 'lucide-react-native';
+import { ShieldCheck, Mail, Lock, ArrowLeft } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -44,6 +44,14 @@ export default function LoginScreen() {
           </View>
 
           <View className="mb-10">
+            <TouchableOpacity 
+              onPress={() => router.replace('/')} 
+              className="flex-row items-center gap-2 mb-8 bg-blue-50 self-start px-3 py-2 rounded-xl"
+            >
+              <ArrowLeft size={14} color="#2563eb" />
+              <Text className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">Return to Home</Text>
+            </TouchableOpacity>
+
             <Text className="text-3xl font-bold text-slate-900 tracking-tight">Welcome back</Text>
             <Text className="text-slate-500 text-base mt-2">Sign in to manage your bookings and services</Text>
           </View>

@@ -6,7 +6,7 @@ import { AppDispatch, RootState } from '../../store';
 import { register, clearError } from '../../store/authSlice';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { UserPlus } from 'lucide-react-native';
+import { UserPlus, ArrowLeft } from 'lucide-react-native';
 
 export default function SignupScreen() {
   const [formData, setFormData] = useState({
@@ -45,6 +45,14 @@ export default function SignupScreen() {
         <View className="flex-1 px-8 pt-20 pb-10">
           {/* Header */}
           <View className="mb-10">
+            <TouchableOpacity 
+              onPress={() => router.replace('/')} 
+              className="flex-row items-center gap-2 mb-8 bg-blue-50 self-start px-3 py-2 rounded-xl"
+            >
+              <ArrowLeft size={14} color="#2563eb" />
+              <Text className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest">Return to Home</Text>
+            </TouchableOpacity>
+
             <View className="w-12 h-12 bg-blue-600 rounded-2xl items-center justify-center mb-6 shadow-lg shadow-blue-200">
               <UserPlus color="white" size={24} />
             </View>

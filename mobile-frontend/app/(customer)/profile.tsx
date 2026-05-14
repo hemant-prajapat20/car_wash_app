@@ -1,74 +1,100 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
-import { logout } from '../../store/authSlice';
-import { User, Shield, CreditCard, Bell, LogOut, ChevronRight, Settings } from 'lucide-react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, SafeAreaView, ActivityIndicator, ScrollView } from 'react-native';
+import { User, Camera, Car, Trash2, Plus, ShieldCheck } from 'lucide-react-native';
+import api from '../../services/api';
 
 export default function CustomerProfile() {
-  const { user } = useSelector((state: RootState) => state.auth);
-  const dispatch = useDispatch();
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const menuItems = [
-    { icon: <User size={20} color="#0f172a" />, title: 'Personal Information', subtitle: 'Manage your profile details' },
-    { icon: <CreditCard size={20} color="#0f172a" />, title: 'Payment Methods', subtitle: 'Saved cards and UPI IDs' },
-    { icon: <Bell size={20} color="#0f172a" />, title: 'Notifications', subtitle: 'Alerts and booking updates' },
-    { icon: <Shield size={20} color="#0f172a" />, title: 'Privacy & Security', subtitle: 'Password and data control' },
-  ];
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setProfile({
+          fullName: 'John Doe',
+          email: 'john@example.com',
+          phone: '+1 234 567 890',
+          vehicles: [
+            { make: 'Tesla', model: 'Model 3', plate: 'ABC-123' },
+            { make: 'BMW', model: 'X5', plate: 'XYZ-789' }
+          ],
+          addresses: [
+            { label: 'Home', val: '123 Main St, LA' }
+          ]
+        });
+      } catch (err) {
+        console.error('Fetch profile failed');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  if (loading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-slate-50">
+        <ActivityIndicator color="#2563eb" />
+      </View>
+    );
+  }
 
   return (
-    <ScrollView className="flex-1 bg-slate-50" showsVerticalScrollIndicator={false}>
-      <View className="bg-slate-900 pt-16 pb-12 px-6 rounded-b-[50px]">
+    <SafeAreaView className="flex-1 bg-slate-50">
+      <ScrollView contentContainerStyle={{ padding: 24 }} showsVerticalScrollIndicator={false}>
+        
         <View className="flex-row items-center justify-between mb-8">
-           <Text className="text-white text-2xl font-bold tracking-tight">Account</Text>
-           <TouchableOpacity className="w-10 h-10 bg-white/10 rounded-xl items-center justify-center">
-              <Settings size={20} color="white" />
-           </TouchableOpacity>
+          <View>
+            <Text className="text-xl font-bold text-slate-900 tracking-tight">Your Profile</Text>
+            <Text className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Manage your account and vehicles</Text>
+          </View>
+          <TouchableOpacity className="bg-slate-900 px-4 py-2.5 rounded-xl shadow-lg shadow-slate-200">
+             <Text className="text-white text-[11px] font-bold uppercase tracking-widest">Save</Text>
+          </TouchableOpacity>
         </View>
 
-        <View className="flex-row items-center gap-5">
-           <View className="w-20 h-20 bg-blue-500 rounded-[32px] items-center justify-center border-4 border-white/10">
-              <Text className="text-white text-2xl font-bold">{user?.fullName?.charAt(0) || 'U'}</Text>
+        <View className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm items-center mb-6">
+           <View className="relative w-24 h-24 mb-5">
+             <View className="w-full h-full bg-slate-50 rounded-3xl flex items-center justify-center border-4 border-white shadow-sm">
+               <User size={32} color="#cbd5e1" />
+             </View>
+             <TouchableOpacity className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 rounded-2xl items-center justify-center shadow-lg shadow-blue-200">
+               <Camera size={18} color="white" />
+             </TouchableOpacity>
            </View>
-           <View>
-              <Text className="text-white text-xl font-bold">{user?.fullName || 'Valued Customer'}</Text>
-              <Text className="text-blue-200 text-sm font-medium">{user?.email || 'customer@chakachak.com'}</Text>
-           </View>
+           <Text className="text-lg font-bold text-slate-900">{profile.fullName}</Text>
+           <Text className="text-xs font-medium text-slate-400 mt-1">{profile.email}</Text>
         </View>
-      </View>
 
-      <View className="px-6 -mt-6">
-         <View className="bg-white rounded-[32px] p-2 shadow-xl shadow-slate-200">
-            {menuItems.map((item, index) => (
-               <TouchableOpacity 
-                  key={index}
-                  className={`flex-row items-center justify-between p-4 ${index !== menuItems.length - 1 ? 'border-b border-slate-50' : ''}`}
-               >
+        <View className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm">
+           <Text className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6">Saved Vehicles</Text>
+           
+           <View className="gap-3">
+              {profile.vehicles.map((v: any, i: number) => (
+                <View key={i} className="p-4 bg-slate-50 rounded-2xl flex-row items-center justify-between">
                   <View className="flex-row items-center gap-4">
-                     <View className="w-10 h-10 bg-slate-50 rounded-xl items-center justify-center">
-                        {item.icon}
-                     </View>
-                     <View>
-                        <Text className="text-slate-900 font-bold text-sm">{item.title}</Text>
-                        <Text className="text-slate-400 text-[10px] font-medium tracking-wide uppercase">{item.subtitle}</Text>
-                     </View>
+                    <View className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+                      <Car size={18} color="#94a3b8" />
+                    </View>
+                    <View>
+                      <Text className="text-sm font-bold text-slate-900">{v.make} {v.model}</Text>
+                      <Text className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">{v.plate}</Text>
+                    </View>
                   </View>
-                  <ChevronRight size={18} color="#cbd5e1" />
-               </TouchableOpacity>
-            ))}
-         </View>
-      </View>
+                  <TouchableOpacity className="p-2">
+                    <Trash2 size={16} color="#cbd5e1" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              
+              <TouchableOpacity className="p-5 border-2 border-dashed border-slate-200 rounded-2xl flex-row items-center justify-center gap-2 mt-2">
+                <Plus size={18} color="#94a3b8" />
+                <Text className="text-xs font-bold uppercase tracking-widest text-slate-400">Add New Vehicle</Text>
+              </TouchableOpacity>
+           </View>
+        </View>
 
-      <View className="px-6 py-10">
-         <TouchableOpacity 
-            onPress={() => dispatch(logout())}
-            className="flex-row items-center justify-center gap-3 bg-red-50 py-4 rounded-[20px] border border-red-100"
-         >
-            <LogOut size={18} color="#ef4444" />
-            <Text className="text-red-500 font-bold text-sm">Sign Out Session</Text>
-         </TouchableOpacity>
-         <Text className="text-center text-slate-300 text-[10px] font-bold uppercase tracking-[3px] mt-8">Chakachak Mobile v1.0.4</Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

@@ -41,9 +41,9 @@ function InitialLayout() {
     } else if (token && user) {
       if (inAuthGroup || isLandingPage) {
         if (user.role === 'vendor') router.replace('/(vendor)/dashboard');
-        else router.replace('/(customer)/home');
+        else router.replace('/(customer)/search');
       } else if (user.role === 'customer' && inVendorGroup) {
-        router.replace('/(customer)/home');
+        router.replace('/(customer)/search');
       } else if (user.role === 'vendor' && inCustomerGroup) {
         router.replace('/(vendor)/dashboard');
       }

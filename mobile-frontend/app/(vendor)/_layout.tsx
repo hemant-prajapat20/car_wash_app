@@ -1,22 +1,56 @@
 import { Drawer } from 'expo-router/drawer';
+import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { useDispatch } from 'react-redux';
+import { logout } from '../../store/authSlice';
+import { router } from 'expo-router';
 import { 
   LayoutDashboard, Inbox, Clock, Package, 
   Users, Contact, Receipt, BarChart3, 
-  Bell, User 
+  Bell, User, LogOut 
 } from 'lucide-react-native';
+
+function CustomDrawerContent(props: any) {
+  const dispatch = useDispatch();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    router.replace('/');
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
+      <DrawerContentScrollView {...props}>
+        <DrawerItemList {...props} />
+      </DrawerContentScrollView>
+      <View style={{ padding: 20, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
+        <TouchableOpacity 
+          onPress={handleLogout}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
+        >
+          <LogOut size={22} color="#f43f5e" />
+          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#f43f5e' }}>Logout</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
 
 export default function VendorLayout() {
   return (
-    <Drawer screenOptions={{ 
-      headerShown: true,
-      headerStyle: { backgroundColor: '#ffffff' },
-      headerTintColor: '#0f172a',
-      headerTitleStyle: { fontWeight: 'bold' },
-      drawerActiveBackgroundColor: '#eff6ff',
-      drawerActiveTintColor: '#2563eb',
-      drawerInactiveTintColor: '#64748b',
-      drawerLabelStyle: { fontWeight: 'bold' }
-    }}>
+    <Drawer 
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      screenOptions={{ 
+        headerShown: true,
+        headerStyle: { backgroundColor: '#ffffff' },
+        headerTintColor: '#0f172a',
+        headerTitleStyle: { fontWeight: 'bold' },
+        drawerActiveBackgroundColor: '#eff6ff',
+        drawerActiveTintColor: '#2563eb',
+        drawerInactiveTintColor: '#64748b',
+        drawerLabelStyle: { fontWeight: 'bold' }
+      }}
+    >
       <Drawer.Screen 
         name="dashboard" 
         options={{ title: 'Dashboard', drawerIcon: ({ color }) => <LayoutDashboard size={22} color={color} /> }} 
