@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Professional API configuration for the Chakachak SaaS platform
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:5000/api', // Points to the live backend we just fixed
+  baseURL: 'http://192.168.1.2:5000/api', // Points to your computer's IP for mobile access
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

@@ -30,13 +30,13 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitl
 
         {/* Auth Card */}
         <div className="bg-white p-6 rounded-[2rem] shadow-2xl shadow-slate-200/40 border border-white relative overflow-hidden">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-start mb-6 border-b border-slate-50 pb-4">
             <Link
               to="/"
-              className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-widest transition-colors shrink-0"
+              className="flex items-center gap-2 text-[10px] font-extrabold text-blue-600 hover:text-blue-700 uppercase tracking-[0.15em] transition-all group shrink-0"
             >
-              <ArrowLeft size={10} />
-              <span>Back to Home</span>
+              <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
+              <span>Return to Home</span>
             </Link>
           </div>
 

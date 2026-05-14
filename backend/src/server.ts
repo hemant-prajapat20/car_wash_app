@@ -41,11 +41,10 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on: http://localhost:${PORT}`);
-
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on: http://192.168.1.2:${PORT}`);
   });
 });

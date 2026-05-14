@@ -16,7 +16,8 @@ export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useSelector((state: any) => state.auth);
+  const { token, user } = useSelector((state: any) => state.auth);
+  const isAuthenticated = !!token;
   const activeSection = useActiveSection(NAV_ITEMS.map(i => i.id));
 
   useEffect(() => {
