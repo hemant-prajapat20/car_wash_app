@@ -18,7 +18,7 @@ import {
   updateSlot, 
   deleteSlot
 } from '../controllers/vendorController';
-import { searchVendors, createBooking, getMyBookings, submitReview } from '../controllers/customerController';
+import { searchVendors, getVendorDetails, createBooking, getMyBookings, submitReview } from '../controllers/customerController';
 import { protect, authorize } from '../middleware/auth';
 
 const router = express.Router();
@@ -66,6 +66,7 @@ router.route('/vendor/workers/:id')
 
 // CUSTOMER ROUTES (Protected)
 router.get('/customer/search', protect, searchVendors);
+router.get('/customer/vendors/:vendorId', protect, getVendorDetails);
 router.post('/customer/bookings', protect, authorize('customer'), createBooking);
 router.get('/customer/my-bookings', protect, authorize('customer'), getMyBookings);
 router.post('/customer/reviews', protect, authorize('customer'), submitReview);

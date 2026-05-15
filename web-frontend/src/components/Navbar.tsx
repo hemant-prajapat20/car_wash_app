@@ -17,7 +17,7 @@ export const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
   const { token, user } = useSelector((state: any) => state.auth);
-  const isAuthenticated = !!token;
+  const isAuthenticated = !!token && !!user;
   const activeSection = useActiveSection(NAV_ITEMS.map(i => i.id));
 
   useEffect(() => {
@@ -83,30 +83,18 @@ export const Navbar: React.FC = () => {
         </div>
 
         <div className="hidden lg:flex items-center gap-3">
-          {isAuthenticated ? (
-            <button
-              onClick={() => navigate(getDashboardPath())}
-              className="px-6 py-2.5 bg-slate-900 text-white rounded-xl font-semibold shadow-lg shadow-slate-200 flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95"
-            >
-              <LayoutDashboard size={16} />
-              <span>Dashboard</span>
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={() => navigate('/login')}
-                className="px-6 py-2.5 text-slate-600 font-semibold hover:text-slate-900 transition-colors"
-              >
-                Login
-              </button>
-              <button
-                onClick={() => navigate('/signup')}
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
-              >
-                Register
-              </button>
-            </>
-          )}
+          <button
+            onClick={() => navigate('/login')}
+            className="px-6 py-2.5 text-slate-600 font-semibold hover:text-slate-900 transition-colors"
+          >
+            Login
+          </button>
+          <button
+            onClick={() => navigate('/signup')}
+            className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
+          >
+            Register
+          </button>
         </div>
 
         {/* Mobile Toggle */}
@@ -131,23 +119,10 @@ export const Navbar: React.FC = () => {
             ))}
             <div className="h-px bg-slate-100 my-2" />
 
-            {isAuthenticated ? (
-              <button
-                onClick={() => {
-                  navigate(getDashboardPath());
-                  setIsOpen(false);
-                }}
-                className="py-3 bg-slate-900 text-white font-semibold rounded-xl shadow-lg flex items-center justify-center gap-2"
-              >
-                <LayoutDashboard size={18} />
-                <span>Go to Dashboard</span>
-              </button>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                <button onClick={() => navigate('/login')} className="py-3 text-slate-600 font-semibold border border-slate-200 rounded-xl">Login</button>
-                <button onClick={() => navigate('/signup')} className="py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200">Register</button>
-              </div>
-            )}
+            <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => { navigate('/login'); setIsOpen(false); }} className="py-3 text-slate-600 font-semibold border border-slate-200 rounded-xl">Login</button>
+              <button onClick={() => { navigate('/signup'); setIsOpen(false); }} className="py-3 bg-blue-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200">Register</button>
+            </div>
           </div>
         </div>
       )}

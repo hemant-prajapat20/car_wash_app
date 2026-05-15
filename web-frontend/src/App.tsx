@@ -34,8 +34,8 @@ function App() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={isAuthenticated ? <Navigate to={getHomeRedirect()} /> : <LoginPage />} />
-      <Route path="/signup" element={isAuthenticated ? <Navigate to={getHomeRedirect()} /> : <SignupPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
       <Route path="/vendor-demo" element={<VendorDemoLogin />} />
       
       {/* Secret Admin Login Route */}

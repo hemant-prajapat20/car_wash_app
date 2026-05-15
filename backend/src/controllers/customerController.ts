@@ -5,15 +5,56 @@ import Slot from '../models/Slot';
 import { Review } from '../models/Others';
 import { asyncHandler, AuthRequest } from '../middleware/auth';
 
+import Service from '../models/Service';
+
 export const searchVendors = asyncHandler(async (req: Request, res: Response) => {
   const { city, service } = req.query;
   
   let query: any = { role: 'vendor', isActive: true };
   if (city) query.businessLocation = { $regex: city, $options: 'i' };
-  if (service) query['services.name'] = { $regex: service, $options: 'i' };
+  
+  // Basic match for vendors
+  const vendors = await User.find(query).select('fullName companyName businessLocation vendorId avatar');
+  
+  const detailedVendors = await Promise.all(vendors.map(async (v) => {
+    // Get their active services
+    const services = await Service.find({ vendorId: v._id, isActive: true });
+    
+    // Filter by service if query provided
+    if (service && !services.some(s => s.name.toLowerCase().includes((service as string).toLowerCase()))) {
+      return null;
+    }
 
-  const vendors = await User.find(query).select('fullName companyName businessLocation services vendorId');
-  res.json({ success: true, data: vendors });
+    // Calculate starting price
+    const startingPrice = services.length > 0 ? Math.min(...services.map(s => s.price)) : 0;
+    
+    // Count available slots
+    const slots = await Slot.find({ vendorId: v._id, isAvailable: true });
+    
+    return {
+      ...v.toObject(),
+      activeServices: services.slice(0, 3).map(s => s.name), // Just send top 3 for preview
+      startingPrice,
+      availableSlotsCount: slots.length
+    };
+  }));
+
+  const validVendors = detailedVendors.filter(v => v !== null);
+
+  res.json({ success: true, data: validVendors });
+});
+
+export const getVendorDetails = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { vendorId } = req.params;
+  
+  const vendor = await User.findOne({ _id: vendorId, role: 'vendor', isActive: true }).select('-password');
+  if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+  const services = await Service.find({ vendorId, isActive: true });
+  const slots = await Slot.find({ vendorId, isAvailable: true });
+  const reviews = await Review.find({ vendor: vendorId }).populate('customer', 'fullName');
+
+  res.json({ success: true, data: { vendor, services, slots, reviews } });
 });
 
 export const createBooking = asyncHandler(async (req: AuthRequest, res: Response) => {

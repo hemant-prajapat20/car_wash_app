@@ -16,7 +16,6 @@ function cn(...inputs: ClassValue[]) {
 
 const MENU_ITEMS = [
   { id: 'search', label: 'Search Vendors', icon: Search, path: '/customer/search' },
-  { id: 'book', label: 'Book Service', icon: CalendarCheck, path: '/customer/book' },
   { id: 'bookings', label: 'My Bookings', icon: History, path: '/customer/bookings' },
   { id: 'profile', label: 'Profile Settings', icon: User, path: '/customer/profile' },
 ];

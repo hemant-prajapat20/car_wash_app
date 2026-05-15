@@ -2,10 +2,12 @@
   "compilerOptions": {
     "target": "ES6",
     "module": "commonjs",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["shared/*"]
+      "@shared/*": [
+        "shared/*"
+      ]
     },
     "strict": true,
     "esModuleInterop": true,
@@ -15,5 +17,6 @@
   "include": [
     "services/**/*.ts",
     "shared/**/*.ts"
-  ]
+  ],
+  "extends": "expo/tsconfig.base"
 }

@@ -29,6 +29,15 @@ export const LoginPage: React.FC = () => {
       
       if (response.success) {
         const userData = response.data;
+        const role = userData.role;
+
+        // Force administrators to use the Secret Key portal
+        if (role === 'admin' || role === 'superAdmin') {
+          toast.error("Administrators must use the Secret Key portal to access the panel.");
+          navigate('/admin-access');
+          return;
+        }
+
         toast.success(`Welcome back, ${userData.fullName || 'User'}!`);
         
         dispatch(setCredentials({ 
@@ -36,9 +45,7 @@ export const LoginPage: React.FC = () => {
           token: userData.token 
         }));
 
-        const role = userData.role;
-        if (role === 'admin' || role === 'superAdmin') navigate('/admin/dashboard');
-        else if (role === 'vendor') navigate('/vendor/dashboard');
+        if (role === 'vendor') navigate('/vendor/dashboard');
         else navigate('/customer/dashboard');
       }
     } catch (err: any) {

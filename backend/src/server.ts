@@ -41,10 +41,27 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
+import os from 'os';
+
 const PORT = Number(process.env.PORT) || 5000;
 
 connectDB().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on: http://192.168.1.2:${PORT}`);
+    // Dynamically get the local IP address
+    const nets = os.networkInterfaces();
+    let localIp = 'localhost';
+    
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name] || []) {
+        // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
+        if (net.family === 'IPv4' && !net.internal) {
+          localIp = net.address;
+          break;
+        }
+      }
+    }
+
+    console.log(`🚀 Server running locally on: http://localhost:${PORT}`);
+    console.log(`📡 Server running on network: http://${localIp}:${PORT}`);
   });
 });
