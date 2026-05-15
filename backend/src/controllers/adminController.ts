@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import User from '../models/User';
 import Booking from '../models/Booking';
 import { asyncHandler } from '../middleware/auth';
+import { createNotification } from './notificationController';
 
 export const registerVendor = asyncHandler(async (req: Request, res: Response) => {
   const { fullName, email, phone, password, companyName, businessLocation } = req.body;
@@ -20,6 +21,19 @@ export const registerVendor = asyncHandler(async (req: Request, res: Response) =
     businessLocation,
     role: 'vendor'
   });
+
+  // Notify SuperAdmin
+  const superAdmin = await User.findOne({ role: 'superAdmin' });
+  if (superAdmin) {
+    await createNotification({
+      receiverId: superAdmin._id,
+      receiverRole: 'superAdmin',
+      title: 'New Vendor Registration',
+      message: `A new vendor "${companyName}" has been registered by an admin.`,
+      type: 'vendor_registration',
+      status: 'info'
+    });
+  }
 
   res.status(201).json({
     success: true,
@@ -89,5 +103,15 @@ export const toggleVendorStatus = asyncHandler(async (req: Request, res: Respons
     success: true, 
     message: `Vendor ${vendor.isActive ? 'activated' : 'deactivated'} successfully`,
     data: vendor 
+  });
+
+  // Notify Vendor
+  await createNotification({
+    receiverId: vendor._id,
+    receiverRole: 'vendor',
+    title: 'Account Status Updated',
+    message: `Your account has been ${vendor.isActive ? 'activated' : 'deactivated'} by the system administrator.`,
+    type: 'system_alert',
+    status: vendor.isActive ? 'success' : 'warning'
   });
 });

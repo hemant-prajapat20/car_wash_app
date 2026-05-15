@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Stack } from 'expo-router';
 import { NotificationList } from '../../components/NotificationList';
 import { useDispatch } from 'react-redux';
@@ -7,7 +7,7 @@ import { AppDispatch } from '../../store';
 import { fetchNotifications, markAllRead } from '../../store/notificationSlice';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function VendorNotifications() {
+export default function NotificationsScreen() {
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function VendorNotifications() {
     <View style={styles.container}>
       <Stack.Screen 
         options={{
-          title: "Vendor Alerts",
+          title: "Notifications",
           headerShadowVisible: false,
           headerRight: () => (
             <Pressable 
@@ -28,7 +28,7 @@ export default function VendorNotifications() {
                 pressed && { opacity: 0.7 }
               ]}
             >
-              <Ionicons name="checkmark-done" size={20} color="#10b981" />
+              <Ionicons name="checkmark-done" size={20} color="#3b82f6" />
             </Pressable>
           ),
         }} 
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   headerButton: {
     marginRight: 15,
     padding: 8,
-    backgroundColor: '#ecfdf5',
+    backgroundColor: '#eff6ff',
     borderRadius: 12,
   }
 });

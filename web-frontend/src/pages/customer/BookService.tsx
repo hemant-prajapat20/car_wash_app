@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Car, Package, Clock, ShieldCheck, 
-  ChevronRight, ArrowLeft, CheckCircle2, 
-  Loader2, Waves, Calendar, Tag
+  Car, Clock, ChevronRight, ArrowLeft, CheckCircle2, 
+  Loader2, Plus, X
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../../services/axiosConfig';
 import { clsx, type ClassValue } from 'clsx';
@@ -17,39 +16,66 @@ function cn(...inputs: ClassValue[]) {
 
 const STEPS = ['Vehicle', 'Package', 'Schedule', 'Confirm'];
 
-interface BookingData {
-  vehicle: any;
-  service: any;
-  slot: any;
-}
+interface BookingData { vehicle: any; service: any; slot: any; }
 
+/* ─── Step Indicator ─────────────────────────────────── */
+const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }) => (
+  <div className="flex items-center w-full px-2 mb-6">
+    {STEPS.map((step, i) => (
+      <React.Fragment key={step}>
+        <div className="flex flex-col items-center gap-1 shrink-0">
+          <div className={cn(
+            'w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-black border-2 transition-all',
+            currentStep > i + 1  ? 'bg-emerald-500 border-emerald-500 text-white' :
+            currentStep === i + 1 ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-200' :
+            'bg-white border-slate-200 text-slate-300'
+          )}>
+            {currentStep > i + 1 ? <CheckCircle2 size={14} /> : i + 1}
+          </div>
+          <span className={cn(
+            'text-[9px] font-bold uppercase tracking-widest',
+            currentStep === i + 1 ? 'text-blue-600' : 'text-slate-300'
+          )}>{step}</span>
+        </div>
+        {i < STEPS.length - 1 && (
+          <div className={cn(
+            'flex-1 h-0.5 mx-2 rounded-full mb-4 transition-colors',
+            currentStep > i + 1 ? 'bg-emerald-400' : 'bg-slate-100'
+          )} />
+        )}
+      </React.Fragment>
+    ))}
+  </div>
+);
+
+/* ─── Main Component ─────────────────────────────────── */
 export const BookService: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const vendorId = searchParams.get('vendor');
-  
+  const navigate        = useNavigate();
+  const vendorId        = searchParams.get('vendor');
+
   const [currentStep, setCurrentStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
-  
-  const [vendor, setVendor] = useState<any>(null);
+  const [loading,     setLoading]     = useState(false);
+  const [fetching,    setFetching]    = useState(true);
+
+  const [vendor,   setVendor]   = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
-  const [slots, setSlots] = useState<any[]>([]);
-  
+  const [slots,    setSlots]    = useState<any[]>([]);
+
   const [bookingData, setBookingData] = useState<BookingData>({
-    vehicle: null,
-    service: null,
-    slot: null,
+    vehicle: null, service: null, slot: null,
   });
 
-  // Mock vehicles - in a full app these would come from Customer's saved vehicles
-  const savedVehicles = [
-    { id: 1, make: 'Tesla', model: 'Model 3', plateNumber: 'XYZ-1234' },
-    { id: 2, make: 'BMW', model: 'X5', plateNumber: 'ABC-9876' }
-  ];
+  const [vehicles,       setVehicles]       = useState<any[]>([]);
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [newVehicle,     setNewVehicle]     = useState({ make: '', model: '', plateNumber: '' });
+
+  /* ── Fetch ────────────────────────────────────────── */
+  useEffect(() => { fetchVehicles(); }, []);
 
   useEffect(() => {
-    const fetchVendorData = async () => {
+    if (!vendorId) { toast.error('Invalid vendor'); navigate('/customer/search'); return; }
+    (async () => {
       try {
         const res = await api.get(`/customer/vendors/${vendorId}`);
         if (res.data.success) {
@@ -57,270 +83,393 @@ export const BookService: React.FC = () => {
           setServices(res.data.data.services);
           setSlots(res.data.data.slots);
         }
-      } catch (err) {
-        console.error('Failed to fetch vendor data', err);
-        toast.error("Failed to load vendor schedule.");
-      } finally {
-        setFetching(false);
-      }
-    };
-    if (vendorId) fetchVendorData();
-    else {
-      toast.error("Invalid vendor selected");
-      navigate('/customer/search');
-    }
+      } catch { toast.error('Failed to load vendor schedule.'); }
+      finally { setFetching(false); }
+    })();
   }, [vendorId, navigate]);
+
+  const fetchVehicles = async () => {
+    try {
+      const res = await api.get('/customer/vehicles');
+      if (res.data.success) setVehicles(res.data.data);
+    } catch { /* silent */ }
+  };
+
+  const handleAddVehicle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await api.post('/customer/vehicles', newVehicle);
+      if (res.data.success) {
+        setVehicles(res.data.data);
+        setShowAddVehicle(false);
+        setNewVehicle({ make: '', model: '', plateNumber: '' });
+        toast.success('Vehicle added!');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to add vehicle');
+    } finally { setLoading(false); }
+  };
 
   const handleFinalBooking = async () => {
     setLoading(true);
     try {
-      const payload = {
+      const res = await api.post('/customer/bookings', {
         vendorId,
         vehicle: bookingData.vehicle,
         service: bookingData.service,
-        slot: {
-          date: new Date(), 
-          time: bookingData.slot.startTime
-        }
-      };
-      
-      const response = await api.post('/customer/bookings', payload);
-      
-      if (response.data.success) {
-        setCurrentStep(4);
-        toast.success("Booking Confirmed!");
-      }
+        slot: { date: new Date(), time: bookingData.slot.startTime },
+      });
+      if (res.data.success) { setCurrentStep(4); toast.success('Booking Confirmed!'); }
     } catch (err: any) {
-      console.error('Booking failed', err);
       toast.error(err.response?.data?.message || 'Failed to create booking.');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const nextStep = () => {
-    if (currentStep === 1 && !bookingData.vehicle) return toast.error("Please select a vehicle");
-    if (currentStep === 2 && !bookingData.service) return toast.error("Please select a service package");
-    if (currentStep === 3 && !bookingData.slot) return toast.error("Please select a time slot");
-    
+    if (currentStep === 1 && !bookingData.vehicle) return toast.error('Please select a vehicle');
+    if (currentStep === 2 && !bookingData.service) return toast.error('Please select a service');
+    if (currentStep === 3 && !bookingData.slot)    return toast.error('Please select a time slot');
     if (currentStep === 3) handleFinalBooking();
-    else setCurrentStep(prev => prev + 1);
+    else setCurrentStep(p => p + 1);
   };
 
-  const StepIndicator = () => (
-    <div className="flex items-center justify-between max-w-3xl mx-auto mb-10 px-4">
-      {STEPS.map((step, i) => (
-        <React.Fragment key={step}>
-          <div className="flex flex-col items-center gap-2">
-            <div className={cn(
-              "w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold transition-all border-2",
-              currentStep > i + 1 ? "bg-emerald-500 border-emerald-500 text-white" :
-              currentStep === i + 1 ? "bg-blue-600 border-blue-600 text-white shadow-lg" :
-              "bg-white border-slate-200 text-slate-400"
-            )}>
-              {currentStep > i + 1 ? <CheckCircle2 size={16} /> : i + 1}
-            </div>
-            <span className={cn("text-[9px] font-bold uppercase", currentStep === i + 1 ? "text-blue-600" : "text-slate-400")}>{step}</span>
-          </div>
-          {i < STEPS.length - 1 && <div className={cn("h-px flex-1 mx-2 transition-colors", currentStep > i + 1 ? "bg-emerald-500" : "bg-slate-200")} />}
-        </React.Fragment>
-      ))}
+  if (fetching) return (
+    <div className="flex items-center justify-center h-[60vh]">
+      <Loader2 className="animate-spin text-blue-600" size={36} />
     </div>
   );
 
-  if (fetching) {
-    return (
-      <div className="min-h-[500px] flex items-center justify-center">
-        <Loader2 className="animate-spin text-blue-600" size={32} />
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-4xl mx-auto py-4 animate-in fade-in duration-500 font-inter pb-20">
-      <button 
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-widest mb-6"
-      >
-        <ArrowLeft size={14} /> Back
-      </button>
+    <div className="w-full font-inter animate-in fade-in duration-300">
 
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-slate-900">Book Appointment</h1>
-        <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-2">{vendor?.companyName}</p>
+      {/* ── Page header ──────────────────────────────── */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 hover:text-slate-800 uppercase tracking-widest border border-slate-200 bg-white px-3 py-2 rounded-xl shadow-sm transition-all"
+        >
+          <ArrowLeft size={13} /> Back
+        </button>
+        <div className="text-right">
+          <h1 className="text-xl font-black text-slate-900">Book Appointment</h1>
+          <div className="flex items-center justify-end gap-1.5 mt-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+            <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{vendor?.companyName}</span>
+          </div>
+        </div>
       </div>
 
-      <StepIndicator />
+      {/* ── Step Indicator ───────────────────────────── */}
+      <StepIndicator currentStep={currentStep} />
 
-      <div className="bg-white border border-slate-100 rounded-[2.5rem] p-6 sm:p-10 shadow-xl shadow-slate-200/40 min-h-[400px] flex flex-col justify-between">
-        <div className="flex-1">
-          
-          {/* STEP 1: VEHICLE */}
+      {/* ── Main Card ────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+
+        {/* Blue accent top bar */}
+        <div className="h-1 bg-gradient-to-r from-blue-600 to-indigo-500" />
+
+        <div className="p-5 sm:p-8">
+
+          {/* ── STEP 1: Vehicle ──────────────────────── */}
           {currentStep === 1 && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 max-w-2xl mx-auto">
-               <div className="flex items-center justify-between">
-                 <h3 className="text-base font-bold text-slate-900">Select Vehicle</h3>
-                 <button className="text-[10px] font-bold text-blue-600 uppercase tracking-widest bg-blue-50 px-3 py-1.5 rounded-lg">+ Add New</button>
-               </div>
-               
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                 {savedVehicles.map(v => (
-                   <div 
-                     key={v.id} 
-                     onClick={() => setBookingData({...bookingData, vehicle: v})} 
-                     className={cn(
-                       "p-5 border rounded-2xl cursor-pointer flex items-center gap-4 transition-all", 
-                       bookingData.vehicle?.id === v.id ? "border-blue-600 bg-blue-50/50 shadow-md shadow-blue-100/50" : "border-slate-100 hover:border-blue-200"
-                     )}
-                   >
-                      <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0", bookingData.vehicle?.id === v.id ? "bg-blue-100 text-blue-600" : "bg-slate-50 text-slate-400")}>
-                        <Car size={20} />
-                      </div>
-                      <div>
-                        <span className="text-sm font-bold text-slate-900 block">{v.make} {v.model}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 block">{v.plateNumber}</span>
-                      </div>
-                   </div>
-                 ))}
-               </div>
+            <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Select Vehicle</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Choose a car from your garage</p>
+                </div>
+                <button
+                  onClick={() => setShowAddVehicle(true)}
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl transition-all"
+                >
+                  <Plus size={13} /> Add New
+                </button>
+              </div>
+
+              {vehicles.length === 0 ? (
+                <div className="py-16 flex flex-col items-center justify-center text-center border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
+                  <Car size={40} className="text-slate-200 mb-3" />
+                  <p className="text-sm font-bold text-slate-400">No vehicles found</p>
+                  <button
+                    onClick={() => setShowAddVehicle(true)}
+                    className="mt-3 text-xs text-blue-600 font-bold hover:underline"
+                  >
+                    Add your first car →
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {vehicles.map(v => {
+                    const selected = bookingData.vehicle?._id === v._id;
+                    return (
+                      <button
+                        key={v._id}
+                        onClick={() => setBookingData({ ...bookingData, vehicle: v })}
+                        className={cn(
+                          'p-4 border-2 rounded-xl flex items-center gap-3 text-left transition-all duration-200',
+                          selected
+                            ? 'border-blue-600 bg-blue-50 shadow-md shadow-blue-100'
+                            : 'border-slate-100 bg-slate-50 hover:border-blue-200 hover:bg-white'
+                        )}
+                      >
+                        <div className={cn(
+                          'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
+                          selected ? 'bg-blue-600 text-white' : 'bg-white text-slate-400 border border-slate-200'
+                        )}>
+                          <Car size={20} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-slate-900 truncate">{v.make} {v.model}</p>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">{v.plateNumber}</span>
+                        </div>
+                        {selected && <CheckCircle2 size={16} className="text-blue-600 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </motion.div>
           )}
 
-          {/* STEP 2: SERVICE PACKAGE */}
+          {/* ── STEP 2: Service ──────────────────────── */}
           {currentStep === 2 && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 max-w-2xl mx-auto">
-               <h3 className="text-base font-bold text-slate-900">Select Service Package</h3>
-               
-               {services.length === 0 ? (
-                 <p className="text-slate-400 italic text-sm text-center py-10 border border-dashed rounded-2xl">No services available from this vendor.</p>
-               ) : (
-                 <div className="grid grid-cols-1 gap-4">
-                   {services.map((s: any) => (
-                     <div 
-                       key={s._id} 
-                       onClick={() => setBookingData({...bookingData, service: s})} 
-                       className={cn(
-                         "p-5 border rounded-2xl cursor-pointer transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4", 
-                         bookingData.service?._id === s._id ? "border-blue-600 bg-blue-50/50 shadow-md shadow-blue-100/50" : "border-slate-100 hover:border-blue-200"
-                       )}
-                     >
+            <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+              <div className="pb-4 border-b border-slate-100">
+                <h2 className="text-base font-bold text-slate-900">Select Service Package</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Pick the service that suits your car</p>
+              </div>
+
+              {services.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-12 border-2 border-dashed border-slate-100 rounded-2xl">
+                  No services available from this vendor.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {services.map((s: any) => {
+                    const selected = bookingData.service?._id === s._id;
+                    return (
+                      <button
+                        key={s._id}
+                        onClick={() => setBookingData({ ...bookingData, service: s })}
+                        className={cn(
+                          'w-full p-4 border-2 rounded-xl flex items-center justify-between gap-4 text-left transition-all',
+                          selected ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
+                        )}
+                      >
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="text-sm font-bold text-slate-900">{s.name}</h4>
-                            <span className="bg-slate-100 text-slate-500 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md">{s.category}</span>
+                            <span className="text-sm font-bold text-slate-900">{s.name}</span>
+                            <span className="text-[9px] font-bold uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{s.category}</span>
                           </div>
-                          <p className="text-[11px] text-slate-500 line-clamp-2 pr-4">{s.description}</p>
+                          <p className="text-[11px] text-slate-400 line-clamp-1">{s.description}</p>
                         </div>
-                        <div className="text-left sm:text-right shrink-0">
-                          <span className="text-lg font-bold text-emerald-600 block">${s.price}</span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-start sm:justify-end gap-1 mt-1">
-                            <Clock size={10} /> {s.duration} Mins
-                          </span>
+                        <div className="text-right shrink-0">
+                          <span className="text-base font-black text-emerald-600">${s.price}</span>
+                          <p className="text-[10px] text-slate-400 flex items-center gap-1 justify-end mt-0.5">
+                            <Clock size={10} /> {s.duration} min
+                          </p>
                         </div>
-                     </div>
-                   ))}
-                 </div>
-               )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </motion.div>
           )}
 
-          {/* STEP 3: TIME SLOT */}
+          {/* ── STEP 3: Slot ─────────────────────────── */}
           {currentStep === 3 && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 max-w-2xl mx-auto">
-               <h3 className="text-base font-bold text-slate-900">Select Time Slot</h3>
-               
-               {slots.length === 0 ? (
-                 <p className="text-slate-400 italic text-sm text-center py-10 border border-dashed rounded-2xl">No available slots for this vendor.</p>
-               ) : (
-                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                   {slots.map((t: any) => {
-                     const isSelected = bookingData.slot?._id === t._id;
-                     const isFull = t.currentBookings >= t.maxBookings;
-                     return (
-                       <button 
-                         key={t._id} 
-                         disabled={isFull}
-                         onClick={() => setBookingData({...bookingData, slot: t})} 
-                         className={cn(
-                           "py-4 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-1", 
-                           isSelected ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200" : 
-                           isFull ? "bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed" :
-                           "bg-white text-slate-700 border-slate-200 hover:border-blue-300"
-                         )}
-                       >
-                         <span>{t.startTime} - {t.endTime}</span>
-                         {isFull && <span className="text-[9px] uppercase tracking-widest text-red-400">Full</span>}
-                       </button>
-                     );
-                   })}
-                 </div>
-               )}
-               
-               {/* Booking Summary Pre-flight */}
-               {bookingData.slot && (
-                 <div className="mt-8 p-5 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
-                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-200 pb-2">Booking Summary</h4>
-                   <div className="flex justify-between items-center text-sm">
-                     <span className="font-semibold text-slate-600">Service: {bookingData.service?.name}</span>
-                     <span className="font-bold text-slate-900">${bookingData.service?.price}</span>
-                   </div>
-                   <div className="flex justify-between items-center text-sm">
-                     <span className="font-semibold text-slate-600">Time:</span>
-                     <span className="font-bold text-blue-600">{bookingData.slot?.startTime}</span>
-                   </div>
-                   <div className="flex justify-between items-center text-sm">
-                     <span className="font-semibold text-slate-600">Vehicle:</span>
-                     <span className="font-bold text-slate-900">{bookingData.vehicle?.make} {bookingData.vehicle?.model}</span>
-                   </div>
-                 </div>
-               )}
+            <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
+              <div className="pb-4 border-b border-slate-100">
+                <h2 className="text-base font-bold text-slate-900">Select Time Slot</h2>
+                <p className="text-xs text-slate-400 mt-0.5">Choose an available appointment time</p>
+              </div>
+
+              {slots.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-12 border-2 border-dashed border-slate-100 rounded-2xl">
+                  No slots available from this vendor.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {slots.map((t: any) => {
+                    const isSelected = bookingData.slot?._id === t._id;
+                    const isFull     = t.currentBookings >= t.maxBookings;
+                    return (
+                      <button
+                        key={t._id}
+                        disabled={isFull}
+                        onClick={() => setBookingData({ ...bookingData, slot: t })}
+                        className={cn(
+                          'py-3.5 px-2 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-1',
+                          isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-md' :
+                          isFull     ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' :
+                          'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
+                        )}
+                      >
+                        <span>{t.startTime}</span>
+                        <span className="text-[9px] opacity-70">— {t.endTime}</span>
+                        {isFull && <span className="text-[8px] text-red-400 font-black uppercase">Full</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Booking summary */}
+              {bookingData.slot && (
+                <div className="mt-2 p-4 bg-blue-50 border border-blue-100 rounded-xl space-y-2">
+                  <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3">Booking Summary</p>
+                  {[
+                    ['Service',  bookingData.service?.name,  `$${bookingData.service?.price}`],
+                    ['Time',     bookingData.slot?.startTime, null],
+                    ['Vehicle',  `${bookingData.vehicle?.make} ${bookingData.vehicle?.model}`, null],
+                  ].map(([label, left, right]) => (
+                    <div key={label} className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500 font-medium">{label}: <span className="text-slate-900 font-bold">{left}</span></span>
+                      {right && <span className="font-black text-emerald-600">{right}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
 
-          {/* STEP 4: CONFIRMATION */}
+          {/* ── STEP 4: Confirmation ─────────────────── */}
           {currentStep === 4 && (
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center space-y-6 pt-10">
-               <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-xl shadow-emerald-100/50">
-                 <CheckCircle2 size={40} />
-               </div>
-               <div>
-                 <h2 className="text-2xl font-bold text-slate-900">Booking Confirmed!</h2>
-                 <p className="text-sm font-medium text-slate-500 mt-2">Your appointment with <span className="text-slate-900 font-bold">{vendor?.companyName}</span> is locked in.</p>
-               </div>
-               
-               <div className="max-w-xs mx-auto space-y-3 pt-6">
-                 <button onClick={() => navigate('/customer/bookings')} className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95">
-                   View My Bookings
-                 </button>
-                 <button onClick={() => navigate('/customer/search')} className="w-full py-4 text-slate-500 hover:text-slate-900 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-colors">
-                   Return to Search
-                 </button>
-               </div>
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="py-10 text-center space-y-5">
+              <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle2 size={44} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-slate-900">Booking Confirmed!</h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  Your appointment with <span className="font-bold text-slate-900">{vendor?.companyName}</span> is all set.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4 max-w-sm mx-auto">
+                <button
+                  onClick={() => navigate('/customer/bookings')}
+                  className="flex-1 py-3.5 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg"
+                >
+                  View Bookings
+                </button>
+                <button
+                  onClick={() => navigate('/customer/search')}
+                  className="flex-1 py-3.5 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition-all"
+                >
+                  Back to Search
+                </button>
+              </div>
             </motion.div>
+          )}
+
+          {/* ── Navigation buttons ───────────────────── */}
+          {currentStep < 4 && (
+            <div className="flex items-center justify-between mt-8 pt-5 border-t border-slate-100">
+              <button
+                onClick={() => setCurrentStep(p => p - 1)}
+                disabled={currentStep === 1}
+                className="text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-700 transition-colors disabled:opacity-0 px-2 py-1"
+              >
+                ← Back
+              </button>
+              <button
+                onClick={nextStep}
+                disabled={loading}
+                className="flex items-center gap-2 px-7 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-blue-100 transition-all active:scale-95 disabled:opacity-50"
+              >
+                {loading
+                  ? <Loader2 size={14} className="animate-spin" />
+                  : currentStep === 3 ? 'Confirm & Pay' : 'Continue'
+                }
+                {!loading && <ChevronRight size={14} />}
+              </button>
+            </div>
           )}
         </div>
-
-        {/* BOTTOM NAVIGATION ACTIONS */}
-        {currentStep < 4 && (
-          <div className="mt-10 pt-6 border-t border-slate-100 flex items-center justify-between max-w-2xl mx-auto w-full">
-            <button 
-              onClick={() => setCurrentStep(prev => prev - 1)} 
-              disabled={currentStep === 1} 
-              className="text-slate-400 text-[11px] font-bold uppercase disabled:opacity-0 hover:text-slate-600 transition-colors px-4 py-2"
-            >
-              Back
-            </button>
-            <button 
-              onClick={nextStep} 
-              disabled={loading} 
-              className="px-8 py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-slate-200 transition-all active:scale-95 disabled:opacity-50"
-            >
-               {loading ? <Loader2 size={14} className="animate-spin" /> : currentStep === 3 ? 'Confirm & Pay' : 'Continue'}
-               {!loading && <ChevronRight size={14} />}
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* ── Add Vehicle Modal ─────────────────────────── */}
+      <AnimatePresence>
+        {showAddVehicle && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              className="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-slate-100 overflow-hidden"
+            >
+              {/* Modal header */}
+              <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Add New Vehicle</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Register your car to continue</p>
+                </div>
+                <button
+                  onClick={() => setShowAddVehicle(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddVehicle} className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: 'Make',  key: 'make',  placeholder: 'e.g. Toyota' },
+                    { label: 'Model', key: 'model', placeholder: 'e.g. Corolla' },
+                  ].map(({ label, key, placeholder }) => (
+                    <div key={key} className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder={placeholder}
+                        value={(newVehicle as any)[key]}
+                        onChange={e => setNewVehicle({ ...newVehicle, [key]: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-400 focus:bg-white transition-all"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Plate Number</label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="e.g. MH-12-AB-1234"
+                    value={newVehicle.plateNumber}
+                    onChange={e => setNewVehicle({ ...newVehicle, plateNumber: e.target.value.toUpperCase() })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-bold tracking-wider outline-none focus:border-blue-400 focus:bg-white transition-all"
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddVehicle(false)}
+                    className="flex-1 py-3 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-slate-700 transition-colors border border-slate-200 rounded-xl"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-[2] py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {loading ? 'Saving…' : 'Save Vehicle'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -13,6 +13,21 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const StatusBadge = ({ status }: { status: string }) => {
+  const styles: Record<string, string> = {
+    'Pending': 'text-amber-600 bg-amber-50',
+    'Confirmed': 'text-blue-600 bg-blue-50',
+    'In Progress': 'text-indigo-600 bg-indigo-50',
+    'Completed': 'text-emerald-600 bg-emerald-50',
+    'Cancelled': 'text-rose-600 bg-rose-50',
+  };
+  return (
+    <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest", styles[status])}>
+      {status}
+    </span>
+  );
+};
+
 export const ManageBookings: React.FC = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,21 +62,6 @@ export const ManageBookings: React.FC = () => {
     } finally {
       setActionLoading(null);
     }
-  };
-
-  const StatusBadge = ({ status }: { status: string }) => {
-    const styles: Record<string, string> = {
-      'Pending': 'text-amber-600 bg-amber-50',
-      'Confirmed': 'text-blue-600 bg-blue-50',
-      'In Progress': 'text-indigo-600 bg-indigo-50',
-      'Completed': 'text-emerald-600 bg-emerald-50',
-      'Cancelled': 'text-rose-600 bg-rose-50',
-    };
-    return (
-      <span className={cn("px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest", styles[status])}>
-        {status}
-      </span>
-    );
   };
 
   if (loading) return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;

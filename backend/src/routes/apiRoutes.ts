@@ -18,10 +18,23 @@ import {
   updateSlot, 
   deleteSlot
 } from '../controllers/vendorController';
-import { searchVendors, getVendorDetails, createBooking, getMyBookings, submitReview } from '../controllers/customerController';
+import { 
+  searchVendors, 
+  getVendorDetails, 
+  createBooking, 
+  getMyBookings, 
+  submitReview,
+  addVehicle,
+  getVehicles,
+  deleteVehicle
+} from '../controllers/customerController';
 import { protect, authorize } from '../middleware/auth';
+import notificationRoutes from './notificationRoutes';
 
 const router = express.Router();
+
+// NOTIFICATION ROUTES
+router.use('/notifications', notificationRoutes);
 
 // AUTH ROUTES
 router.post('/auth/signup', registerCustomer);
@@ -70,5 +83,10 @@ router.get('/customer/vendors/:vendorId', protect, getVendorDetails);
 router.post('/customer/bookings', protect, authorize('customer'), createBooking);
 router.get('/customer/my-bookings', protect, authorize('customer'), getMyBookings);
 router.post('/customer/reviews', protect, authorize('customer'), submitReview);
+
+router.route('/customer/vehicles')
+  .get(protect, authorize('customer'), getVehicles)
+  .post(protect, authorize('customer'), addVehicle);
+router.delete('/customer/vehicles/:vehicleId', protect, authorize('customer'), deleteVehicle);
 
 export default router;

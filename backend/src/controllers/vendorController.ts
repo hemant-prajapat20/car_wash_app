@@ -6,6 +6,7 @@ import Worker from '../models/Worker';
 import Booking from '../models/Booking';
 import User from '../models/User';
 import { asyncHandler } from '../middleware/auth';
+import { createNotification } from './notificationController';
 
 // --- DASHBOARD & PROFILE ---
 export const getVendorDashboard = asyncHandler(async (req: any, res: Response) => {
@@ -97,6 +98,36 @@ export const updateBookingStatus = asyncHandler(async (req: any, res: Response) 
     { new: true }
   );
   if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+  // Create Notification for Customer
+  let notificationTitle = 'Booking Status Update';
+  let notificationMessage = `Your booking status has been updated to ${status}.`;
+  let notificationType: any = 'system_alert';
+
+  if (status === 'Confirmed') {
+    notificationTitle = 'Booking Confirmed';
+    notificationMessage = 'Your car wash booking has been confirmed by the vendor.';
+    notificationType = 'booking_confirmed';
+  } else if (status === 'Completed') {
+    notificationTitle = 'Service Completed';
+    notificationMessage = 'Great news! Your car wash service is complete. Please rate your experience.';
+    notificationType = 'booking_completed';
+  } else if (status === 'Cancelled') {
+    notificationTitle = 'Booking Cancelled';
+    notificationMessage = 'Your booking has been cancelled by the vendor.';
+    notificationType = 'booking_cancelled';
+  }
+
+  await createNotification({
+    receiverId: booking.customer,
+    receiverRole: 'customer',
+    vendorId: req.user._id,
+    title: notificationTitle,
+    message: notificationMessage,
+    type: notificationType,
+    status: status === 'Cancelled' ? 'error' : status === 'Completed' ? 'success' : 'info'
+  });
+
   res.json({ success: true, data: booking });
 });
 
@@ -126,6 +157,9 @@ export const manageSlots = asyncHandler(async (req: any, res: Response) => {
       maxBookings: validMaxBookings,
       vendorId
     });
+
+    // Notify SuperAdmin of potential system update (optional, but good for tracking)
+    // For now, let's just return
     return res.status(201).json({ success: true, data: slot });
   }
   
@@ -147,6 +181,17 @@ export const updateSlot = asyncHandler(async (req: any, res: Response) => {
     { new: true }
   );
   if (!slot) return res.status(404).json({ success: false, message: 'Slot not found' });
+
+  // Optional: Notify vendor of slot change (internal log)
+  await createNotification({
+    receiverId: vendorId,
+    receiverRole: 'vendor',
+    title: 'Slot Updated',
+    message: `Your booking slot for ${slot.startTime} has been updated.`,
+    type: 'slot_updated',
+    status: 'info'
+  });
+
   res.json({ success: true, data: slot });
 });
 
@@ -154,6 +199,16 @@ export const deleteSlot = asyncHandler(async (req: any, res: Response) => {
   const vendorId = req.user._id;
   const slot = await Slot.findOneAndDelete({ _id: req.params.id, vendorId });
   if (!slot) return res.status(404).json({ success: false, message: 'Slot not found' });
+
+  await createNotification({
+    receiverId: vendorId,
+    receiverRole: 'vendor',
+    title: 'Slot Removed',
+    message: `Your booking slot for ${slot.startTime} has been removed.`,
+    type: 'slot_updated',
+    status: 'warning'
+  });
+
   res.json({ success: true, message: 'Slot removed' });
 });
 
@@ -188,6 +243,16 @@ export const updateService = asyncHandler(async (req: any, res: Response) => {
     { new: true }
   );
   if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
+
+  await createNotification({
+    receiverId: vendorId,
+    receiverRole: 'vendor',
+    title: 'Service Updated',
+    message: `Service "${service.name}" has been successfully updated.`,
+    type: 'service_updated',
+    status: 'success'
+  });
+
   res.json({ success: true, data: service });
 });
 
@@ -195,6 +260,16 @@ export const deleteService = asyncHandler(async (req: any, res: Response) => {
   const vendorId = req.user._id;
   const service = await Service.findOneAndDelete({ _id: req.params.id, vendorId });
   if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
+
+  await createNotification({
+    receiverId: vendorId,
+    receiverRole: 'vendor',
+    title: 'Service Removed',
+    message: `Service "${service.name}" has been removed from your list.`,
+    type: 'service_updated',
+    status: 'warning'
+  });
+
   res.json({ success: true, message: 'Service removed' });
 });
 
@@ -205,6 +280,16 @@ export const addWorker = asyncHandler(async (req: any, res: Response) => {
     ...req.body,
     vendorId
   });
+
+  await createNotification({
+    receiverId: vendorId,
+    receiverRole: 'vendor',
+    title: 'New Worker Added',
+    message: `Worker "${worker.name}" has been added to your team.`,
+    type: 'worker_assignment',
+    status: 'success'
+  });
+
   res.status(201).json({ success: true, data: worker });
 });
 
@@ -222,6 +307,16 @@ export const updateWorker = asyncHandler(async (req: any, res: Response) => {
     { new: true }
   );
   if (!worker) return res.status(404).json({ success: false, message: 'Worker not found' });
+
+  await createNotification({
+    receiverId: vendorId,
+    receiverRole: 'vendor',
+    title: 'Worker Profile Updated',
+    message: `Details for worker "${worker.name}" have been updated.`,
+    type: 'worker_assignment',
+    status: 'info'
+  });
+
   res.json({ success: true, data: worker });
 });
 
@@ -229,5 +324,15 @@ export const deleteWorker = asyncHandler(async (req: any, res: Response) => {
   const vendorId = req.user._id;
   const worker = await Worker.findOneAndDelete({ _id: req.params.id, vendorId });
   if (!worker) return res.status(404).json({ success: false, message: 'Worker not found' });
+
+  await createNotification({
+    receiverId: vendorId,
+    receiverRole: 'vendor',
+    title: 'Worker Removed',
+    message: `Worker "${worker.name}" has been removed from your team.`,
+    type: 'worker_assignment',
+    status: 'warning'
+  });
+
   res.json({ success: true, message: 'Worker removed' });
 });

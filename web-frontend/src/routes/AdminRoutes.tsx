@@ -8,6 +8,8 @@ import { VendorManagement } from '../pages/admin/VendorManagement';
 // Default import for the AdminProfile component
 import AdminProfile from '../pages/admin/AdminProfile';
 
+import AdminNotifications from '../pages/admin/AdminNotifications';
+
 export const AdminRoutes: React.FC = () => {
   return (
     <Routes>
@@ -21,7 +23,7 @@ export const AdminRoutes: React.FC = () => {
         <Route path="vendors" element={<VendorManagement />} />
         
         {/* Admin Specific Routes */}
-        <Route path="notifications" element={<div className="p-10 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">Notification Center • Coming Soon</div>} />
+        <Route path="notifications" element={<AdminNotifications />} />
         <Route path="profile" element={<AdminProfile />} />
 
         {/* Fallback for admin routes */}

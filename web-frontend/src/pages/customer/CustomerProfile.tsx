@@ -6,34 +6,64 @@ import {
 } from 'lucide-react';
 import api from '../../services/axiosConfig';
 
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
+
 export const CustomerProfile: React.FC = () => {
-  const [profile, setProfile] = useState<any>(null);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [newVehicle, setNewVehicle] = useState({ make: '', model: '', plateNumber: '' });
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const fetchVehicles = async () => {
+    try {
+      const res = await api.get('/customer/vehicles');
+      if (res.data.success) setVehicles(res.data.data);
+    } catch (err) {
+      console.error('Fetch vehicles failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get('/customer/search'); // Placeholder for get profile
-        setProfile({
-          fullName: 'John Doe',
-          email: 'john@example.com',
-          phone: '+1 234 567 890',
-          vehicles: [
-            { make: 'Tesla', model: 'Model 3', plate: 'ABC-123' },
-            { make: 'BMW', model: 'X5', plate: 'XYZ-789' }
-          ],
-          addresses: [
-            { label: 'Home', val: '123 Main St, LA' }
-          ]
-        });
-      } catch (err) {
-        console.error('Fetch profile failed');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
+    fetchVehicles();
   }, []);
+
+  const handleAddVehicle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionLoading(true);
+    try {
+      const res = await api.post('/customer/vehicles', newVehicle);
+      if (res.data.success) {
+        setVehicles(res.data.data);
+        setShowAddVehicle(false);
+        setNewVehicle({ make: '', model: '', plateNumber: '' });
+        toast.success("Vehicle added!");
+      }
+    } catch (err) {
+      toast.error("Failed to add vehicle");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteVehicle = async (id: string) => {
+    if (!window.confirm("Are you sure you want to remove this vehicle?")) return;
+    try {
+      const res = await api.delete(`/customer/vehicles/${id}`);
+      if (res.data.success) {
+        setVehicles(res.data.data);
+        toast.success("Vehicle removed");
+      }
+    } catch (err) {
+      toast.error("Failed to remove vehicle");
+    }
+  };
 
   if (loading) return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
 
@@ -41,54 +71,145 @@ export const CustomerProfile: React.FC = () => {
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl font-inter">
       <div className="flex items-center justify-between px-1">
         <div>
-          <h1 className="text-[16px] font-bold text-slate-900 tracking-tight">Your Profile</h1>
+          <h1 className="text-xl font-black text-slate-900 tracking-tight">Your Profile</h1>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Manage your account and vehicles</p>
         </div>
-        <button className="bg-slate-900 text-white px-4 py-2 rounded-xl text-[11px] font-bold uppercase hover:bg-blue-600 transition-all shadow-lg">Save Changes</button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1 space-y-4">
-           <div className="bg-white border border-slate-100 rounded-[2rem] p-6 text-center shadow-sm">
-             <div className="relative mx-auto w-20 h-20 mb-4">
-               <div className="w-full h-full bg-slate-50 rounded-[1.5rem] flex items-center justify-center text-slate-300 border-2 border-white shadow-sm">
-                 <User size={32} />
+           <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 text-center shadow-sm">
+             <div className="relative mx-auto w-24 h-24 mb-4">
+               <div className="w-full h-full bg-slate-50 rounded-[2rem] flex items-center justify-center text-slate-300 border-4 border-white shadow-inner">
+                 {user?.avatar ? (
+                   <img src={user.avatar} className="w-full h-full object-cover rounded-[2rem]" alt="" />
+                 ) : (
+                   <User size={40} />
+                 )}
                </div>
-               <button className="absolute -bottom-1 -right-1 p-2 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition-all">
-                 <Camera size={14} />
+               <button className="absolute -bottom-1 -right-1 p-2.5 bg-blue-600 text-white rounded-2xl shadow-xl hover:bg-blue-700 transition-all border-4 border-white">
+                 <Camera size={16} />
                </button>
              </div>
-             <h3 className="text-[15px] font-bold text-slate-900">{profile.fullName}</h3>
-             <p className="text-[11px] font-medium text-slate-400">{profile.email}</p>
+             <h3 className="text-[16px] font-black text-slate-900">{user?.fullName}</h3>
+             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Customer Account</p>
+             
+             <div className="mt-6 pt-6 border-t border-slate-50 space-y-3">
+                <div className="flex items-center gap-3 text-left">
+                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400"><Mail size={14}/></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Email</p>
+                    <p className="text-[12px] font-bold text-slate-900 truncate">{user?.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-left">
+                  <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400"><Phone size={14}/></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Phone</p>
+                    <p className="text-[12px] font-bold text-slate-900">{user?.phone}</p>
+                  </div>
+                </div>
+             </div>
            </div>
         </div>
 
         <div className="md:col-span-2 space-y-4">
-           <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm">
-             <h3 className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-4">Saved Vehicles</h3>
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {profile.vehicles.map((v: any, i: number) => (
-                  <div key={i} className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors">
-                        <Car size={16} />
+           <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
+             <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-widest">My Garage</h3>
+                <span className="bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase">{vehicles.length} Vehicles</span>
+             </div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {vehicles.map((v: any) => (
+                  <div key={v._id} className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-between group hover:border-blue-200 hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-blue-500/5 duration-300">
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all duration-300">
+                        <Car size={20} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[12px] font-bold text-slate-900 truncate">{v.make} {v.model}</p>
-                        <p className="text-[10px] font-bold text-blue-600 tracking-tight uppercase">{v.plate}</p>
+                        <p className="text-[14px] font-black text-slate-900 truncate">{v.make} {v.model}</p>
+                        <p className="text-[10px] font-black text-blue-600 tracking-wider uppercase mt-1 px-1.5 py-0.5 bg-blue-50 rounded inline-block">{v.plateNumber}</p>
                       </div>
                     </div>
-                    <button className="text-slate-200 hover:text-rose-500 transition-colors"><Trash2 size={14}/></button>
+                    <button 
+                      onClick={() => handleDeleteVehicle(v._id)}
+                      className="w-8 h-8 flex items-center justify-center text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                    >
+                      <Trash2 size={16}/>
+                    </button>
                   </div>
                 ))}
-                <button className="p-4 border-2 border-dashed border-slate-100 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:border-blue-200 hover:text-blue-600 transition-all">
-                  <Plus size={16} />
-                  <span className="text-[11px] font-bold uppercase tracking-widest">Add New</span>
+                
+                <button 
+                  onClick={() => setShowAddVehicle(true)}
+                  className="p-5 border-2 border-dashed border-slate-100 rounded-3xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-blue-200 hover:bg-blue-50/30 hover:text-blue-600 transition-all duration-300 group"
+                >
+                  <div className="w-10 h-10 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center group-hover:border-blue-300 transition-colors">
+                    <Plus size={20} />
+                  </div>
+                  <span className="text-[11px] font-black uppercase tracking-widest">Add New Vehicle</span>
                 </button>
              </div>
            </div>
         </div>
       </div>
+
+      {/* Add Vehicle Modal (Reusable Logic) */}
+      {showAddVehicle && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl border border-slate-100 relative">
+            <div className="mb-6 text-center">
+              <h3 className="text-xl font-black text-slate-900">Add New Vehicle</h3>
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">Join the Chakachak Garage</p>
+            </div>
+
+            <form onSubmit={handleAddVehicle} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Make</label>
+                  <input 
+                    required 
+                    type="text" 
+                    placeholder="e.g. Tesla" 
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none"
+                    value={newVehicle.make}
+                    onChange={e => setNewVehicle({...newVehicle, make: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Model</label>
+                  <input 
+                    required 
+                    type="text" 
+                    placeholder="e.g. Model 3" 
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none"
+                    value={newVehicle.model}
+                    onChange={e => setNewVehicle({...newVehicle, model: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Plate Number</label>
+                <input 
+                  required 
+                  type="text" 
+                  placeholder="e.g. XYZ-1234" 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold tracking-wider focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none"
+                  value={newVehicle.plateNumber}
+                  onChange={e => setNewVehicle({...newVehicle, plateNumber: e.target.value.toUpperCase()})}
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => setShowAddVehicle(false)} className="flex-1 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors">Cancel</button>
+                <button type="submit" disabled={actionLoading} className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50">
+                  {actionLoading ? "Adding..." : "Save Vehicle"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, Inbox, Clock, Package, 
-  Users, Bell, UserCircle, LogOut, 
-  BarChart3, Users2, Receipt, 
-  Waves, ChevronLeft, Menu, X 
+import {
+  LayoutDashboard, Inbox, Clock, Package,
+  Users, Bell, UserCircle, LogOut,
+  BarChart3, Users2, Receipt,
+  Waves, ChevronLeft, Menu, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
@@ -17,38 +17,33 @@ function cn(...inputs: ClassValue[]) {
 }
 
 const VENDOR_MENU_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/vendor/dashboard' },
-  { id: 'bookings', label: 'Manage Bookings', icon: Inbox, path: '/vendor/bookings' },
-  { id: 'slots', label: 'Slot Management', icon: Clock, path: '/vendor/slots' },
-  { id: 'services', label: 'Services & Packages', icon: Package, path: '/vendor/services' },
-  { id: 'workers', label: 'Manage Workers', icon: Users2, path: '/vendor/workers' },
-  { id: 'customers', label: 'Customers', icon: Users, path: '/vendor/customers' },
-  { id: 'transactions', label: 'Transactions', icon: Receipt, path: '/vendor/transactions' },
-  { id: 'reports', label: 'Reports', icon: BarChart3, path: '/vendor/reports' },
-  { id: 'notifications', label: 'Notifications', icon: Bell, path: '/vendor/notifications' },
-  { id: 'profile', label: 'Vendor Profile', icon: UserCircle, path: '/vendor/profile' },
+  { id: 'dashboard',     label: 'Dashboard',        icon: LayoutDashboard, path: '/vendor/dashboard' },
+  { id: 'bookings',      label: 'Manage Bookings',  icon: Inbox,           path: '/vendor/bookings' },
+  { id: 'slots',         label: 'Slot Management',  icon: Clock,           path: '/vendor/slots' },
+  { id: 'services',      label: 'Services & Packages', icon: Package,      path: '/vendor/services' },
+  { id: 'workers',       label: 'Manage Workers',   icon: Users2,          path: '/vendor/workers' },
+  { id: 'customers',     label: 'Customers',        icon: Users,           path: '/vendor/customers' },
+  { id: 'transactions',  label: 'Transactions',     icon: Receipt,         path: '/vendor/transactions' },
+  { id: 'reports',       label: 'Reports',          icon: BarChart3,       path: '/vendor/reports' },
+  { id: 'notifications', label: 'Notifications',    icon: Bell,            path: '/vendor/notifications' },
+  { id: 'profile',       label: 'Vendor Profile',   icon: UserCircle,      path: '/vendor/profile' },
 ];
 
 interface VendorSidebarProps {
-  isOpen?: boolean;
-  setIsOpen?: (isOpen: boolean) => void;
-  isCollapsed?: boolean;
-  setIsCollapsed?: (isCollapsed: boolean) => void;
+  /** Mobile drawer — controlled by VendorLayout */
+  mobileOpen: boolean;
+  setMobileOpen: (v: boolean) => void;
+  /** Desktop collapse — controlled by VendorLayout */
+  collapsed: boolean;
+  setCollapsed: (v: boolean) => void;
 }
 
-export const VendorSidebar: React.FC<VendorSidebarProps> = ({ 
-  isOpen, 
-  setIsOpen, 
-  isCollapsed: externalIsCollapsed, 
-  setIsCollapsed: externalSetIsCollapsed 
+export const VendorSidebar: React.FC<VendorSidebarProps> = ({
+  mobileOpen,
+  setMobileOpen,
+  collapsed,
+  setCollapsed,
 }) => {
-  const [localIsCollapsed, setLocalIsCollapsed] = useState(false);
-  
-  const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : localIsCollapsed;
-  const setIsCollapsed = externalSetIsCollapsed || setLocalIsCollapsed;
-  
-  const isMobileOpen = isOpen || false;
-  const setIsMobileOpen = setIsOpen || (() => {});
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -57,117 +52,169 @@ export const VendorSidebar: React.FC<VendorSidebarProps> = ({
     navigate('/login');
   };
 
-  const SidebarContent = (
-    <div className="flex flex-col h-full bg-white border-r border-slate-100 font-inter overflow-hidden">
-      {/* Vendor Branding */}
-      <div className={cn(
-        "p-5 flex items-center gap-3 transition-all duration-300 shrink-0",
-        isCollapsed ? "justify-center" : "justify-start"
-      )}>
+  /* ── Shared nav items ─────────────────────────────── */
+  const NavItems = ({ closeMobile = false }: { closeMobile?: boolean }) => (
+    <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto custom-scrollbar">
+      {VENDOR_MENU_ITEMS.map((item) => (
+        <NavLink
+          key={item.id}
+          to={item.path}
+          onClick={() => closeMobile && setMobileOpen(false)}
+          className={({ isActive }) => cn(
+            'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative',
+            isActive
+              ? 'bg-blue-50 text-blue-600 font-semibold'
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium',
+            collapsed && !closeMobile ? 'justify-center px-0' : ''
+          )}
+        >
+          <item.icon size={17} className="shrink-0" />
+
+          {(!collapsed || closeMobile) && (
+            <span className="text-[12.5px] tracking-tight whitespace-nowrap">{item.label}</span>
+          )}
+
+          {/* Tooltip when desktop-collapsed */}
+          {collapsed && !closeMobile && (
+            <span className="
+              absolute left-full ml-3 px-2.5 py-1.5
+              bg-slate-900 text-white text-[10px] font-semibold rounded-lg
+              opacity-0 group-hover:opacity-100 pointer-events-none
+              transition-opacity whitespace-nowrap shadow-xl z-[200]
+            ">
+              {item.label}
+            </span>
+          )}
+        </NavLink>
+      ))}
+    </nav>
+  );
+
+  /* ── Brand / header strip ─────────────────────────── */
+  const Brand = ({ showClose = false }: { showClose?: boolean }) => (
+    <div className={cn(
+      'h-14 md:h-16 flex items-center px-3 shrink-0 border-b border-slate-100',
+      collapsed && !showClose ? 'justify-center' : 'justify-between'
+    )}>
+      <div className="flex items-center gap-2.5">
         <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
           <Waves size={16} color="#fff" />
         </div>
-        {!isCollapsed && (
-          <span className="text-[14px] font-semibold text-slate-900 tracking-tight whitespace-nowrap uppercase">
+        {(!collapsed || showClose) && (
+          <span className="text-[13px] font-bold text-slate-900 tracking-tight uppercase whitespace-nowrap">
             Chakachak Vendor
           </span>
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-1.5 space-y-0.5 overflow-y-auto overflow-x-hidden custom-scrollbar">
-        {VENDOR_MENU_ITEMS.map((item) => (
-          <NavLink
-            key={item.id}
-            to={item.path}
-            className={({ isActive }) => cn(
-              "flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all group relative",
-              isActive 
-                ? "bg-blue-50 text-blue-600 font-semibold" 
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium"
-            )}
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <item.icon size={17} className="shrink-0" />
-            {!isCollapsed && <span className="text-[12.5px] tracking-tight">{item.label}</span>}
-            
-            {isCollapsed && (
-              <div className="absolute left-full ml-4 px-2 py-1 bg-slate-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-[100] shadow-xl font-semibold">
-                {item.label}
-              </div>
-            )}
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* Logout */}
-      <div className="p-3 border-t border-slate-50 shrink-0">
+      {/* Desktop collapse toggle — inside header, never overlaps navbar */}
+      {!showClose && (
         <button
-          onClick={handleLogout}
-          className={cn(
-            "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-50 transition-all font-semibold group relative",
-            isCollapsed ? "justify-center" : ""
-          )}
+          onClick={() => setCollapsed(!collapsed)}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
         >
-          <LogOut size={17} />
-          {!isCollapsed && <span className="text-[12.5px] tracking-tight">Logout</span>}
+          <ChevronLeft
+            size={15}
+            className={cn('transition-transform duration-300', collapsed && 'rotate-180')}
+          />
         </button>
-      </div>
+      )}
 
-      <button 
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="hidden lg:flex absolute -right-2.5 top-14 w-5 h-5 bg-white border border-slate-200 rounded-full items-center justify-center shadow-sm hover:bg-slate-50 transition-all text-slate-400 hover:text-slate-600 z-50"
+      {showClose && (
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-all"
+        >
+          <X size={18} />
+        </button>
+      )}
+    </div>
+  );
+
+  /* ── Logout button ────────────────────────────────── */
+  const LogoutBtn = ({ showLabel = true }: { showLabel?: boolean }) => (
+    <div className="p-2 border-t border-slate-50 shrink-0">
+      <button
+        onClick={handleLogout}
+        className={cn(
+          'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl',
+          'text-rose-500 hover:bg-rose-50 transition-all font-semibold group relative',
+          !showLabel ? 'justify-center px-0' : ''
+        )}
       >
-        <ChevronLeft size={12} className={cn("transition-transform duration-300", isCollapsed && "rotate-180")} />
+        <LogOut size={17} />
+        {showLabel && <span className="text-[12.5px] tracking-tight">Logout</span>}
+        {!showLabel && (
+          <span className="
+            absolute left-full ml-3 px-2.5 py-1.5
+            bg-slate-900 text-white text-[10px] font-semibold rounded-lg
+            opacity-0 group-hover:opacity-100 pointer-events-none
+            transition-opacity whitespace-nowrap shadow-xl z-[200]
+          ">
+            Logout
+          </span>
+        )}
       </button>
     </div>
   );
 
   return (
     <>
-      <aside className={cn(
-        "hidden lg:block h-screen fixed top-0 left-0 z-40 transition-all duration-300",
-        isCollapsed ? "w-16" : "w-60"
-      )}>
-        {SidebarContent}
+      {/* ─── DESKTOP SIDEBAR ──────────────────────────── */}
+      <aside
+        style={{ width: collapsed ? '4rem' : '15rem' }}
+        className="hidden lg:flex flex-col h-screen fixed top-0 left-0 z-40 bg-white border-r border-slate-100 transition-all duration-300 overflow-visible"
+      >
+        <Brand />
+        <NavItems />
+        <LogoutBtn showLabel={!collapsed} />
       </aside>
 
-      {!isMobileOpen && (
-        <button 
-          onClick={() => setIsMobileOpen(true)}
-          className="lg:hidden fixed top-3 left-4 z-40 p-1.5 bg-white rounded-lg shadow-md border border-slate-100 text-slate-600"
+      {/* ─── MOBILE HAMBURGER ─────────────────────────── */}
+      {!mobileOpen && (
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="lg:hidden fixed top-4 left-4 z-[50] p-1.5 bg-white rounded-lg shadow-md border border-slate-100 text-slate-600 hover:bg-slate-50 transition-all"
         >
-          <Menu size={18} />
+          <Menu size={20} />
         </button>
       )}
 
+      {/* ─── MOBILE DRAWER ────────────────────────────── */}
       <AnimatePresence>
-        {isMobileOpen && (
+        {mobileOpen && (
           <>
-            <motion.div 
+            <motion.div
+              key="vendor-backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsMobileOpen(false)}
-              className="lg:hidden fixed inset-0 bg-slate-900/30 backdrop-blur-sm z-[60]"
+              onClick={() => setMobileOpen(false)}
+              className="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60]"
             />
             <motion.aside
+              key="vendor-drawer"
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="lg:hidden fixed top-0 left-0 bottom-0 w-64 z-[70]"
+              transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+              className="lg:hidden fixed top-0 left-0 bottom-0 w-64 z-[70] bg-white border-r border-slate-100 flex flex-col"
             >
-              <div className="absolute top-3 right-3 z-[80]">
-                <button onClick={() => setIsMobileOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-600">
-                  <X size={20} />
-                </button>
-              </div>
-              {SidebarContent}
+              <Brand showClose />
+              <NavItems closeMobile />
+              <LogoutBtn />
             </motion.aside>
           </>
         )}
       </AnimatePresence>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar       { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #f1f5f9; border-radius: 10px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #e2e8f0; }
+      `}</style>
     </>
   );
 };

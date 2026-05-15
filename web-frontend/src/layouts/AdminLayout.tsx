@@ -3,6 +3,8 @@ import { Outlet } from 'react-router-dom';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { Bell, Search, ShieldCheck, Menu } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { NotificationDropdown } from '../components/shared/NotificationDropdown';
+import api from '../services/axiosConfig';
 
 export const AdminLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
@@ -35,10 +37,7 @@ export const AdminLayout: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4 shrink-0">
-            <button className="p-2 text-slate-500 hover:bg-slate-50 rounded-xl transition-all relative">
-              <Bell size={18} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-blue-600 rounded-full border-2 border-white" />
-            </button>
+            <NotificationDropdown />
             
             <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />
             

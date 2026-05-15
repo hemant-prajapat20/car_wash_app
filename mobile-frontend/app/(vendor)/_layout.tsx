@@ -9,6 +9,7 @@ import {
   Users, Contact, Receipt, BarChart3, 
   Bell, User, LogOut 
 } from 'lucide-react-native';
+import { HeaderNotificationIcon } from '../../components/HeaderNotificationIcon';
 
 function CustomDrawerContent(props: any) {
   const dispatch = useDispatch();
@@ -45,6 +46,7 @@ export default function VendorLayout() {
         headerStyle: { backgroundColor: '#ffffff' },
         headerTintColor: '#0f172a',
         headerTitleStyle: { fontWeight: 'bold' },
+        headerRight: () => <HeaderNotificationIcon role="vendor" />,
         drawerActiveBackgroundColor: '#eff6ff',
         drawerActiveTintColor: '#2563eb',
         drawerInactiveTintColor: '#64748b',

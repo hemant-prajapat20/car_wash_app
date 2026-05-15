@@ -5,8 +5,9 @@ import { useDispatch } from 'react-redux';
 import { logout } from '../../store/authSlice';
 import { router } from 'expo-router';
 import { 
-  Home, Search, CalendarCheck, History, User, LogOut 
+  Home, Search, CalendarCheck, History, User, LogOut, Bell 
 } from 'lucide-react-native';
+import { HeaderNotificationIcon } from '../../components/HeaderNotificationIcon';
 
 function CustomDrawerContent(props: any) {
   const dispatch = useDispatch();
@@ -43,6 +44,7 @@ export default function CustomerLayout() {
         headerStyle: { backgroundColor: '#ffffff' },
         headerTintColor: '#0f172a',
         headerTitleStyle: { fontWeight: 'bold' },
+        headerRight: () => <HeaderNotificationIcon role="customer" />,
         drawerActiveBackgroundColor: '#eff6ff',
         drawerActiveTintColor: '#2563eb',
         drawerInactiveTintColor: '#64748b',
@@ -60,6 +62,10 @@ export default function CustomerLayout() {
       <Drawer.Screen 
         name="bookings" 
         options={{ title: 'My Bookings', drawerIcon: ({ color }) => <History size={22} color={color} /> }} 
+      />
+      <Drawer.Screen 
+        name="notifications" 
+        options={{ title: 'Notifications', drawerIcon: ({ color }) => <Bell size={22} color={color} /> }} 
       />
       <Drawer.Screen 
         name="profile" 

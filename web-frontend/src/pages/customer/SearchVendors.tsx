@@ -31,11 +31,17 @@ export const SearchVendors: React.FC = () => {
     fetchVendors();
   }, []);
 
-  const filteredVendors = vendors.filter(v => 
-    v.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    v.businessLocation?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    v.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredVendors = vendors.filter(v => {
+    const q = searchQuery.toLowerCase();
+    return (
+      v.companyName?.toLowerCase().includes(q) ||
+      v.businessLocation?.toLowerCase().includes(q) ||
+      v.fullName?.toLowerCase().includes(q) ||
+      v.phone?.includes(q) ||
+      v.startingPrice?.toString().includes(q) ||
+      (v.activeServices && v.activeServices.some((s: string) => s.toLowerCase().includes(q)))
+    );
+  });
 
   if (loading) return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
 
