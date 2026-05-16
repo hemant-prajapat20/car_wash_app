@@ -4,8 +4,11 @@ import axios from 'axios';
 // types/auth.ts equivalent
 export interface User {
   id: string;
+  _id?: string;
   fullName: string;
   email: string;
+  phone?: string;
+  avatar?: string;
   role: 'customer' | 'vendor' | 'admin' | 'superAdmin';
   token?: string;
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Car, Clock, ChevronRight, ArrowLeft, CheckCircle2, 
-  Loader2, Plus, X
+  Loader2, Plus, X, Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';

@@ -21,6 +21,8 @@ interface Stats {
   totalBookings: number;
   totalCustomers: number;
   totalRevenue: number;
+  todayRegistrations?: number;
+  pendingRequests?: number;
 }
 
 export const AdminDashboard: React.FC = () => {
@@ -34,7 +36,7 @@ export const AdminDashboard: React.FC = () => {
     const failsafe = setTimeout(() => {
       if (loading) {
         setLoading(false);
-        if (!stats) setStats({ totalVendors: 0, activeVendors: 0, totalBookings: 0, totalCustomers: 0, totalRevenue: 0 });
+        if (!stats) setStats({ totalVendors: 0, activeVendors: 0, totalBookings: 0, totalCustomers: 0, totalRevenue: 0, todayRegistrations: 0, pendingRequests: 0 });
       }
     }, 3000);
 
@@ -88,10 +90,10 @@ export const AdminDashboard: React.FC = () => {
   }
 
   const statCards = [
-    { name: 'Total Vendors', value: stats.totalVendors, icon: Users, color: 'blue', trend: '+12%' },
-    { name: 'Active Vendors', value: stats.activeVendors, icon: UserCheck, color: 'emerald', trend: '+5%' },
-    { name: 'Today Reg.', value: stats.todayRegistrations || 0, icon: UserPlus, color: 'amber', trend: 'Live' },
-    { name: 'Pending Requests', value: stats.pendingRequests || 0, icon: Clock, color: 'indigo', trend: 'Critical' },
+    { name: 'Total Vendors', value: stats?.totalVendors || 0, icon: Users, color: 'blue', trend: '+12%' },
+    { name: 'Active Vendors', value: stats?.activeVendors || 0, icon: UserCheck, color: 'emerald', trend: '+5%' },
+    { name: 'Today Reg.', value: stats?.todayRegistrations || 0, icon: UserPlus, color: 'amber', trend: 'Live' },
+    { name: 'Pending Requests', value: stats?.pendingRequests || 0, icon: Clock, color: 'indigo', trend: 'Critical' },
   ];
 
   return (
