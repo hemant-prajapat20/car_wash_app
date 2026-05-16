@@ -423,19 +423,49 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
 
   try {
     const transactions = await Booking.find({ vendor: vendorId })
-      .populate('customer', 'fullName email')
+      .populate('customer vendor', 'fullName email phone address companyName businessLocation')
       .sort({ createdAt: -1 })
-      .select('transactionId totalAmount paymentStatus status createdAt customer');
+      .select('transactionId totalAmount paymentStatus status createdAt customer vendor service');
 
     const formattedTransactions = transactions.map(tx => {
       const txAny = tx as any;
+      const subtotal = tx.totalAmount;
+      const taxableAmount = parseFloat((subtotal / 1.18).toFixed(2));
+      const totalTax = parseFloat((subtotal - taxableAmount).toFixed(2));
+      const cgst = parseFloat((totalTax / 2).toFixed(2));
+      const sgst = parseFloat((totalTax / 2).toFixed(2));
+      
+      const dateObj = new Date(txAny.createdAt);
+      const dateStr = `${dateObj.getFullYear()}${(dateObj.getMonth()+1).toString().padStart(2,'0')}${dateObj.getDate().toString().padStart(2,'0')}`;
+      const invoiceNo = `INV/${dateObj.getFullYear()}/${(dateObj.getMonth()+1).toString().padStart(2,'0')}/${tx._id.toString().slice(-4).toUpperCase()}`;
+      
+      // Pattern: TXN - YYYYMMDD - LAST_6_CHARS_OF_ID
+      const displayTxnId = tx.transactionId?.startsWith('TXN') 
+        ? tx.transactionId 
+        : `TXN-${dateStr}-${tx._id.toString().slice(-6).toUpperCase()}`;
+
       return {
-        id: tx.transactionId || tx._id.toString().slice(-10).toUpperCase(),
+        id: displayTxnId,
+        bookingId: tx._id.toString(),
         cust: (tx.customer as any)?.fullName || 'Walk-in',
         amt: `${tx.status === 'Cancelled' ? '-' : '+'}₹${tx.totalAmount}`,
-        date: new Date(txAny.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-        time: new Date(txAny.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-        status: tx.paymentStatus === 'Success' ? 'Success' : tx.paymentStatus === 'Failed' ? 'Failed' : tx.status === 'Cancelled' ? 'Refund' : 'Pending'
+        date: dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+        time: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        status: tx.paymentStatus === 'Success' ? 'Success' : tx.paymentStatus === 'Failed' ? 'Failed' : tx.status === 'Cancelled' ? 'Refund' : 'Pending',
+        // High-Fidelity Invoice Data
+        invoiceData: {
+          invoiceNo,
+          transactionId: displayTxnId,
+          date: txAny.createdAt,
+          subtotal,
+          taxableAmount,
+          cgst,
+          sgst,
+          grandTotal: subtotal,
+          customer: tx.customer,
+          vendor: tx.vendor, 
+          service: tx.service
+        }
       };
     });
 

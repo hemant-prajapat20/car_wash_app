@@ -43,16 +43,49 @@ export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: 
   const isDemoSuccess = req.body.isDemo && process.env.NODE_ENV === 'development';
 
   if (generated_signature === razorpay_signature || isDemoSuccess) {
-    // Payment is successful
     try {
-      const booking = await Booking.findById(bookingId);
-      if (booking) {
-        booking.paymentStatus = 'Success';
-        booking.transactionId = razorpay_payment_id;
-        booking.status = 'Confirmed'; // Auto-confirm on successful payment
-        await booking.save();
-      }
-      res.json({ success: true, message: 'Payment verified successfully' });
+      const booking = await Booking.findById(bookingId).populate('customer vendor');
+      if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+      // Finalize booking and generate Standardized Transaction & Invoice Metadata
+      const date = new Date();
+      const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
+      const txnId = `TXN-${dateStr}-${booking._id.toString().slice(-6).toUpperCase()}`;
+
+      booking.paymentStatus = 'Success'; 
+      booking.status = 'Confirmed';
+      booking.transactionId = txnId;
+      booking.razorpayPaymentId = razorpay_payment_id;
+      
+      // Generate professional invoice number: INV / YEAR / MONTH / 4-DIGIT-ID
+      const invoiceNo = `INV/${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${booking._id.toString().slice(-4).toUpperCase()}`;
+      
+      // Calculate itemized taxes (Assuming 18% total GST: 9% CGST + 9% SGST)
+      const subtotal = booking.totalAmount;
+      const taxableAmount = parseFloat((subtotal / 1.18).toFixed(2));
+      const totalTax = parseFloat((subtotal - taxableAmount).toFixed(2));
+      const cgst = parseFloat((totalTax / 2).toFixed(2));
+      const sgst = parseFloat((totalTax / 2).toFixed(2));
+
+      await booking.save();
+
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Payment verified successfully',
+        invoiceData: {
+          invoiceNo,
+          transactionId: razorpay_payment_id,
+          date: booking.createdAt,
+          subtotal,
+          taxableAmount,
+          cgst,
+          sgst,
+          grandTotal: subtotal,
+          customer: booking.customer,
+          vendor: booking.vendor,
+          service: booking.service
+        }
+      });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Error updating booking' });
     }
@@ -62,5 +95,48 @@ export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: 
       await Booking.findByIdAndDelete(bookingId);
     } catch (e) {}
     res.status(400).json({ success: false, message: 'Payment verification failed. Booking discarded.' });
+  }
+});
+export const getInvoiceData = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { bookingId } = req.params;
+
+  try {
+    const booking = await Booking.findById(bookingId).populate('customer vendor');
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+    // Calculate itemized taxes (Assuming 18% total GST: 9% CGST + 9% SGST)
+    const subtotal = booking.totalAmount;
+    const taxableAmount = parseFloat((subtotal / 1.18).toFixed(2));
+    const totalTax = parseFloat((subtotal - taxableAmount).toFixed(2));
+    const cgst = parseFloat((totalTax / 2).toFixed(2));
+    const sgst = parseFloat((totalTax / 2).toFixed(2));
+    
+    // Generate standardized IDs
+    const date = new Date(booking.createdAt);
+    const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
+    const invoiceNo = `INV/${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${booking._id.toString().slice(-4).toUpperCase()}`;
+    
+    const displayTxnId = booking.transactionId?.startsWith('TXN') 
+      ? booking.transactionId 
+      : `TXN-${dateStr}-${booking._id.toString().slice(-6).toUpperCase()}`;
+
+    res.json({
+      success: true,
+      data: {
+        invoiceNo,
+        transactionId: displayTxnId,
+        date: booking.createdAt,
+        subtotal,
+        taxableAmount,
+        cgst,
+        sgst,
+        grandTotal: subtotal,
+        customer: booking.customer,
+        vendor: booking.vendor,
+        service: booking.service
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Error retrieving invoice data' });
   }
 });

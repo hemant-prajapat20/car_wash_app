@@ -76,6 +76,9 @@ export const BookService: React.FC = () => {
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [newVehicle,     setNewVehicle]     = useState({ make: '', model: '', plateNumber: '' });
 
+  // Invoice State
+  const [invoiceId, setInvoiceId] = useState<string | null>(null);
+
   /* ── Fetch ────────────────────────────────────────── */
   useEffect(() => { fetchVehicles(); }, []);
 
@@ -182,6 +185,7 @@ export const BookService: React.FC = () => {
             });
 
             if (verifyRes.data.success) {
+              setInvoiceId(booking._id);
               setCurrentStep(4);
               toast.success('Payment successful! Booking confirmed.');
             } else {
@@ -454,6 +458,15 @@ export const BookService: React.FC = () => {
                   Back to Search
                 </button>
               </div>
+
+              {invoiceId && (
+                <button
+                  onClick={() => window.open(`/invoice/${invoiceId}`, '_blank')}
+                  className="mt-6 flex items-center gap-2 mx-auto text-blue-600 font-black text-[10px] uppercase tracking-widest bg-blue-50 px-6 py-3 rounded-2xl border border-blue-100 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                >
+                  <Printer size={14} /> View Professional Receipt
+                </button>
+              )}
             </motion.div>
           )}
 
@@ -563,6 +576,7 @@ export const BookService: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
     </div>
   );
 };

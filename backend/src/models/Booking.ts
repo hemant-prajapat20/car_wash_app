@@ -25,6 +25,9 @@ export interface IBooking extends Document {
   transactionId?: string;
   totalAmount: number;
   completedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  razorpayPaymentId?: string;
 }
 
 const BookingSchema: Schema = new Schema({
@@ -52,6 +55,7 @@ const BookingSchema: Schema = new Schema({
   },
   paymentStatus: { type: String, enum: ['Pending', 'Success', 'Failed'], default: 'Pending' },
   transactionId: { type: String },
+  razorpayPaymentId: { type: String },
   totalAmount: { type: Number, required: true },
   completedAt: { type: Date }
 }, { timestamps: true });

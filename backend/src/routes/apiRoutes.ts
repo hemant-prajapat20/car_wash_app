@@ -34,7 +34,8 @@ import {
 } from '../controllers/customerController';
 import { 
   createRazorpayOrder, 
-  verifyRazorpayPayment 
+  verifyRazorpayPayment,
+  getInvoiceData
 } from '../controllers/paymentController';
 import { getHostedPaymentPage } from '../controllers/hostedPaymentController';
 import { protect, authorize } from '../middleware/auth';
@@ -105,6 +106,7 @@ router.delete('/customer/vehicles/:vehicleId', protect, authorize('customer'), d
 // PAYMENT ROUTES (Protected)
 router.post('/payment/create-order', protect, authorize('customer'), createRazorpayOrder);
 router.post('/payment/verify', protect, authorize('customer'), verifyRazorpayPayment);
+router.get('/payment/invoice/:bookingId', protect, getInvoiceData);
 router.get('/payment/hosted', getHostedPaymentPage);
 
 export default router;

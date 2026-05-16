@@ -73,10 +73,15 @@ export const VendorTransactions: React.FC = () => {
           <div className="grid grid-cols-1 gap-2.5">
             {transactions.map((tx) => (
               <div key={tx.id} className="bg-white border border-slate-100 rounded-2xl p-4 md:px-6 md:py-4 flex flex-col md:grid md:grid-cols-6 items-center gap-3 md:gap-4 hover:shadow-md hover:border-blue-100 transition-all group">
-                {/* Transaction ID */}
+                 {/* Transaction ID */}
                 <div className="w-full md:w-auto flex items-center justify-between md:block col-span-1">
                    <span className="md:hidden text-[9px] font-bold text-slate-300 uppercase tracking-widest">ID</span>
-                   <p className="text-[10px] font-bold text-blue-600 font-mono tracking-tighter uppercase px-2 py-1 bg-blue-50 rounded-lg">{tx.id}</p>
+                   <button 
+                     onClick={() => window.open(`/invoice/${tx.bookingId}`, '_blank')}
+                     className="text-[10px] font-bold text-blue-600 font-mono tracking-tighter uppercase px-2 py-1 bg-blue-50 rounded-lg hover:bg-blue-600 hover:text-white transition-all cursor-pointer border border-blue-100/50 active:scale-95"
+                   >
+                     {tx.id}
+                   </button>
                 </div>
 
                 {/* Customer Name */}

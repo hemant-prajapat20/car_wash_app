@@ -9,6 +9,7 @@ import { CustomerRoutes } from './routes/CustomerRoutes';
 import { AdminRoutes } from './routes/AdminRoutes';
 import { VendorRoutes } from './routes/VendorRoutes';
 import { VendorDemoLogin } from './pages/auth/VendorDemoLogin';
+import { InvoicePage } from './pages/InvoicePage';
 
 // Secret path from environment variables
 const ADMIN_ACCESS_PATH = '/admin-access';
@@ -40,6 +41,9 @@ function App() {
       
       {/* Secret Admin Login Route */}
       <Route path={ADMIN_ACCESS_PATH} element={isAuthenticated ? <Navigate to={getHomeRedirect()} /> : <AdminAccessPage />} />
+      
+      {/* Shared Invoice Page */}
+      <Route path="/invoice/:bookingId" element={isAuthenticated ? <InvoicePage /> : <Navigate to="/login" />} />
       
       {/* Customer Panel Routes (Nested) */}
       <Route 
