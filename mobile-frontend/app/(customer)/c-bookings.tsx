@@ -101,7 +101,7 @@ export default function MyBookings() {
         
         {item.paymentStatus === 'Success' && (
           <TouchableOpacity 
-            onPress={() => router.push(`/invoice/${item._id}`)}
+            onPress={() => router.push(`/invoice/${item._id}` as any)}
             className="bg-blue-50 px-4 py-2 rounded-xl flex-row items-center gap-2"
           >
             <Printer size={14} color="#2563eb" />

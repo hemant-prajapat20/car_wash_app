@@ -91,7 +91,7 @@ export default function VendorTransactions() {
               <View key={tx.id} className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm mb-4">
                 <View className="flex-row justify-between items-center mb-5">
                   <TouchableOpacity 
-                    onPress={() => router.push(`/invoice/${tx.bookingId}`)}
+                    onPress={() => router.push(`/invoice/${tx.bookingId}` as any)}
                     className="bg-blue-50 px-3 py-1 rounded-xl flex-row items-center gap-2"
                   >
                     <Printer size={12} color="#2563eb" />
