@@ -1,0 +1,43 @@
+{
+  "cli": {
+    "version": ">= 14.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://car-wash-app-3.onrender.com/api",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_SbIYMAQzqrEkAM"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://car-wash-app-3.onrender.com/api",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_SbIYMAQzqrEkAM"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://car-wash-app-3.onrender.com/api",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_your_live_key_here"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

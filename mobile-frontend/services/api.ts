@@ -2,9 +2,11 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Central API configuration for the Chakachak SaaS platform
-// Using the local IP address for mobile-to-backend communication
+// Uses production backend URL in builds, fallback to local for dev
+const PRODUCTION_API = process.env.EXPO_PUBLIC_API_URL || 'https://car-wash-app-3.onrender.com/api';
+
 const api = axios.create({
-  baseURL: 'http://192.168.1.12:5001/api',
+  baseURL: PRODUCTION_API,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
