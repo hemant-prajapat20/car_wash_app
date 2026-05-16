@@ -10,6 +10,12 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import toast from 'react-hot-toast';
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -111,19 +117,106 @@ export const BookService: React.FC = () => {
     } finally { setLoading(false); }
   };
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleFinalBooking = async () => {
     setLoading(true);
     try {
-      const res = await api.post('/customer/bookings', {
+      // 1. Create Booking first (Status: Pending)
+      const bookingRes = await api.post('/customer/bookings', {
         vendorId,
         vehicle: bookingData.vehicle,
         service: bookingData.service,
         slot: { date: new Date(), time: bookingData.slot.startTime },
       });
-      if (res.data.success) { setCurrentStep(4); toast.success('Booking Confirmed!'); }
+
+      if (!bookingRes.data.success) {
+        throw new Error('Failed to create booking');
+      }
+
+      const booking = bookingRes.data.data;
+
+      // 2. Load Razorpay script
+      const res = await loadRazorpayScript();
+      if (!res) {
+        toast.error('Razorpay SDK failed to load. Are you online?');
+        setLoading(false);
+        return;
+      }
+
+      // 3. Create Order on Backend
+      const orderRes = await api.post('/payment/create-order', {
+        amount: bookingData.service.price,
+      });
+
+      if (!orderRes.data.success) {
+        throw new Error('Failed to create payment order');
+      }
+
+      const order = orderRes.data.data;
+
+      // 4. Open Razorpay Checkout
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Enter the Key ID generated from the Dashboard
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Chakaachak Wash',
+        description: `Booking for ${bookingData.service.name}`,
+        order_id: order.id,
+        handler: async function (response: any) {
+          try {
+            // 5. Verify Payment on Backend
+            const verifyRes = await api.post('/payment/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              bookingId: booking._id,
+            });
+
+            if (verifyRes.data.success) {
+              setCurrentStep(4);
+              toast.success('Payment successful! Booking confirmed.');
+            } else {
+              toast.error('Payment verification failed');
+            }
+          } catch (err) {
+            toast.error('Error verifying payment');
+          }
+        },
+        prefill: {
+          name: 'Customer', // Can populate from user profile
+          email: 'customer@example.com',
+          contact: '9999999999',
+        },
+        theme: {
+          color: '#2563eb', // Tailwind blue-600
+        },
+        modal: {
+          ondismiss: function () {
+            toast.error('Payment cancelled');
+            setLoading(false);
+          }
+        }
+      };
+
+      const rzp1 = new window.Razorpay(options);
+      rzp1.on('payment.failed', function (response: any) {
+        toast.error(`Payment failed: ${response.error.description}`);
+      });
+      rzp1.open();
+
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to create booking.');
-    } finally { setLoading(false); }
+      toast.error(err.response?.data?.message || err.message || 'Failed to process booking.');
+      setLoading(false);
+    }
   };
 
   const nextStep = () => {

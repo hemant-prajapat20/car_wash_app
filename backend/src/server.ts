@@ -9,6 +9,10 @@ import { initSocket } from './socket';
 
 dotenv.config();
 
+const PORT_START = Number(process.env.PORT) || 5001;
+process.stdout.write(`\n\x1b[32m[SYSTEM] Backend attempting to start on port ${PORT_START}...\x1b[0m\n`);
+process.stdout.write(`\x1b[34m[LINK] http://localhost:${PORT_START}\x1b[0m\n\n`);
+
 const app = express();
 
 // MIDDLEWARE
@@ -44,28 +48,30 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 5001;
 const server = http.createServer(app);
 
 // Initialize Socket.io
 initSocket(server);
 
-connectDB().then(() => {
-  server.listen(PORT, '0.0.0.0', () => {
-    // Dynamically get the local IP address
-    const nets = os.networkInterfaces();
-    let localIp = 'localhost';
-    
-    for (const name of Object.keys(nets)) {
-      for (const net of nets[name] || []) {
-        if (net.family === 'IPv4' && !net.internal) {
-          localIp = net.address;
-          break;
-        }
+connectDB();
+
+console.log('⏳ Starting server on port', PORT, '...');
+
+server.listen(PORT, '0.0.0.0', () => {
+  // Dynamically get the local IP address
+  const nets = os.networkInterfaces();
+  let localIp = 'localhost';
+
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] || []) {
+      if (net.family === 'IPv4' && !net.internal) {
+        localIp = net.address;
+        break;
       }
     }
+  }
 
-    console.log(`🚀 Server running locally on: http://localhost:${PORT}`);
-    console.log(`📡 Server running on network: http://${localIp}:${PORT}`);
-  });
+  console.log(`🚀 Backend is running on: http://localhost:${PORT}`);
+  console.log(`📡 Network access: http://${localIp}:${PORT}`);
 });

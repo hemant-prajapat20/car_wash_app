@@ -16,18 +16,27 @@ import {
   updateWorker, 
   deleteWorker,
   updateSlot, 
-  deleteSlot
+  deleteSlot,
+  searchVendorData,
+  getVendorCustomers,
+  getVendorTransactions
 } from '../controllers/vendorController';
 import { 
   searchVendors, 
   getVendorDetails, 
   createBooking, 
   getMyBookings, 
+  deleteBooking,
   submitReview,
   addVehicle,
   getVehicles,
   deleteVehicle
 } from '../controllers/customerController';
+import { 
+  createRazorpayOrder, 
+  verifyRazorpayPayment 
+} from '../controllers/paymentController';
+import { getHostedPaymentPage } from '../controllers/hostedPaymentController';
 import { protect, authorize } from '../middleware/auth';
 import notificationRoutes from './notificationRoutes';
 
@@ -50,6 +59,9 @@ router.patch('/admin/vendors/:id/toggle', protect, authorize('superAdmin'), togg
 
 // VENDOR ROUTES (Protected)
 router.get('/vendor/dashboard', protect, authorize('vendor'), getVendorDashboard);
+router.get('/vendor/search', protect, authorize('vendor'), searchVendorData);
+router.get('/vendor/customers', protect, authorize('vendor'), getVendorCustomers);
+router.get('/vendor/transactions', protect, authorize('vendor'), getVendorTransactions);
 router.patch('/vendor/bookings/:id/status', protect, authorize('vendor'), updateBookingStatus);
 
 router.route('/vendor/profile')
@@ -82,11 +94,17 @@ router.get('/customer/search', protect, searchVendors);
 router.get('/customer/vendors/:vendorId', protect, getVendorDetails);
 router.post('/customer/bookings', protect, authorize('customer'), createBooking);
 router.get('/customer/my-bookings', protect, authorize('customer'), getMyBookings);
+router.delete('/customer/bookings/:id', protect, authorize('customer'), deleteBooking);
 router.post('/customer/reviews', protect, authorize('customer'), submitReview);
 
 router.route('/customer/vehicles')
   .get(protect, authorize('customer'), getVehicles)
   .post(protect, authorize('customer'), addVehicle);
 router.delete('/customer/vehicles/:vehicleId', protect, authorize('customer'), deleteVehicle);
+
+// PAYMENT ROUTES (Protected)
+router.post('/payment/create-order', protect, authorize('customer'), createRazorpayOrder);
+router.post('/payment/verify', protect, authorize('customer'), verifyRazorpayPayment);
+router.get('/payment/hosted', getHostedPaymentPage);
 
 export default router;

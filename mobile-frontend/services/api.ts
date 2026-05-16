@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Central API configuration for the Chakachak SaaS platform
 // Using the local IP address for mobile-to-backend communication
 const api = axios.create({
-  baseURL: 'http://192.168.1.12:5000/api',
+  baseURL: 'http://192.168.1.12:5001/api',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',

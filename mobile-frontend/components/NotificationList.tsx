@@ -1,10 +1,11 @@
 import React, { useCallback } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, RefreshControl, ActivityIndicator } from 'react-redux';
+import { View, Text, FlatList, Pressable, RefreshControl, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store';
 import { fetchNotifications, markRead, removeNotification, setRefreshing } from '../store/notificationSlice';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
+import { Bell, Trash2, Check, AlertTriangle, CheckCircle2, Info, XCircle } from 'lucide-react-native';
 
 export const NotificationList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -17,55 +18,70 @@ export const NotificationList: React.FC = () => {
 
   const getIcon = (status: string) => {
     switch (status) {
-      case 'success': return { name: 'checkmark-circle', color: '#10b981' };
-      case 'warning': return { name: 'alert-circle', color: '#f59e0b' };
-      case 'error': return { name: 'close-circle', color: '#f43f5e' };
-      default: return { name: 'information-circle', color: '#3b82f6' };
+      case 'success': return { icon: <CheckCircle2 size={20} color="#10b981" />, bg: 'bg-emerald-50' };
+      case 'warning': return { icon: <AlertTriangle size={20} color="#f59e0b" />, bg: 'bg-amber-50' };
+      case 'error': return { icon: <XCircle size={20} color="#f43f5e" />, bg: 'bg-rose-50' };
+      default: return { icon: <Info size={20} color="#3b82f6" />, bg: 'bg-blue-50' };
     }
   };
 
   const renderItem = ({ item }: { item: any }) => {
-    const icon = getIcon(item.status);
+    const { icon, bg } = getIcon(item.status);
     
     return (
-      <View style={[styles.card, !item.isRead && styles.unreadCard]}>
-        <View style={styles.iconContainer}>
-          <Ionicons name={icon.name as any} size={24} color={icon.color} />
+      <Pressable 
+        onPress={() => !item.isRead && dispatch(markRead(item._id))}
+        className={`bg-white border rounded-[28px] p-5 mb-3 flex-row gap-4 shadow-sm ${!item.isRead ? 'border-blue-200 bg-blue-50/20 border-l-4' : 'border-slate-100'}`}
+      >
+        <View className={`w-12 h-12 rounded-2xl items-center justify-center shadow-sm ${bg}`}>
+          {icon}
         </View>
         
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={[styles.title, !item.isRead && styles.unreadText]}>{item.title}</Text>
-            <Text style={styles.time}>{formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}</Text>
+        <View className="flex-1">
+          <View className="flex-row justify-between items-start mb-1">
+            <View className="flex-row items-center gap-2 flex-1 pr-2">
+              <Text className={`text-sm ${!item.isRead ? 'font-black text-slate-900' : 'font-bold text-slate-600'}`} numberOfLines={1}>
+                {item.title}
+              </Text>
+              {!item.isRead && <View className="w-2 h-2 bg-blue-600 rounded-full" />}
+            </View>
+            <Text className="text-[10px] font-bold text-slate-400">
+              {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+            </Text>
           </View>
-          <Text style={styles.message} numberOfLines={2}>{item.message}</Text>
           
-          <View style={styles.actions}>
+          <Text className={`text-xs leading-5 mb-4 ${!item.isRead ? 'font-bold text-slate-700' : 'font-medium text-slate-400'}`} numberOfLines={2}>
+            {item.message}
+          </Text>
+          
+          <View className="flex-row items-center gap-4">
             {!item.isRead && (
-              <Pressable 
+              <TouchableOpacity 
                 onPress={() => dispatch(markRead(item._id))}
-                style={styles.actionButton}
+                className="flex-row items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-xl"
               >
-                <Text style={styles.actionText}>Mark as read</Text>
-              </Pressable>
+                <Check size={12} color="#3b82f6" />
+                <Text className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Mark Read</Text>
+              </TouchableOpacity>
             )}
-            <Pressable 
+            <TouchableOpacity 
               onPress={() => dispatch(removeNotification(item._id))}
-              style={[styles.actionButton, { marginLeft: 15 }]}
+              className="flex-row items-center gap-1.5 bg-rose-50 px-3 py-1.5 rounded-xl"
             >
-              <Text style={[styles.actionText, { color: '#f43f5e' }]}>Delete</Text>
-            </Pressable>
+              <Trash2 size={12} color="#f43f5e" />
+              <Text className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Delete</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </Pressable>
     );
   };
 
   if (loading && notifications.length === 0) {
     return (
-      <View style={styles.centered}>
+      <View className="flex-1 items-center justify-center py-20">
         <ActivityIndicator size="large" color="#3b82f6" />
-        <Text style={styles.loadingText}>Loading notifications...</Text>
+        <Text className="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fetching Alerts...</Text>
       </View>
     );
   }
@@ -75,118 +91,22 @@ export const NotificationList: React.FC = () => {
       data={notifications}
       renderItem={renderItem}
       keyExtractor={(item) => item._id}
-      contentContainerStyle={styles.list}
+      contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+      showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#3b82f6']} />
       }
       ListEmptyComponent={
-        <View style={styles.emptyContainer}>
-          <Ionicons name="notifications-off-outline" size={64} color="#e2e8f0" />
-          <Text style={styles.emptyTitle}>No notifications yet</Text>
-          <Text style={styles.emptySubtitle}>We'll alert you when something happens.</Text>
+        <View className="items-center justify-center py-32 bg-white rounded-[40px] border border-dashed border-slate-200">
+          <View className="w-20 h-20 bg-slate-50 rounded-full items-center justify-center mb-6">
+            <Bell size={32} color="#cbd5e1" />
+          </View>
+          <Text className="text-lg font-black text-slate-300">All caught up!</Text>
+          <Text className="text-xs font-bold text-slate-400 mt-1 text-center px-10">
+            No business alerts found in your queue.
+          </Text>
         </View>
       }
     />
   );
 };
-
-const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-  },
-  list: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  unreadCard: {
-    borderColor: '#e0f2fe',
-    backgroundColor: '#f8fafc',
-  },
-  iconContainer: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  content: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#475569',
-    flex: 1,
-    marginRight: 8,
-  },
-  unreadText: {
-    color: '#0f172a',
-  },
-  time: {
-    fontSize: 10,
-    color: '#94a3b8',
-    fontWeight: '500',
-  },
-  message: {
-    fontSize: 13,
-    color: '#64748b',
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  actions: {
-    flexDirection: 'row',
-  },
-  actionButton: {
-    paddingVertical: 4,
-  },
-  actionText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#3b82f6',
-    textTransform: 'uppercase',
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 100,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#cbd5e1',
-    marginTop: 20,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#cbd5e1',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-});

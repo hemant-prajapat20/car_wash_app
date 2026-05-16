@@ -4,11 +4,8 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { logout } from '../../store/authSlice';
 import { router } from 'expo-router';
-import { 
-  LayoutDashboard, Inbox, Clock, Package, 
-  Users, Contact, Receipt, BarChart3, 
-  Bell, User, LogOut 
-} from 'lucide-react-native';
+import { Waves, LayoutDashboard, Inbox, Clock, Package, Users, Contact, Receipt, BarChart3, Bell, User, LogOut } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { HeaderNotificationIcon } from '../../components/HeaderNotificationIcon';
 
 function CustomDrawerContent(props: any) {
@@ -20,17 +17,33 @@ function CustomDrawerContent(props: any) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
-      <DrawerContentScrollView {...props}>
+    <View className="flex-1 bg-white">
+      {/* Brand Section - Synced with Web */}
+      <SafeAreaView edges={['top']} className="border-b border-slate-50">
+        <View className="px-6 py-8 flex-row items-center gap-3">
+          <View className="w-10 h-10 bg-blue-600 rounded-xl items-center justify-center shadow-lg shadow-blue-200">
+             <Waves size={20} color="#ffffff" />
+          </View>
+          <View>
+            <Text className="text-xl font-black text-slate-900 tracking-tighter">Chakachak Vendor</Text>
+            <Text className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Vendor Professional Pro</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+
+      <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 10 }}>
         <DrawerItemList {...props} />
       </DrawerContentScrollView>
-      <View style={{ padding: 20, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
+
+      {/* Footer Section */}
+      <View className="p-6 border-t border-slate-50">
         <TouchableOpacity 
           onPress={handleLogout}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
+          activeOpacity={0.7}
+          className="flex-row items-center gap-3 bg-rose-50 px-5 py-4 rounded-[20px]"
         >
-          <LogOut size={22} color="#f43f5e" />
-          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#f43f5e' }}>Logout</Text>
+          <LogOut size={18} color="#e11d48" />
+          <Text className="text-xs font-black text-rose-600 uppercase tracking-widest">Logout</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -42,11 +55,7 @@ export default function VendorLayout() {
     <Drawer 
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{ 
-        headerShown: true,
-        headerStyle: { backgroundColor: '#ffffff' },
-        headerTintColor: '#0f172a',
-        headerTitleStyle: { fontWeight: 'bold' },
-        headerRight: () => <HeaderNotificationIcon role="vendor" />,
+        headerShown: false,
         drawerActiveBackgroundColor: '#eff6ff',
         drawerActiveTintColor: '#2563eb',
         drawerInactiveTintColor: '#64748b',

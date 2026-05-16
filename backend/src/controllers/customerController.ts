@@ -115,6 +115,21 @@ export const getMyBookings = asyncHandler(async (req: AuthRequest, res: Response
   res.json({ success: true, data: bookings });
 });
 
+export const deleteBooking = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const booking = await Booking.findOneAndDelete({ _id: id, customer: req.user?._id, paymentStatus: 'Pending' });
+  if (!booking) return res.status(404).json({ success: false, message: 'Booking not found or already processed' });
+  
+  // Restore slot capacity if needed
+  const slotDoc = await Slot.findOne({ vendorId: booking.vendor, startTime: booking.slot.time });
+  if (slotDoc && slotDoc.currentBookings > 0) {
+    slotDoc.currentBookings -= 1;
+    await slotDoc.save();
+  }
+
+  res.json({ success: true, message: 'Booking deleted' });
+});
+
 export const submitReview = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { bookingId, rating, comment } = req.body;
 

@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
 // Replace with your computer's local IP address for physical device testing
-const SOCKET_URL = 'http://192.168.1.12:5000'; 
+const SOCKET_URL = 'http://192.168.1.12:5001'; 
 
 class SocketService {
   private socket: Socket | null = null;

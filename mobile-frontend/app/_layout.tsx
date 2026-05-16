@@ -60,14 +60,17 @@ function InitialLayout() {
 }
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Provider store={store}>
-        <InitialLayout />
-        <StatusBar style="auto" />
-      </Provider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Provider store={store}>
+          <InitialLayout />
+          <StatusBar style="auto" />
+        </Provider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }

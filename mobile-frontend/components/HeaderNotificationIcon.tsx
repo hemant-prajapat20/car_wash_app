@@ -1,13 +1,12 @@
-import React, { useEffect } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Pressable } from 'react-native';
+import { Bell } from 'lucide-react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store';
 import { fetchUnreadCount, addNotification } from '../store/notificationSlice';
 import { socketService } from '../services/socketService';
 import { router } from 'expo-router';
 import { Audio } from 'expo-av';
-import { useRef } from 'react';
 
 export const HeaderNotificationIcon: React.FC<{ role: 'customer' | 'vendor' }> = ({ role }) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -51,45 +50,23 @@ export const HeaderNotificationIcon: React.FC<{ role: 'customer' | 'vendor' }> =
 
   return (
     <Pressable 
-      onPress={() => router.push(`/${role}/notifications`)}
-      style={({ pressed }) => [
-        styles.container,
-        pressed && { opacity: 0.7 }
-      ]}
+      onPress={() => {
+        const path = role === 'customer' ? '/(customer)/c-notifications' : '/(vendor)/notifications';
+        router.push(path as any);
+      }}
+      className="p-2 mr-2 relative"
+      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
     >
-      <Ionicons name="notifications-outline" size={24} color="#475569" />
+      <View className="w-10 h-10 bg-slate-50 rounded-xl items-center justify-center border border-slate-100 shadow-sm">
+        <Bell size={20} color="#0f172a" />
+      </View>
       {unreadCount > 0 && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+        <View className="absolute top-1 right-1 bg-rose-500 min-w-[18px] h-[18px] rounded-full justify-center items-center border-2 border-white">
+          <Text className="text-white text-[8px] font-black">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </Text>
         </View>
       )}
     </Pressable>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 8,
-    marginRight: 10,
-    position: 'relative',
-  },
-  badge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: '#f43f5e',
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    paddingHorizontal: 2,
-  },
-  badgeText: {
-    color: '#ffffff',
-    fontSize: 8,
-    fontWeight: '900',
-  }
-});

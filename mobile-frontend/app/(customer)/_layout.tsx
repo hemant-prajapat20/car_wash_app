@@ -1,13 +1,13 @@
 import { Drawer } from 'expo-router/drawer';
 import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch } from 'react-redux';
 import { logout } from '../../store/authSlice';
 import { router } from 'expo-router';
 import { 
-  Home, Search, CalendarCheck, History, User, LogOut, Bell 
+  Home, Search, CalendarCheck, History, User, LogOut, Bell, Waves
 } from 'lucide-react-native';
-import { HeaderNotificationIcon } from '../../components/HeaderNotificationIcon';
 
 function CustomDrawerContent(props: any) {
   const dispatch = useDispatch();
@@ -18,17 +18,33 @@ function CustomDrawerContent(props: any) {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#ffffff' }}>
-      <DrawerContentScrollView {...props}>
+    <View className="flex-1 bg-white">
+      {/* Brand Section - Synced with Web */}
+      <SafeAreaView edges={['top']} className="border-b border-slate-50">
+        <View className="px-6 py-8 flex-row items-center gap-3">
+          <View className="w-10 h-10 bg-blue-600 rounded-xl items-center justify-center shadow-lg shadow-blue-200">
+             <Waves size={20} color="#ffffff" />
+          </View>
+          <View>
+            <Text className="text-xl font-black text-slate-900 tracking-tighter">Chakachak</Text>
+            <Text className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Premium Car Care</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+
+      <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 10 }}>
         <DrawerItemList {...props} />
       </DrawerContentScrollView>
-      <View style={{ padding: 20, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
+
+      {/* Footer Section */}
+      <View className="p-6 border-t border-slate-50">
         <TouchableOpacity 
           onPress={handleLogout}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}
+          activeOpacity={0.7}
+          className="flex-row items-center gap-3 bg-rose-50 px-5 py-4 rounded-[20px]"
         >
-          <LogOut size={22} color="#f43f5e" />
-          <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#f43f5e' }}>Logout</Text>
+          <LogOut size={18} color="#e11d48" />
+          <Text className="text-xs font-black text-rose-600 uppercase tracking-widest">Logout</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -40,11 +56,7 @@ export default function CustomerLayout() {
     <Drawer 
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{ 
-        headerShown: true,
-        headerStyle: { backgroundColor: '#ffffff' },
-        headerTintColor: '#0f172a',
-        headerTitleStyle: { fontWeight: 'bold' },
-        headerRight: () => <HeaderNotificationIcon role="customer" />,
+        headerShown: false,
         drawerActiveBackgroundColor: '#eff6ff',
         drawerActiveTintColor: '#2563eb',
         drawerInactiveTintColor: '#64748b',
@@ -57,19 +69,32 @@ export default function CustomerLayout() {
       />
       <Drawer.Screen 
         name="book" 
-        options={{ title: 'Book Service', drawerIcon: ({ color }) => <CalendarCheck size={22} color={color} /> }} 
+        options={{ 
+          title: 'Book Service', 
+          drawerItemStyle: { display: 'none' }
+        }} 
       />
       <Drawer.Screen 
-        name="bookings" 
+        name="c-bookings" 
         options={{ title: 'My Bookings', drawerIcon: ({ color }) => <History size={22} color={color} /> }} 
       />
       <Drawer.Screen 
-        name="notifications" 
-        options={{ title: 'Notifications', drawerIcon: ({ color }) => <Bell size={22} color={color} /> }} 
+        name="c-notifications" 
+        options={{ 
+          title: 'Notifications', 
+          drawerItemStyle: { display: 'none' }
+        }} 
       />
       <Drawer.Screen 
-        name="profile" 
+        name="c-profile" 
         options={{ title: 'Profile Settings', drawerIcon: ({ color }) => <User size={22} color={color} /> }} 
+      />
+      <Drawer.Screen 
+        name="vendor/[vendorId]" 
+        options={{ 
+          drawerItemStyle: { display: 'none' },
+          headerShown: false
+        }} 
       />
     </Drawer>
   );

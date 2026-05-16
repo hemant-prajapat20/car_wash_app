@@ -14,7 +14,7 @@ export interface IBooking extends Document {
   service: {
     name: string;
     price: number;
-    duration: string;
+    duration: number;
   };
   slot: {
     date: Date;
@@ -39,7 +39,7 @@ const BookingSchema: Schema = new Schema({
   service: {
     name: { type: String, required: true },
     price: { type: Number, required: true },
-    duration: { type: String, required: true }
+    duration: { type: Number, required: true }
   },
   slot: {
     date: { type: Date, required: true },

@@ -12,14 +12,14 @@ export const CustomerRoutes: React.FC = () => {
   return (
     <Routes>
       <Route element={<DashboardLayout />}>
-        <Route index element={<Navigate to="search" replace />} />
+        <Route index element={<Navigate to="/customer/search" replace />} />
         <Route path="search" element={<SearchVendors />} />
         <Route path="vendor/:vendorId" element={<VendorProfile />} />
         <Route path="book" element={<BookService />} />
         <Route path="bookings" element={<MyBookings />} />
         <Route path="notifications" element={<CustomerNotifications />} />
         <Route path="profile" element={<CustomerProfile />} />
-        <Route path="*" element={<Navigate to="search" replace />} />
+        <Route path="*" element={<Navigate to="/customer/search" replace />} />
       </Route>
     </Routes>
   );

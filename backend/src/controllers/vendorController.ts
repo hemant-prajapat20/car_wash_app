@@ -336,3 +336,111 @@ export const deleteWorker = asyncHandler(async (req: any, res: Response) => {
 
   res.json({ success: true, message: 'Worker removed' });
 });
+
+// --- SMART SEARCH ---
+export const searchVendorData = asyncHandler(async (req: any, res: Response) => {
+  const vendorId = req.user._id;
+  const { query } = req.query;
+
+  if (!query || query.length < 2) {
+    return res.json({ success: true, data: { bookings: [], workers: [], services: [] } });
+  }
+
+  const regex = new RegExp(query, 'i');
+
+  // 1. Search Bookings (Populate customer to search by name)
+  const bookings = await Booking.find({ vendor: vendorId })
+    .populate('customer', 'fullName email')
+    .then(docs => docs.filter(doc => 
+      (doc.customer as any)?.fullName.match(regex) || 
+      doc.vehicle?.plateNumber?.match(regex) ||
+      doc.service?.name?.match(regex) ||
+      doc.status.match(regex)
+    ).slice(0, 5));
+
+  // 2. Search Workers
+  const workers = await Worker.find({ 
+    vendorId, 
+    $or: [{ name: regex }, { expertise: regex }, { phone: regex }] 
+  }).limit(5);
+
+  // 3. Search Services
+  const services = await Service.find({ 
+    vendorId, 
+    $or: [{ name: regex }, { category: regex }] 
+  }).limit(5);
+
+  res.json({
+    success: true,
+    data: {
+      bookings,
+      workers,
+      services
+    }
+  });
+});
+
+// --- CUSTOMER MANAGEMENT ---
+export const getVendorCustomers = asyncHandler(async (req: any, res: Response) => {
+  const vendorId = req.user._id;
+  const vendorObjectId = new mongoose.Types.ObjectId(vendorId.toString());
+
+  try {
+    const customers = await Booking.aggregate([
+      { $match: { vendor: vendorObjectId } },
+      { $group: { 
+          _id: '$customer', 
+          bookingsCount: { $sum: 1 },
+          avgRating: { $avg: '$rating' } 
+      } },
+      { $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'details'
+      } },
+      { $unwind: '$details' },
+      { $project: {
+          _id: 1,
+          bookingsCount: 1,
+          avgRating: { $ifNull: ['$avgRating', 5.0] },
+          name: '$details.fullName',
+          email: '$details.email',
+          avatar: '$details.avatar',
+          phone: '$details.phone'
+      } }
+    ]);
+
+    res.json({ success: true, data: customers });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// --- FINANCES & TRANSACTIONS ---
+export const getVendorTransactions = asyncHandler(async (req: any, res: Response) => {
+  const vendorId = req.user._id;
+
+  try {
+    const transactions = await Booking.find({ vendor: vendorId })
+      .populate('customer', 'fullName email')
+      .sort({ createdAt: -1 })
+      .select('transactionId totalAmount paymentStatus status createdAt customer');
+
+    const formattedTransactions = transactions.map(tx => {
+      const txAny = tx as any;
+      return {
+        id: tx.transactionId || tx._id.toString().slice(-10).toUpperCase(),
+        cust: (tx.customer as any)?.fullName || 'Walk-in',
+        amt: `${tx.status === 'Cancelled' ? '-' : '+'}₹${tx.totalAmount}`,
+        date: new Date(txAny.createdAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+        time: new Date(txAny.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        status: tx.paymentStatus === 'Success' ? 'Success' : tx.paymentStatus === 'Failed' ? 'Failed' : tx.status === 'Cancelled' ? 'Refund' : 'Pending'
+      };
+    });
+
+    res.json({ success: true, data: formattedTransactions });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});

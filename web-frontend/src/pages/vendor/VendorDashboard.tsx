@@ -100,37 +100,41 @@ export const VendorDashboard: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            {recentBookings.length > 0 ? recentBookings.map((bk, i) => (
-              <motion.div 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
-                key={i} 
-                className="flex items-center justify-between p-3.5 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group border border-transparent hover:border-slate-100"
-              >
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
-                    <UserCheck size={18} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-bold text-slate-900 truncate leading-tight">{bk.customer?.fullName || 'Walk-in Customer'}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{bk.service?.name || 'Standard Wash'}</span>
-                      <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                      <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">{bk.slot?.time || '09:00 AM'}</span>
+            {recentBookings.length > 0 ? (
+              [...recentBookings]
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((bk, i) => (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  key={i} 
+                  className="flex items-center justify-between p-3.5 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group border border-transparent hover:border-slate-100"
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
+                      <UserCheck size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-bold text-slate-900 truncate leading-tight">{bk.customer?.fullName || 'Walk-in Customer'}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{bk.service?.name || 'Standard Wash'}</span>
+                        <span className="w-1 h-1 bg-slate-200 rounded-full" />
+                        <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">{bk.slot?.time || '09:00 AM'}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[12px] font-bold text-slate-900 mb-1">₹{bk.totalAmount}</p>
-                  <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-1 rounded-md ${
-                    bk.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                  }`}>
-                    {bk.status}
-                  </span>
-                </div>
-              </motion.div>
-            )) : (
+                  <div className="text-right shrink-0">
+                    <p className="text-[12px] font-bold text-slate-900 mb-1">₹{bk.totalAmount}</p>
+                    <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-1 rounded-md ${
+                      bk.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                    }`}>
+                      {bk.status}
+                    </span>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
               <div className="text-center py-16 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
                 <AlertCircle size={32} className="mx-auto text-slate-200 mb-3" />
                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">No Recent Bookings Found</p>
