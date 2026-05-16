@@ -8,7 +8,7 @@ const workspaceRoot = path.resolve(projectRoot, "..");
 const config = getDefaultConfig(projectRoot);
 
 // Add shared folder to Metro's watch list
-config.watchFolders = [workspaceRoot];
+config.watchFolders = [projectRoot, workspaceRoot];
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(workspaceRoot, "node_modules"),
