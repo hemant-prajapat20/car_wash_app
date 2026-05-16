@@ -32,7 +32,8 @@ function InitialLayout() {
     const inAuthGroup = segments[0] === '(auth)';
     const inCustomerGroup = segments[0] === '(customer)';
     const inVendorGroup = segments[0] === '(vendor)';
-    const isLandingPage = !inAuthGroup && !inCustomerGroup && !inVendorGroup;
+    const inInvoice = segments[0] === 'invoice';
+    const isLandingPage = !inAuthGroup && !inCustomerGroup && !inVendorGroup && !inInvoice;
 
     if (!token) {
       if (!inAuthGroup && !isLandingPage) {
@@ -55,6 +56,7 @@ function InitialLayout() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(customer)" />
       <Stack.Screen name="(vendor)" />
+      <Stack.Screen name="invoice/[bookingId]" />
     </Stack>
   );
 }

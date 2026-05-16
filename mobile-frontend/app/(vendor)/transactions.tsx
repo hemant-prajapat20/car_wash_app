@@ -3,15 +3,16 @@ import {
   View, Text, ScrollView, TouchableOpacity, 
   ActivityIndicator, RefreshControl 
 } from 'react-native';
-import { Download, Receipt, AlertCircle, Loader2, Menu } from 'lucide-react-native';
+import { Download, Receipt, AlertCircle, Loader2, Menu, Printer } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../services/api';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 import { HeaderNotificationIcon } from '../../components/HeaderNotificationIcon';
 
 export default function VendorTransactions() {
   const navigation = useNavigation();
+  const router = useRouter();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -89,9 +90,13 @@ export default function VendorTransactions() {
             transactions.map((tx) => (
               <View key={tx.id} className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm mb-4">
                 <View className="flex-row justify-between items-center mb-5">
-                  <View className="bg-blue-50 px-3 py-1 rounded-xl">
+                  <TouchableOpacity 
+                    onPress={() => router.push(`/invoice/${tx.bookingId}`)}
+                    className="bg-blue-50 px-3 py-1 rounded-xl flex-row items-center gap-2"
+                  >
+                    <Printer size={12} color="#2563eb" />
                     <Text className="text-[10px] font-black text-blue-600 font-mono tracking-tighter uppercase">{tx.id}</Text>
-                  </View>
+                  </TouchableOpacity>
                   <View className={`px-3 py-1 rounded-xl ${
                     tx.status === 'Success' ? 'bg-emerald-50' : 
                     tx.status === 'Refund' ? 'bg-amber-50' : 

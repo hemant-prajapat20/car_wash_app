@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
-import { Calendar, Clock, MapPin, ChevronRight, Package, Menu, Search, AlertCircle } from 'lucide-react-native';
+import { Calendar, Clock, MapPin, ChevronRight, Package, Menu, Search, AlertCircle, Printer } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import api from '../../services/api';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 import { HeaderNotificationIcon } from '../../components/HeaderNotificationIcon';
 
@@ -12,6 +12,7 @@ export default function MyBookings() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const navigation = useNavigation();
+  const router = useRouter();
 
   const fetchBookings = async () => {
     try {
@@ -88,7 +89,7 @@ export default function MyBookings() {
       </View>
 
       <View className="flex-row justify-between items-center pt-5 border-t border-slate-50">
-        <View className="flex-row items-center gap-3">
+        <View className="flex-1 flex-row items-center gap-3">
            <View className="w-10 h-10 bg-slate-900 rounded-xl items-center justify-center shadow-sm">
               <Package size={18} color="white" />
            </View>
@@ -97,9 +98,16 @@ export default function MyBookings() {
              <Text className="text-lg font-black text-slate-900 tracking-tighter">₹{item.totalAmount || '0'}</Text>
            </View>
         </View>
-        <View className="w-12 h-12 bg-slate-50 rounded-2xl items-center justify-center">
-           <ChevronRight size={20} color="#94a3b8" />
-        </View>
+        
+        {item.paymentStatus === 'Success' && (
+          <TouchableOpacity 
+            onPress={() => router.push(`/invoice/${item._id}`)}
+            className="bg-blue-50 px-4 py-2 rounded-xl flex-row items-center gap-2"
+          >
+            <Printer size={14} color="#2563eb" />
+            <Text className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Receipt</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </TouchableOpacity>
   );
