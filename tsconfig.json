@@ -12,11 +12,11 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true
   },
   "include": [
     "services/**/*.ts",
     "shared/**/*.ts"
-  ],
-  "extends": "expo/tsconfig.base"
+  ]
 }
