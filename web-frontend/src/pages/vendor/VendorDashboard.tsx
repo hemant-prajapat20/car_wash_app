@@ -103,6 +103,7 @@ export const VendorDashboard: React.FC = () => {
             {recentBookings.length > 0 ? (
               [...recentBookings]
                 .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .slice(0, 5)
                 .map((bk, i) => (
                 <motion.div 
                   initial={{ opacity: 0, x: -10 }}

@@ -84,14 +84,24 @@ export const BookService: React.FC = () => {
   const [homeAddress, setHomeAddress] = useState({ address: '', city: '' });
   const [paymentMode, setPaymentMode] = useState<'Online' | 'Cash'>('Online');
 
+  // Dynamic Booking Calendar Date Selection
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
+
   /* ── Fetch ────────────────────────────────────────── */
   useEffect(() => { fetchVehicles(); }, []);
+
+  useEffect(() => {
+    setBookingData(prev => ({ ...prev, slot: null }));
+  }, [selectedDate]);
 
   useEffect(() => {
     if (!vendorId) { toast.error('Invalid vendor'); navigate('/customer/search'); return; }
     (async () => {
       try {
-        const res = await api.get(`/customer/vendors/${vendorId}`);
+        const res = await api.get(`/customer/vendors/${vendorId}?date=${selectedDate}`);
         if (res.data.success) {
           setVendor(res.data.data.vendor);
           setServices(res.data.data.services);
@@ -100,7 +110,7 @@ export const BookService: React.FC = () => {
       } catch { toast.error('Failed to load vendor schedule.'); }
       finally { setFetching(false); }
     })();
-  }, [vendorId, navigate]);
+  }, [vendorId, navigate, selectedDate]);
 
   const fetchVehicles = async () => {
     try {
@@ -143,7 +153,7 @@ export const BookService: React.FC = () => {
         vendorId,
         vehicle: bookingData.vehicle,
         service: bookingData.service,
-        slot: { date: new Date(), time: bookingData.slot.startTime },
+        slot: { date: new Date(selectedDate), time: bookingData.slot.startTime },
         paymentMode,
         serviceType,
         homeAddress: serviceType === 'Home' ? homeAddress : undefined
@@ -462,6 +472,17 @@ export const BookService: React.FC = () => {
                 </div>
               )}
 
+              {/* Service Date Picker Panel */}
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Select Service Date</label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={e => setSelectedDate(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-lg px-3.5 py-2.5 text-xs outline-none focus:border-blue-400 transition-all font-semibold text-slate-700 shadow-sm"
+                />
+              </div>
+
               <div className="pb-2">
                 <h2 className="text-base font-bold text-slate-900">Select Time Slot</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Choose an available appointment time</p>
@@ -504,6 +525,7 @@ export const BookService: React.FC = () => {
                   {[
                     ['Service',  bookingData.service?.name,  `$${bookingData.service?.price}`],
                     ['Location',  serviceType === 'Home' ? 'Doorstep Service' : 'Shop Visit', null],
+                    ['Date',      selectedDate, null],
                     ['Time',     bookingData.slot?.startTime, null],
                     ['Vehicle',  `${bookingData.vehicle?.make} ${bookingData.vehicle?.model}`, null],
                   ].map(([label, left, right]) => (

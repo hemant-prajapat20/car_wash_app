@@ -101,18 +101,34 @@ export const ManageBookings: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-2 mb-4 pt-3 border-t border-slate-50">
+              <div className="space-y-2 mb-4 pt-3 border-t border-slate-50 text-[10px]">
                  <div className="flex items-center gap-2 text-slate-500">
-                   <Calendar size={12} className="shrink-0" />
-                   <span className="text-[10px] font-bold truncate">
-                     {new Date(booking.slot?.date).toLocaleDateString()} at {booking.slot?.time} AM
+                   <Calendar size={12} className="shrink-0 text-blue-500" />
+                   <span className="font-bold truncate">
+                     Scheduled: {new Date(booking.slot?.date).toLocaleDateString()} at {booking.slot?.time}
                    </span>
                  </div>
-                 <div className="flex items-center gap-2 text-blue-600">
-                   <CheckCircle2 size={12} className="shrink-0" />
-                   <span className="text-[10px] font-bold truncate">
+                 <div className="flex items-center gap-2 text-slate-500">
+                   <Clock size={12} className="shrink-0 text-indigo-500" />
+                   <span className="font-bold truncate">
+                     Placed: {new Date(booking.createdAt).toLocaleString()}
+                   </span>
+                 </div>
+                 <div className="flex items-center gap-2 text-slate-600">
+                   <CheckCircle2 size={12} className="shrink-0 text-emerald-500" />
+                   <span className="font-bold truncate">
                      {booking.vehicle?.make} {booking.vehicle?.model} • {booking.vehicle?.plateNumber}
                    </span>
+                 </div>
+                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-dashed border-slate-100 text-[9px] font-bold text-slate-400">
+                   <div>
+                     <span className="uppercase tracking-widest block text-[8px] text-slate-300">Payment Mode</span>
+                     <span className="text-slate-700 font-black">{booking.paymentMode || 'Online'}</span>
+                   </div>
+                   <div>
+                     <span className="uppercase tracking-widest block text-[8px] text-slate-300">Customer ID</span>
+                     <span className="font-mono text-slate-600 block truncate">{booking.customer?._id || booking.customer}</span>
+                   </div>
                  </div>
               </div>
 

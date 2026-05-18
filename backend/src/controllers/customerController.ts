@@ -47,6 +47,7 @@ export const searchVendors = asyncHandler(async (req: Request, res: Response) =>
 
 export const getVendorDetails = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { vendorId } = req.params;
+  const { date } = req.query; // YYYY-MM-DD format
 
   const vendor = await User.findOne({ _id: vendorId, role: 'vendor', isActive: true }).select('-password');
   if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
@@ -55,7 +56,32 @@ export const getVendorDetails = asyncHandler(async (req: AuthRequest, res: Respo
   const slots = await Slot.find({ vendorId, isAvailable: true });
   const reviews = await Review.find({ vendor: vendorId }).populate('customer', 'fullName');
 
-  res.json({ success: true, data: { vendor, services, slots, reviews } });
+  let dynamicSlots = slots.map(s => s.toObject());
+  if (date) {
+    const bookingDate = new Date(date as string);
+    bookingDate.setUTCHours(12, 0, 0, 0);
+
+    const startOfDate = new Date(bookingDate);
+    startOfDate.setUTCHours(0, 0, 0, 0);
+    const endOfDate = new Date(bookingDate);
+    endOfDate.setUTCHours(23, 59, 59, 999);
+
+    const bookings = await Booking.find({
+      vendor: vendorId,
+      'slot.date': { $gte: startOfDate, $lte: endOfDate },
+      status: { $ne: 'Cancelled' }
+    });
+
+    dynamicSlots = slots.map(s => {
+      const slotBookings = bookings.filter(b => b.slot.time === s.startTime);
+      return {
+        ...s.toObject(),
+        currentBookings: slotBookings.length
+      };
+    });
+  }
+
+  res.json({ success: true, data: { vendor, services, slots: dynamicSlots, reviews } });
 });
 
 export const createBooking = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -73,10 +99,26 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
     }
   }
 
-  // 2. Check slot availability
+  // 2. Standardize date & dynamic slot capacity check
+  const bookingDate = new Date(slot.date);
+  bookingDate.setUTCHours(12, 0, 0, 0);
+
+  const startOfDate = new Date(bookingDate);
+  startOfDate.setUTCHours(0, 0, 0, 0);
+  const endOfDate = new Date(bookingDate);
+  endOfDate.setUTCHours(23, 59, 59, 999);
+
   const slotDoc = await Slot.findOne({ vendorId: vendorId, startTime: slot.time });
-  if (slotDoc && slotDoc.currentBookings >= slotDoc.maxBookings) {
-    return res.status(400).json({ success: false, message: 'Slot is full' });
+  
+  const bookingCount = await Booking.countDocuments({
+    vendor: vendorId,
+    'slot.date': { $gte: startOfDate, $lte: endOfDate },
+    'slot.time': slot.time,
+    status: { $ne: 'Cancelled' }
+  });
+
+  if (slotDoc && bookingCount >= slotDoc.maxBookings) {
+    return res.status(400).json({ success: false, message: 'Slot is full for this date' });
   }
 
   // 3. Create Booking (Cash goes straight to 'Confirmed', Online stays 'Pending' until signature verified)
@@ -87,7 +129,10 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
     vendor: vendorId,
     vehicle,
     service,
-    slot,
+    slot: {
+      date: bookingDate,
+      time: slot.time
+    },
     totalAmount: service.price,
     status: bookingStatus,
     paymentMode,
@@ -95,13 +140,7 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
     homeAddress: serviceType === 'Home' ? homeAddress : undefined
   });
 
-  // 4. Update Slot counter
-  if (slotDoc) {
-    slotDoc.currentBookings += 1;
-    await slotDoc.save();
-  }
-
-  // 5. Create Notification for Vendor
+  // 4. Create Notification for Vendor
   await createNotification({
     receiverId: vendorId,
     receiverRole: 'vendor',

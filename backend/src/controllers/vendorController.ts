@@ -67,7 +67,7 @@ export const getVendorDashboard = asyncHandler(async (req: any, res: Response) =
     const recentBookings = await Booking.find({ vendor: vendorObjectId })
       .populate('customer', 'fullName email')
       .sort({ createdAt: -1 })
-      .limit(5);
+      .limit(50);
 
     res.json({
       success: true,
