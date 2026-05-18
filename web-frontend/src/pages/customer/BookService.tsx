@@ -497,21 +497,42 @@ export const BookService: React.FC = () => {
                   {slots.map((t: any) => {
                     const isSelected = bookingData.slot?._id === t._id;
                     const isFull     = t.currentBookings >= t.maxBookings;
+
+                    // Calculate if slot time or date is in the past
+                    const localToday = new Date();
+                    const year = localToday.getFullYear();
+                    const month = String(localToday.getMonth() + 1).padStart(2, '0');
+                    const day = String(localToday.getDate()).padStart(2, '0');
+                    const todayStr = `${year}-${month}-${day}`;
+
+                    let isPassed = false;
+                    if (selectedDate < todayStr) {
+                      isPassed = true;
+                    } else if (selectedDate === todayStr) {
+                      const currentHours = localToday.getHours().toString().padStart(2, '0');
+                      const currentMinutes = localToday.getMinutes().toString().padStart(2, '0');
+                      const currentTimeString = `${currentHours}:${currentMinutes}`;
+                      isPassed = t.startTime < currentTimeString;
+                    }
+
+                    const isDisabled = isFull || isPassed;
+
                     return (
                       <button
                         key={t._id}
-                        disabled={isFull}
+                        disabled={isDisabled}
                         onClick={() => setBookingData({ ...bookingData, slot: t })}
                         className={cn(
                           'py-3.5 px-2 rounded-xl text-xs font-bold border transition-all flex flex-col items-center gap-1',
                           isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-md' :
-                          isFull     ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' :
+                          isDisabled ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' :
                           'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
                         )}
                       >
                         <span>{t.startTime}</span>
                         <span className="text-[9px] opacity-70">— {t.endTime}</span>
                         {isFull && <span className="text-[8px] text-red-400 font-black uppercase">Full</span>}
+                        {isPassed && <span className="text-[8px] text-slate-400 font-black uppercase">Passed</span>}
                       </button>
                     );
                   })}

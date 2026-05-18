@@ -103,6 +103,30 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
   const bookingDate = new Date(slot.date);
   bookingDate.setUTCHours(12, 0, 0, 0);
 
+  // Validate that the slot is not in the past!
+  const localToday = new Date();
+  const year = localToday.getFullYear();
+  const month = String(localToday.getMonth() + 1).padStart(2, '0');
+  const day = String(localToday.getDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`;
+
+  // Get selected date string safely in YYYY-MM-DD
+  const selYear = bookingDate.getFullYear();
+  const selMonth = String(bookingDate.getMonth() + 1).padStart(2, '0');
+  const selDay = String(bookingDate.getDate()).padStart(2, '0');
+  const selectedDateStr = `${selYear}-${selMonth}-${selDay}`;
+
+  if (selectedDateStr < todayStr) {
+    return res.status(400).json({ success: false, message: 'Cannot book slots on a past date.' });
+  } else if (selectedDateStr === todayStr) {
+    const currentHours = localToday.getHours().toString().padStart(2, '0');
+    const currentMinutes = localToday.getMinutes().toString().padStart(2, '0');
+    const currentTimeString = `${currentHours}:${currentMinutes}`;
+    if (slot.time < currentTimeString) {
+      return res.status(400).json({ success: false, message: 'This slot time has already passed for today.' });
+    }
+  }
+
   const startOfDate = new Date(bookingDate);
   startOfDate.setUTCHours(0, 0, 0, 0);
   const endOfDate = new Date(bookingDate);
