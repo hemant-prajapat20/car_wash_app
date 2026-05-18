@@ -16,7 +16,6 @@
     "noEmit": true
   },
   "include": [
-    "services/**/*.ts",
     "shared/**/*.ts"
   ]
 }

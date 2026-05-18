@@ -60,7 +60,7 @@ export const VendorSidebar: React.FC<VendorSidebarProps> = ({
           key={item.id}
           to={item.path}
           onClick={() => closeMobile && setMobileOpen(false)}
-          className={({ isActive }) => cn(
+          className={({ isActive }: { isActive: boolean }) => cn(
             'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group relative',
             isActive
               ? 'bg-blue-50 text-blue-600 font-semibold'

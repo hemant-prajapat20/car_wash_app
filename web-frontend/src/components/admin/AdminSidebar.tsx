@@ -77,14 +77,14 @@ export const AdminSidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               key={item.path}
               to={item.path}
               onClick={() => setIsOpen(false)}
-              className={({ isActive }) => `
+              className={({ isActive }: { isActive: boolean }) => `
                 flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 group
                 ${isActive 
                   ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' 
                   : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}
               `}
             >
-              {({ isActive }) => (
+              {({ isActive }: { isActive: boolean }) => (
                 <>
                   <item.icon size={18} className={isActive ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-600'} />
                   <span className="text-xs font-bold tracking-wide">{item.name}</span>
