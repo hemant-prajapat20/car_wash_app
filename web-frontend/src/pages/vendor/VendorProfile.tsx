@@ -26,7 +26,7 @@ export const VendorProfile: React.FC = () => {
     fetchProfile();
   }, []);
 
-  const handleUpdate = async (field: string, value: string) => {
+  const handleUpdate = async (field: string, value: any) => {
     setSaving(true);
     try {
       const updated = { ...profile, [field]: value };
@@ -103,6 +103,27 @@ export const VendorProfile: React.FC = () => {
                   <button className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Edit2 size={10} className="text-blue-600" />
                   </button>
+              </div>
+
+              {/* Home Service Toggle Support */}
+              <div className="col-span-2 p-3 bg-blue-50/40 border border-blue-100/50 rounded-xl flex items-center justify-between mt-1">
+                <div>
+                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Home Service Support</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Offer convenient mobile washing at customer locations</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleUpdate('isHomeServiceAvailable', !profile?.isHomeServiceAvailable)}
+                  className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 focus:outline-none flex items-center ${
+                    profile?.isHomeServiceAvailable ? 'bg-blue-600' : 'bg-slate-200'
+                  }`}
+                >
+                  <div
+                    className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ${
+                      profile?.isHomeServiceAvailable ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
               </div>
            </div>
         </div>

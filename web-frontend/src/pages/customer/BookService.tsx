@@ -79,6 +79,11 @@ export const BookService: React.FC = () => {
   // Invoice State
   const [invoiceId, setInvoiceId] = useState<string | null>(null);
 
+  // Home Service & Cash Payment States
+  const [serviceType, setServiceType] = useState<'Shop' | 'Home'>('Shop');
+  const [homeAddress, setHomeAddress] = useState({ address: '', city: '' });
+  const [paymentMode, setPaymentMode] = useState<'Online' | 'Cash'>('Online');
+
   /* ── Fetch ────────────────────────────────────────── */
   useEffect(() => { fetchVehicles(); }, []);
 
@@ -133,12 +138,15 @@ export const BookService: React.FC = () => {
   const handleFinalBooking = async () => {
     setLoading(true);
     try {
-      // 1. Create Booking first (Status: Pending)
+      // 1. Create Booking first (Status: Pending or Confirmed based on paymentMode)
       const bookingRes = await api.post('/customer/bookings', {
         vendorId,
         vehicle: bookingData.vehicle,
         service: bookingData.service,
         slot: { date: new Date(), time: bookingData.slot.startTime },
+        paymentMode,
+        serviceType,
+        homeAddress: serviceType === 'Home' ? homeAddress : undefined
       });
 
       if (!bookingRes.data.success) {
@@ -147,7 +155,16 @@ export const BookService: React.FC = () => {
 
       const booking = bookingRes.data.data;
 
-      // 2. Load Razorpay script
+      // 2. Bypass Razorpay payment flow if Cash is selected
+      if (paymentMode === 'Cash') {
+        setInvoiceId(booking._id);
+        setCurrentStep(4);
+        toast.success('Booking confirmed successfully! Pay cash after service.');
+        setLoading(false);
+        return;
+      }
+
+      // 3. Load Razorpay script for Online payment
       const res = await loadRazorpayScript();
       if (!res) {
         toast.error('Razorpay SDK failed to load. Are you online?');
@@ -155,7 +172,7 @@ export const BookService: React.FC = () => {
         return;
       }
 
-      // 3. Create Order on Backend
+      // 4. Create Order on Backend
       const orderRes = await api.post('/payment/create-order', {
         amount: bookingData.service.price,
       });
@@ -166,7 +183,7 @@ export const BookService: React.FC = () => {
 
       const order = orderRes.data.data;
 
-      // 4. Open Razorpay Checkout
+      // 5. Open Razorpay Checkout
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Enter the Key ID generated from the Dashboard
         amount: order.amount,
@@ -176,7 +193,7 @@ export const BookService: React.FC = () => {
         order_id: order.id,
         handler: async function (response: any) {
           try {
-            // 5. Verify Payment on Backend
+            // 6. Verify Payment on Backend
             const verifyRes = await api.post('/payment/verify', {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -226,8 +243,14 @@ export const BookService: React.FC = () => {
   const nextStep = () => {
     if (currentStep === 1 && !bookingData.vehicle) return toast.error('Please select a vehicle');
     if (currentStep === 2 && !bookingData.service) return toast.error('Please select a service');
-    if (currentStep === 3 && !bookingData.slot)    return toast.error('Please select a time slot');
-    if (currentStep === 3) handleFinalBooking();
+    if (currentStep === 3) {
+      if (!bookingData.slot) return toast.error('Please select a time slot');
+      if (serviceType === 'Home') {
+        if (!homeAddress.address.trim()) return toast.error('Please enter a street address for home service');
+        if (!homeAddress.city.trim()) return toast.error('Please enter a city for home service');
+      }
+      handleFinalBooking();
+    }
     else setCurrentStep(p => p + 1);
   };
 
@@ -378,7 +401,68 @@ export const BookService: React.FC = () => {
           {/* ── STEP 3: Slot ─────────────────────────── */}
           {currentStep === 3 && (
             <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-5">
-              <div className="pb-4 border-b border-slate-100">
+              
+              {/* Home Service Selector if vendor allows it */}
+              {vendor?.isHomeServiceAvailable && (
+                <div className="space-y-3 pb-3 border-b border-slate-100">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Service Location</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { type: 'Shop', title: 'At Shop', desc: 'Bring your vehicle to our service shop' },
+                      { type: 'Home', title: 'At Home', desc: 'Convenient mobile wash at your doorstep' },
+                    ].map(loc => {
+                      const active = serviceType === loc.type;
+                      return (
+                        <button
+                          key={loc.type}
+                          type="button"
+                          onClick={() => setServiceType(loc.type as any)}
+                          className={cn(
+                            'p-3 border-2 rounded-xl text-left transition-all',
+                            active ? 'border-blue-600 bg-blue-50/50 shadow-md shadow-blue-50' : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'
+                          )}
+                        >
+                          <p className="text-xs font-black text-slate-800">{loc.title}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{loc.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Home address form fields */}
+              {serviceType === 'Home' && (
+                <div className="p-4 bg-slate-50/80 border border-slate-100 rounded-xl space-y-3 animate-in slide-in-from-top-2 duration-200">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Home Service Address</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Street Address</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="e.g. Flat 101, Green Meadows"
+                        value={homeAddress.address}
+                        onChange={e => setHomeAddress({ ...homeAddress, address: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400 transition-all font-semibold text-slate-700"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">City</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="e.g. Pune"
+                        value={homeAddress.city}
+                        onChange={e => setHomeAddress({ ...homeAddress, city: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400 transition-all font-semibold text-slate-700"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="pb-2">
                 <h2 className="text-base font-bold text-slate-900">Select Time Slot</h2>
                 <p className="text-xs text-slate-400 mt-0.5">Choose an available appointment time</p>
               </div>
@@ -419,6 +503,7 @@ export const BookService: React.FC = () => {
                   <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3">Booking Summary</p>
                   {[
                     ['Service',  bookingData.service?.name,  `$${bookingData.service?.price}`],
+                    ['Location',  serviceType === 'Home' ? 'Doorstep Service' : 'Shop Visit', null],
                     ['Time',     bookingData.slot?.startTime, null],
                     ['Vehicle',  `${bookingData.vehicle?.make} ${bookingData.vehicle?.model}`, null],
                   ].map(([label, left, right]) => (
@@ -429,6 +514,36 @@ export const BookService: React.FC = () => {
                   ))}
                 </div>
               )}
+
+              {/* Payment Method Selector */}
+              {bookingData.slot && (
+                <div className="space-y-3 pt-3 border-t border-slate-100">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Payment Option</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { mode: 'Online', title: 'Pay Online', desc: 'Secure digital checkout via Razorpay' },
+                      { mode: 'Cash', title: 'Pay via Cash', desc: 'Pay cash to our worker after service' },
+                    ].map(pay => {
+                      const active = paymentMode === pay.mode;
+                      return (
+                        <button
+                          key={pay.mode}
+                          type="button"
+                          onClick={() => setPaymentMode(pay.mode as any)}
+                          className={cn(
+                            'p-3 border-2 rounded-xl text-left transition-all',
+                            active ? 'border-blue-600 bg-blue-50/50 shadow-md shadow-blue-50' : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'
+                          )}
+                        >
+                          <p className="text-xs font-black text-slate-800">{pay.title}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{pay.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
             </motion.div>
           )}
 
@@ -487,7 +602,9 @@ export const BookService: React.FC = () => {
               >
                 {loading
                   ? <Loader2 size={14} className="animate-spin" />
-                  : currentStep === 3 ? 'Confirm & Pay' : 'Continue'
+                  : currentStep === 3
+                    ? (paymentMode === 'Cash' ? 'Confirm & Book' : 'Confirm & Pay')
+                    : 'Continue'
                 }
                 {!loading && <ChevronRight size={14} />}
               </button>

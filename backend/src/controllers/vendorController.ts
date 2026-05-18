@@ -92,9 +92,27 @@ export const getVendorDashboard = asyncHandler(async (req: any, res: Response) =
 export const updateBookingStatus = asyncHandler(async (req: any, res: Response) => {
   const { id } = req.params;
   const { status } = req.body;
-  const booking = await Booking.findOneAndUpdate(
-    { _id: id, vendor: req.user._id },
-    { status },
+
+  const currentBooking = await Booking.findOne({ _id: id, vendor: req.user._id });
+  if (!currentBooking) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+  const updateFields: any = { status };
+
+  if (status === 'Completed') {
+    updateFields.completedAt = new Date();
+    if (currentBooking.paymentMode === 'Cash') {
+      updateFields.paymentStatus = 'Success';
+      if (!currentBooking.transactionId) {
+        const date = new Date();
+        const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
+        updateFields.transactionId = `TXN-CSH-${dateStr}-${currentBooking._id.toString().slice(-6).toUpperCase()}`;
+      }
+    }
+  }
+
+  const booking = await Booking.findByIdAndUpdate(
+    currentBooking._id,
+    updateFields,
     { new: true }
   );
   if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });

@@ -28,6 +28,12 @@ export interface IBooking extends Document {
   createdAt: Date;
   updatedAt: Date;
   razorpayPaymentId?: string;
+  paymentMode: 'Online' | 'Cash';
+  serviceType: 'Shop' | 'Home';
+  homeAddress?: {
+    address: string;
+    city: string;
+  };
 }
 
 const BookingSchema: Schema = new Schema({
@@ -57,7 +63,13 @@ const BookingSchema: Schema = new Schema({
   transactionId: { type: String },
   razorpayPaymentId: { type: String },
   totalAmount: { type: Number, required: true },
-  completedAt: { type: Date }
+  completedAt: { type: Date },
+  paymentMode: { type: String, enum: ['Online', 'Cash'], default: 'Online' },
+  serviceType: { type: String, enum: ['Shop', 'Home'], default: 'Shop' },
+  homeAddress: {
+    address: { type: String },
+    city: { type: String }
+  }
 }, { timestamps: true });
 
 // Auto-generate BookingId

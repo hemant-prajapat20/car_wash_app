@@ -18,6 +18,7 @@ export interface IUser extends Document {
   companyName?: string;
   businessLocation?: string;
   serviceArea?: string;
+  isHomeServiceAvailable?: boolean;
   services?: Array<{
     name: string;
     price: number;
@@ -60,6 +61,7 @@ const UserSchema: Schema = new Schema({
   companyName: { type: String },
   businessLocation: { type: String },
   serviceArea: { type: String },
+  isHomeServiceAvailable: { type: Boolean, default: false },
   services: [{
     name: String,
     price: Number,

@@ -60,15 +60,28 @@ export const getVendorDetails = asyncHandler(async (req: AuthRequest, res: Respo
 
 export const createBooking = asyncHandler(async (req: AuthRequest, res: Response) => {
   const customerId = req.user?._id;
-  const { vendorId, vehicle, service, slot } = req.body;
+  const { vendorId, vehicle, service, slot, paymentMode = 'Online', serviceType = 'Shop', homeAddress } = req.body;
 
-  // 1. Check slot availability
+  // 1. Validate Home Service parameters if selected
+  if (serviceType === 'Home') {
+    if (!homeAddress || !homeAddress.address || !homeAddress.city) {
+      return res.status(400).json({ success: false, message: 'Home address and city are required for home service bookings.' });
+    }
+    const vendorDoc = await User.findById(vendorId);
+    if (!vendorDoc || !vendorDoc.isHomeServiceAvailable) {
+      return res.status(400).json({ success: false, message: 'This vendor does not support home service.' });
+    }
+  }
+
+  // 2. Check slot availability
   const slotDoc = await Slot.findOne({ vendorId: vendorId, startTime: slot.time });
   if (slotDoc && slotDoc.currentBookings >= slotDoc.maxBookings) {
     return res.status(400).json({ success: false, message: 'Slot is full' });
   }
 
-  // 2. Create Booking
+  // 3. Create Booking (Cash goes straight to 'Confirmed', Online stays 'Pending' until signature verified)
+  const bookingStatus = paymentMode === 'Cash' ? 'Confirmed' : 'Pending';
+
   const booking = await Booking.create({
     customer: customerId,
     vendor: vendorId,
@@ -76,31 +89,34 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
     service,
     slot,
     totalAmount: service.price,
-    status: 'Pending'
+    status: bookingStatus,
+    paymentMode,
+    serviceType,
+    homeAddress: serviceType === 'Home' ? homeAddress : undefined
   });
 
-  // 3. Update Slot counter
+  // 4. Update Slot counter
   if (slotDoc) {
     slotDoc.currentBookings += 1;
     await slotDoc.save();
   }
 
-  // 4. Create Notification for Vendor
+  // 5. Create Notification for Vendor
   await createNotification({
     receiverId: vendorId,
     receiverRole: 'vendor',
     title: 'New Booking Received',
-    message: `You have a new booking for ${vehicle.make} ${vehicle.model} on ${slot.time}.`,
+    message: `You have a new booking for ${vehicle.make} ${vehicle.model} on ${slot.time}.${serviceType === 'Home' ? ' [HOME SERVICE]' : ''}`,
     type: 'booking_created',
     status: 'info'
   });
 
-  // 5. Create Confirmation Notification for Customer
+  // 6. Create Confirmation Notification for Customer
   await createNotification({
     receiverId: customerId,
     receiverRole: 'customer',
     title: 'Booking Successful! ✅',
-    message: `Your booking for ${service.name} has been placed successfully for ${slot.time}.`,
+    message: `Your booking for ${service.name} has been placed successfully for ${slot.time}.${paymentMode === 'Cash' ? ' Payment mode: Cash.' : ''}`,
     type: 'booking_created',
     status: 'success'
   });
