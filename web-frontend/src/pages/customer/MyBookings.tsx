@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Calendar, Clock, Star, 
-  ChevronRight, Loader2, AlertCircle, FileText
+  ChevronRight, Loader2, AlertCircle, FileText, X
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/axiosConfig';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -33,19 +34,55 @@ export const MyBookings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Review states
+  const [selectedBookingForReview, setSelectedBookingForReview] = useState<any>(null);
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewComment, setReviewComment] = useState<string>('');
+  const [submittingReview, setSubmittingReview] = useState<boolean>(false);
+
+  const fetchMyBookings = async () => {
+    try {
+      const res = await api.get('/customer/my-bookings');
+      if (res.data.success) setBookings(res.data.data);
+    } catch (err) {
+      console.error('Failed to fetch my bookings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchMyBookings = async () => {
-      try {
-        const res = await api.get('/customer/my-bookings');
-        if (res.data.success) setBookings(res.data.data);
-      } catch (err) {
-        console.error('Failed to fetch my bookings');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchMyBookings();
   }, []);
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBookingForReview) return;
+    if (!reviewComment.trim()) return toast.error('Please enter your feedback review.');
+
+    try {
+      setSubmittingReview(true);
+      const res = await api.post('/customer/reviews', {
+        bookingId: selectedBookingForReview._id,
+        rating: reviewRating,
+        comment: reviewComment
+      });
+      if (res.data.success) {
+        toast.success('Thank you! Your feedback has been sent to the vendor.');
+        setSelectedBookingForReview(null);
+        setReviewRating(5);
+        setReviewComment('');
+        // Refresh bookings list to update UI if needed
+        fetchMyBookings();
+      } else {
+        toast.error('Failed to submit review');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error submitting review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   if (loading) return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
 
@@ -88,7 +125,14 @@ export const MyBookings: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                  {booking.status === 'Completed' && (
-                   <button className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-100">
+                   <button 
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       setSelectedBookingForReview(booking);
+                     }}
+                     className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-100"
+                     title="Rate & Feedback"
+                   >
                      <Star size={10} className="fill-white" />
                    </button>
                  )}
@@ -115,6 +159,96 @@ export const MyBookings: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* ── Rate & Review Modal ─────────────────────── */}
+      <AnimatePresence>
+        {selectedBookingForReview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              className="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-slate-100 overflow-hidden"
+            >
+              {/* Modal header */}
+              <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Rate & Review</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Share your wash experience with {selectedBookingForReview.vendor?.companyName}</p>
+                </div>
+                <button
+                  onClick={() => setSelectedBookingForReview(null)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-all"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleReviewSubmit} className="p-6 space-y-5">
+                {/* Star Rating Select Area */}
+                <div className="space-y-2 text-center">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Select Rating Stars</label>
+                  <div className="flex justify-center gap-1.5">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className="p-1 hover:scale-125 transition-transform"
+                      >
+                        <Star 
+                          size={32} 
+                          className={star <= reviewRating ? 'text-amber-500 fill-amber-500' : 'text-slate-200'} 
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Comment Textarea */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Write Review Feedback</label>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder="Describe your service quality, speed, and worker behavior..."
+                    value={reviewComment}
+                    onChange={e => setReviewComment(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs outline-none focus:border-blue-400 focus:bg-white transition-all font-semibold text-slate-700 resize-none"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedBookingForReview(null)}
+                    className="flex-1 py-3 text-xs font-bold text-slate-400 uppercase tracking-widest hover:text-slate-700 transition-colors border border-slate-200 rounded-xl"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingReview}
+                    className="flex-[2] py-3 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {submittingReview ? (
+                      <>
+                        <Loader2 size={12} className="animate-spin" /> Submitting...
+                      </>
+                    ) : 'Submit Review'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

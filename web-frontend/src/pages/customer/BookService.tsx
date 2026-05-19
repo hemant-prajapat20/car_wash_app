@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Car, Clock, ChevronRight, ArrowLeft, CheckCircle2, 
-  Loader2, Plus, X, Printer
+  Loader2, Plus, X, Printer, Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -67,6 +67,7 @@ export const BookService: React.FC = () => {
   const [vendor,   setVendor]   = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [slots,    setSlots]    = useState<any[]>([]);
+  const [reviews,  setReviews]  = useState<any[]>([]);
 
   const [bookingData, setBookingData] = useState<BookingData>({
     vehicle: null, service: null, slot: null,
@@ -106,6 +107,7 @@ export const BookService: React.FC = () => {
           setVendor(res.data.data.vendor);
           setServices(res.data.data.services);
           setSlots(res.data.data.slots);
+          setReviews(res.data.data.reviews || []);
         }
       } catch { toast.error('Failed to load vendor schedule.'); }
       finally { setFetching(false); }
@@ -736,6 +738,62 @@ export const BookService: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Vendor Reviews Section ────────────────── */}
+      <div className="mt-8 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-50 mb-4 gap-3">
+          <div>
+            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+              <Star size={16} className="text-amber-500 fill-amber-500 animate-pulse" />
+              Customer Reviews & Feedback
+            </h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Real feedback left by previous customers</p>
+          </div>
+          {reviews.length > 0 && (
+            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100 rounded-xl px-3 py-1.5 self-start sm:self-auto">
+              <Star size={14} className="text-amber-500 fill-amber-500" />
+              <span className="text-xs font-black text-amber-700">
+                {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)} / 5.0
+              </span>
+              <span className="text-[9px] font-bold text-slate-400">({reviews.length})</span>
+            </div>
+          )}
+        </div>
+
+        {reviews.length === 0 ? (
+          <div className="py-8 text-center text-slate-400">
+            <p className="text-xs font-semibold italic">No feedback left for this vendor yet. Be the first to try their service!</p>
+          </div>
+        ) : (
+          <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+            {reviews.map((r) => (
+              <div key={r._id} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center uppercase">
+                      {r.customer?.fullName?.slice(0, 2) || 'CS'}
+                    </div>
+                    <span className="text-xs font-black text-slate-800">{r.customer?.fullName || 'Customer'}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    {Array.from({ length: 5 }).map((_, idx) => (
+                      <Star 
+                        key={idx} 
+                        size={11} 
+                        className={idx < r.rating ? 'text-amber-500 fill-amber-500' : 'text-slate-200'} 
+                      />
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[11px] font-medium leading-relaxed text-slate-600 italic">"{r.comment}"</p>
+                <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                  Submitted {new Date(r.createdAt || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
     </div>
   );
