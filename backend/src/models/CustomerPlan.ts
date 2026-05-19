@@ -68,12 +68,11 @@ const CustomerPlanSchema = new Schema<ICustomerPlan>(
   { timestamps: true }
 );
 
-// Generate QR token before saving if not present
-CustomerPlanSchema.pre('validate', function (next: any) {
+// Generate QR token before saving if not present (Mongoose 7+ async hook)
+CustomerPlanSchema.pre('validate', async function () {
   if (!this.qrToken) {
     this.qrToken = crypto.randomBytes(32).toString('hex');
   }
-  next();
 });
 
 export default mongoose.model<ICustomerPlan>('CustomerPlan', CustomerPlanSchema);

@@ -14,21 +14,25 @@ import {
 
 const router = express.Router();
 
-// Vendor Routes
+// ─── VENDOR ROUTES ──────────────────────────────────────────────────────────
+
+// Static paths MUST come before wildcard /:id routes
+router.post('/vendor/scan', protect, authorize('vendor'), scanPlanQR);
+
 router.route('/vendor')
   .post(protect, authorize('vendor'), createServicePlan)
   .get(protect, authorize('vendor'), getVendorServicePlans);
 
+// Wildcard routes last
+router.patch('/vendor/:id/toggle', protect, authorize('vendor'), toggleServicePlanStatus);
 router.route('/vendor/:id')
   .put(protect, authorize('vendor'), updateServicePlan);
 
-router.patch('/vendor/:id/toggle', protect, authorize('vendor'), toggleServicePlanStatus);
-router.post('/vendor/scan', protect, authorize('vendor'), scanPlanQR);
+// ─── CUSTOMER ROUTES ─────────────────────────────────────────────────────────
 
-// Customer Routes
 router.get('/customer/vendor/:vendorId', protect, getActiveServicePlansByVendor);
-router.post('/customer/purchase', protect, authorize('customer'), purchasePlan);
-router.get('/customer/my-plans', protect, authorize('customer'), getMyPlans);
-router.get('/customer/my-plans/:id', protect, authorize('customer'), getCustomerPlanById);
+router.post('/customer/purchase', protect, purchasePlan);
+router.get('/customer/my-plans', protect, getMyPlans);
+router.get('/customer/my-plans/:id', protect, getCustomerPlanById);
 
 export default router;

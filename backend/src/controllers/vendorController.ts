@@ -5,6 +5,7 @@ import Service from '../models/Service';
 import Worker from '../models/Worker';
 import Booking from '../models/Booking';
 import User from '../models/User';
+import CustomerPlan from '../models/CustomerPlan';
 import { asyncHandler } from '../middleware/auth';
 import { createNotification } from './notificationController';
 
@@ -64,10 +65,65 @@ export const getVendorDashboard = asyncHandler(async (req: any, res: Response) =
       } }
     ]);
 
+    // Plan Revenue Aggregation
+    const planRevenueResult = await CustomerPlan.aggregate([
+      { $match: { vendor: vendorObjectId, paymentStatus: 'Success' } },
+      { $lookup: {
+          from: 'serviceplans',
+          localField: 'servicePlan',
+          foreignField: '_id',
+          as: 'planDetails'
+      } },
+      { $unwind: '$planDetails' },
+      { $group: { _id: null, total: { $sum: '$planDetails.price' } } }
+    ]);
+
+    const bookingRevenue = revenueResult[0]?.total || 0;
+    const planRevenue = planRevenueResult[0]?.total || 0;
+    const totalRevenue = bookingRevenue + planRevenue;
+
     const recentBookings = await Booking.find({ vendor: vendorObjectId })
       .populate('customer', 'fullName email')
       .sort({ createdAt: -1 })
       .limit(50);
+
+    const recentPlans = await CustomerPlan.find({ vendor: vendorObjectId, paymentStatus: 'Success' })
+      .populate('customer', 'fullName email')
+      .populate('servicePlan', 'title price')
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    const mappedBookings = recentBookings.map(bk => ({
+      ...bk.toObject(),
+      isPlanPurchase: false,
+      activityType: 'Booking'
+    }));
+
+    const mappedPlans = recentPlans.map(pl => {
+      const plObj = pl.toObject();
+      return {
+        ...plObj,
+        bookingId: `PLN-${pl._id.toString().slice(-6).toUpperCase()}`,
+        service: {
+          name: (pl.servicePlan as any)?.title || 'Service Plan',
+          price: (pl.servicePlan as any)?.price || 0,
+          duration: 0
+        },
+        slot: {
+          date: pl.purchasedAt || pl.createdAt,
+          time: 'N/A'
+        },
+        status: pl.status === 'Active' ? 'Confirmed' : pl.status === 'Completed' ? 'Completed' : 'Pending',
+        isPlanPurchase: true,
+        activityType: 'Subscription Plan',
+        totalServices: pl.totalServices,
+        remainingServices: pl.remainingServices
+      };
+    });
+
+    const combinedActivities = [...mappedBookings, ...mappedPlans].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
     res.json({
       success: true,
@@ -77,11 +133,11 @@ export const getVendorDashboard = asyncHandler(async (req: any, res: Response) =
           completedBookings,
           pendingBookings,
           totalWorkers,
-          revenue: revenueResult[0]?.total || 0,
+          revenue: totalRevenue,
           popularSlot: popularSlotResult[0]?._id || 'N/A'
         },
         topCustomers: topCustomersResult,
-        recentBookings
+        recentBookings: combinedActivities
       }
     });
   } catch (err: any) {
@@ -440,12 +496,15 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
   const vendorId = req.user._id;
 
   try {
-    const transactions = await Booking.find({ vendor: vendorId })
+    const bookings = await Booking.find({ vendor: vendorId })
       .populate('customer vendor', 'fullName email phone address companyName businessLocation')
-      .sort({ createdAt: -1 })
       .select('transactionId totalAmount paymentStatus status createdAt customer vendor service');
 
-    const formattedTransactions = transactions.map(tx => {
+    const plans = await CustomerPlan.find({ vendor: vendorId, paymentStatus: 'Success' })
+      .populate('customer vendor servicePlan')
+      .select('servicePlan vehicle totalServices remainingServices status paymentStatus paymentMode purchasedAt customer vendor createdAt');
+
+    const formattedBookings = bookings.map(tx => {
       const txAny = tx as any;
       const subtotal = tx.totalAmount;
       const taxableAmount = parseFloat((subtotal / 1.18).toFixed(2));
@@ -457,7 +516,6 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
       const dateStr = `${dateObj.getFullYear()}${(dateObj.getMonth()+1).toString().padStart(2,'0')}${dateObj.getDate().toString().padStart(2,'0')}`;
       const invoiceNo = `INV/${dateObj.getFullYear()}/${(dateObj.getMonth()+1).toString().padStart(2,'0')}/${tx._id.toString().slice(-4).toUpperCase()}`;
       
-      // Pattern: TXN - YYYYMMDD - LAST_6_CHARS_OF_ID
       const displayTxnId = tx.transactionId?.startsWith('TXN') 
         ? tx.transactionId 
         : `TXN-${dateStr}-${tx._id.toString().slice(-6).toUpperCase()}`;
@@ -467,10 +525,10 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
         bookingId: tx._id.toString(),
         cust: (tx.customer as any)?.fullName || 'Walk-in',
         amt: `${tx.status === 'Cancelled' ? '-' : '+'}₹${tx.totalAmount}`,
-        date: dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-        time: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        date: dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        time: dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
         status: tx.paymentStatus === 'Success' ? 'Success' : tx.paymentStatus === 'Failed' ? 'Failed' : tx.status === 'Cancelled' ? 'Refund' : 'Pending',
-        // High-Fidelity Invoice Data
+        createdAt: tx.createdAt,
         invoiceData: {
           invoiceNo,
           transactionId: displayTxnId,
@@ -487,7 +545,199 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
       };
     });
 
-    res.json({ success: true, data: formattedTransactions });
+    const formattedPlans = plans.map(plan => {
+      const planAny = plan as any;
+      const subtotal = planAny.servicePlan?.price || 0;
+      const taxableAmount = parseFloat((subtotal / 1.18).toFixed(2));
+      const totalTax = parseFloat((subtotal - taxableAmount).toFixed(2));
+      const cgst = parseFloat((totalTax / 2).toFixed(2));
+      const sgst = parseFloat((totalTax / 2).toFixed(2));
+      
+      const dateObj = new Date(planAny.purchasedAt || planAny.createdAt);
+      const dateStr = `${dateObj.getFullYear()}${(dateObj.getMonth()+1).toString().padStart(2,'0')}${dateObj.getDate().toString().padStart(2,'0')}`;
+      const invoiceNo = `PLN/${dateObj.getFullYear()}/${(dateObj.getMonth()+1).toString().padStart(2,'0')}/${plan._id.toString().slice(-4).toUpperCase()}`;
+      const displayTxnId = `TXN-PLN-${dateStr}-${plan._id.toString().slice(-6).toUpperCase()}`;
+
+      return {
+        id: displayTxnId,
+        bookingId: plan._id.toString(),
+        cust: (plan.customer as any)?.fullName || 'Customer',
+        amt: `+₹${subtotal}`,
+        date: dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        time: dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        status: 'Success',
+        createdAt: planAny.purchasedAt || planAny.createdAt,
+        invoiceData: {
+          invoiceNo,
+          transactionId: displayTxnId,
+          date: planAny.purchasedAt || planAny.createdAt,
+          subtotal,
+          taxableAmount,
+          cgst,
+          sgst,
+          grandTotal: subtotal,
+          customer: plan.customer,
+          vendor: plan.vendor, 
+          service: { name: planAny.servicePlan?.title || 'Service Subscription' }
+        }
+      };
+    });
+
+    const combined = [...formattedBookings, ...formattedPlans].sort((a, b) => {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    res.json({ success: true, data: combined });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// --- COMPREHENSIVE REPORTS ---
+export const getVendorReports = asyncHandler(async (req: any, res: Response) => {
+  const vendorId = req.user._id;
+  const vendorObjectId = new mongoose.Types.ObjectId(vendorId.toString());
+
+  try {
+    // ── Summary stats ──────────────────────────────────────
+    const totalBookings    = await Booking.countDocuments({ vendor: vendorObjectId });
+    const completedBookings= await Booking.countDocuments({ vendor: vendorObjectId, status: 'Completed' });
+    const cancelledBookings= await Booking.countDocuments({ vendor: vendorObjectId, status: 'Cancelled' });
+    const pendingBookings  = await Booking.countDocuments({ vendor: vendorObjectId, status: 'Pending' });
+    const totalCustomers   = await Booking.distinct('customer', { vendor: vendorObjectId });
+
+    // ── Booking revenue ────────────────────────────────────
+    const bookingRevenueAgg = await Booking.aggregate([
+      { $match: { vendor: vendorObjectId, status: 'Completed' } },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+    ]);
+    const bookingRevenue = bookingRevenueAgg[0]?.total || 0;
+
+    // ── Plan revenue ───────────────────────────────────────
+    const planRevenueAgg = await CustomerPlan.aggregate([
+      { $match: { vendor: vendorObjectId, paymentStatus: 'Success' } },
+      { $lookup: { from: 'serviceplans', localField: 'servicePlan', foreignField: '_id', as: 'sp' } },
+      { $unwind: '$sp' },
+      { $group: { _id: null, total: { $sum: '$sp.price' } } }
+    ]);
+    const planRevenue = planRevenueAgg[0]?.total || 0;
+    const totalRevenue = bookingRevenue + planRevenue;
+
+    // ── GST breakdown (18% GST included in price) ─────────
+    const gstOnBookings = parseFloat(((bookingRevenue - bookingRevenue / 1.18)).toFixed(2));
+    const gstOnPlans    = parseFloat(((planRevenue    - planRevenue    / 1.18)).toFixed(2));
+    const totalGst      = parseFloat((gstOnBookings + gstOnPlans).toFixed(2));
+    const cgst          = parseFloat((totalGst / 2).toFixed(2));
+    const sgst          = parseFloat((totalGst / 2).toFixed(2));
+
+    // ── Monthly revenue trend (last 6 months) ─────────────
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+
+    const monthlyBookings = await Booking.aggregate([
+      { $match: { vendor: vendorObjectId, status: 'Completed', createdAt: { $gte: sixMonthsAgo } } },
+      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, revenue: { $sum: '$totalAmount' }, count: { $sum: 1 } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
+    ]);
+
+    const monthlyPlans = await CustomerPlan.aggregate([
+      { $match: { vendor: vendorObjectId, paymentStatus: 'Success', createdAt: { $gte: sixMonthsAgo } } },
+      { $lookup: { from: 'serviceplans', localField: 'servicePlan', foreignField: '_id', as: 'sp' } },
+      { $unwind: '$sp' },
+      { $group: { _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } }, revenue: { $sum: '$sp.price' }, count: { $sum: 1 } } },
+      { $sort: { '_id.year': 1, '_id.month': 1 } }
+    ]);
+
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const monthlyMap: Record<string, { label: string; bookingRevenue: number; planRevenue: number; bookings: number; plans: number }> = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+      monthlyMap[key] = { label: `${monthNames[d.getMonth()]} ${d.getFullYear()}`, bookingRevenue: 0, planRevenue: 0, bookings: 0, plans: 0 };
+    }
+    monthlyBookings.forEach(m => {
+      const key = `${m._id.year}-${m._id.month}`;
+      if (monthlyMap[key]) { monthlyMap[key].bookingRevenue = m.revenue; monthlyMap[key].bookings = m.count; }
+    });
+    monthlyPlans.forEach(m => {
+      const key = `${m._id.year}-${m._id.month}`;
+      if (monthlyMap[key]) { monthlyMap[key].planRevenue = m.revenue; monthlyMap[key].plans = m.count; }
+    });
+    const monthlyTrend = Object.values(monthlyMap);
+
+    // ── Top services by bookings ───────────────────────────
+    const topServices = await Booking.aggregate([
+      { $match: { vendor: vendorObjectId } },
+      { $group: { _id: '$service.name', count: { $sum: 1 }, revenue: { $sum: '$totalAmount' } } },
+      { $sort: { count: -1 } },
+      { $limit: 6 }
+    ]);
+
+    // ── Top customers ──────────────────────────────────────
+    const topCustomers = await Booking.aggregate([
+      { $match: { vendor: vendorObjectId, status: 'Completed' } },
+      { $group: { _id: '$customer', spent: { $sum: '$totalAmount' }, count: { $sum: 1 } } },
+      { $sort: { spent: -1 } },
+      { $limit: 8 },
+      { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'u' } },
+      { $unwind: '$u' },
+      { $project: { name: '$u.fullName', email: '$u.email', spent: 1, count: 1 } }
+    ]);
+
+    // ── Plans & subscriptions ──────────────────────────────
+    const activePlans   = await CustomerPlan.countDocuments({ vendor: vendorObjectId, status: 'Active' });
+    const completedPlans= await CustomerPlan.countDocuments({ vendor: vendorObjectId, status: 'Completed' });
+    const expiredPlans  = await CustomerPlan.countDocuments({ vendor: vendorObjectId, status: 'Expired' });
+    const totalPlansSold= await CustomerPlan.countDocuments({ vendor: vendorObjectId, paymentStatus: 'Success' });
+
+    const planDetails = await CustomerPlan.find({ vendor: vendorObjectId, paymentStatus: 'Success' })
+      .populate('customer', 'fullName email')
+      .populate('servicePlan', 'title price')
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .select('customer servicePlan totalServices remainingServices status paymentStatus createdAt vehicle');
+
+    // ── Recent transactions (last 15) ─────────────────────
+    const recentTxns = await Booking.find({ vendor: vendorObjectId })
+      .populate('customer', 'fullName')
+      .sort({ createdAt: -1 })
+      .limit(15)
+      .select('customer service totalAmount status paymentStatus createdAt transactionId');
+
+    // ── Payment mode breakdown ─────────────────────────────
+    const paymentModeAgg = await Booking.aggregate([
+      { $match: { vendor: vendorObjectId, status: 'Completed' } },
+      { $group: { _id: '$paymentMode', count: { $sum: 1 }, revenue: { $sum: '$totalAmount' } } }
+    ]);
+
+    // ── Service type breakdown ─────────────────────────────
+    const serviceTypeAgg = await Booking.aggregate([
+      { $match: { vendor: vendorObjectId } },
+      { $group: { _id: '$serviceType', count: { $sum: 1 } } }
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          totalRevenue, bookingRevenue, planRevenue,
+          totalBookings, completedBookings, cancelledBookings, pendingBookings,
+          totalCustomers: totalCustomers.length,
+          totalGst, cgst, sgst, gstOnBookings, gstOnPlans,
+          totalPlansSold, activePlans, completedPlans, expiredPlans
+        },
+        monthlyTrend,
+        topServices,
+        topCustomers,
+        planDetails,
+        recentTxns,
+        paymentModeBreakdown: paymentModeAgg,
+        serviceTypeBreakdown: serviceTypeAgg
+      }
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -4,6 +4,14 @@ import { razorpayInstance } from '../config/razorpay';
 import crypto from 'crypto';
 import Booking from '../models/Booking';
 import CustomerPlan from '../models/CustomerPlan';
+import User from '../models/User';
+import ServicePlan from '../models/ServicePlan';
+
+import { createNotification } from './notificationController';
+
+// Reference models to prevent TypeScript tree-shaking
+const _registerUser = User.modelName;
+const _registerPlan = ServicePlan.modelName;
 
 export const createRazorpayOrder = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { amount, currency = 'INR', receipt } = req.body;
@@ -96,6 +104,32 @@ export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: 
         customerPlan.status = 'Active';
         customerPlan.purchasedAt = new Date();
         await customerPlan.save();
+
+        // Populate details to construct rich notifications
+        await customerPlan.populate('customer vendor servicePlan');
+        const planDetails: any = customerPlan.servicePlan;
+        const customerDetails: any = customerPlan.customer;
+        const vendorDetails: any = customerPlan.vendor;
+
+        // 1. Notify Customer
+        await createNotification({
+          receiverId: customerDetails._id,
+          receiverRole: 'customer',
+          title: 'Subscription Activated! 💳',
+          message: `Your subscription to "${planDetails.title}" is now active! Services included: ${planDetails.servicesIncluded}.`,
+          type: 'payment_success',
+          status: 'success'
+        });
+
+        // 2. Notify Vendor
+        await createNotification({
+          receiverId: vendorDetails._id,
+          receiverRole: 'vendor',
+          title: 'New Plan Purchased',
+          message: `Customer "${customerDetails.fullName}" purchased your "${planDetails.title}" subscription plan.`,
+          type: 'payment_success',
+          status: 'info'
+        });
         
         return res.status(200).json({
           success: true,
@@ -104,6 +138,7 @@ export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: 
         });
       }
     } catch (error) {
+      console.error('Payment verification error:', error);
       res.status(500).json({ success: false, message: 'Error updating payment status' });
     }
   } else {
@@ -124,7 +159,40 @@ export const getInvoiceData = asyncHandler(async (req: AuthRequest, res: Respons
 
   try {
     const booking = await Booking.findById(bookingId).populate('customer vendor');
-    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    if (!booking) {
+      // Check if it's a CustomerPlan instead
+      const plan = await CustomerPlan.findById(bookingId).populate('customer vendor servicePlan');
+      if (!plan) return res.status(404).json({ success: false, message: 'Transaction record not found' });
+
+      // Map CustomerPlan to the same invoice shape
+      const subtotal = (plan.servicePlan as any)?.price || 0;
+      const taxableAmount = parseFloat((subtotal / 1.18).toFixed(2));
+      const totalTax = parseFloat((subtotal - taxableAmount).toFixed(2));
+      const cgst = parseFloat((totalTax / 2).toFixed(2));
+      const sgst = parseFloat((totalTax / 2).toFixed(2));
+      
+      const date = new Date(plan.purchasedAt || plan.createdAt);
+      const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
+      const invoiceNo = `PLN/${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${plan._id.toString().slice(-4).toUpperCase()}`;
+      const displayTxnId = `TXN-PLN-${dateStr}-${plan._id.toString().slice(-6).toUpperCase()}`;
+
+      return res.json({
+        success: true,
+        data: {
+          invoiceNo,
+          transactionId: displayTxnId,
+          date: plan.purchasedAt || plan.createdAt,
+          subtotal,
+          taxableAmount,
+          cgst,
+          sgst,
+          grandTotal: subtotal,
+          customer: plan.customer,
+          vendor: plan.vendor,
+          service: { name: (plan.servicePlan as any)?.title || 'Service Subscription' }
+        }
+      });
+    }
 
     // Calculate itemized taxes (Assuming 18% total GST: 9% CGST + 9% SGST)
     const subtotal = booking.totalAmount;

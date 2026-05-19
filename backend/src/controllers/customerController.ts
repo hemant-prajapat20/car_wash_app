@@ -7,6 +7,7 @@ import { asyncHandler, AuthRequest } from '../middleware/auth';
 import { createNotification } from './notificationController';
 
 import Service from '../models/Service';
+import ServicePlan from '../models/ServicePlan';
 
 export const searchVendors = asyncHandler(async (req: Request, res: Response) => {
   const { city, service } = req.query;
@@ -32,11 +33,15 @@ export const searchVendors = asyncHandler(async (req: Request, res: Response) =>
     // Count available slots
     const slots = await Slot.find({ vendorId: v._id, isAvailable: true });
 
+    // Check for active subscription plans
+    const activePlansCount = await ServicePlan.countDocuments({ vendor: v._id, isActive: true });
+
     return {
       ...v.toObject(),
       activeServices: services.slice(0, 3).map(s => s.name), // Just send top 3 for preview
       startingPrice,
-      availableSlotsCount: slots.length
+      availableSlotsCount: slots.length,
+      hasActivePlans: activePlansCount > 0
     };
   }));
 

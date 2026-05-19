@@ -19,7 +19,8 @@ import {
   deleteSlot,
   searchVendorData,
   getVendorCustomers,
-  getVendorTransactions
+  getVendorTransactions,
+  getVendorReports
 } from '../controllers/vendorController';
 import { 
   searchVendors, 
@@ -67,6 +68,7 @@ router.get('/vendor/dashboard', protect, authorize('vendor'), getVendorDashboard
 router.get('/vendor/search', protect, authorize('vendor'), searchVendorData);
 router.get('/vendor/customers', protect, authorize('vendor'), getVendorCustomers);
 router.get('/vendor/transactions', protect, authorize('vendor'), getVendorTransactions);
+router.get('/vendor/reports', protect, authorize('vendor'), getVendorReports);
 router.patch('/vendor/bookings/:id/status', protect, authorize('vendor'), updateBookingStatus);
 
 router.route('/vendor/profile')
