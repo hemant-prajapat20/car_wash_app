@@ -9,12 +9,12 @@ const stats = [
   { label: 'Active', value: '2', icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50' },
   { label: 'Completed', value: '14', icon: Calendar, color: 'text-emerald-600', bg: 'bg-emerald-50' },
   { label: 'Points', value: '1,250', icon: Star, color: 'text-amber-500', bg: 'bg-amber-50' },
-  { label: 'Savings', value: '$84', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
+  { label: 'Savings', value: '₹84', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
 ];
 
 const recentBookings = [
-  { id: '1', vendor: 'Elite Car Spa', service: 'Premium Detail', date: 'Yesterday', status: 'Completed', price: '$45' },
-  { id: '2', vendor: 'QuickWash Hub', service: 'Exterior Wash', date: '2 days ago', status: 'Completed', price: '$20' },
+  { id: '1', vendor: 'Elite Car Spa', service: 'Premium Detail', date: 'Yesterday', status: 'Completed', price: '₹45' },
+  { id: '2', vendor: 'QuickWash Hub', service: 'Exterior Wash', date: '2 days ago', status: 'Completed', price: '₹20' },
 ];
 
 export const CustomerDashboard: React.FC = () => {

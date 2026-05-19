@@ -395,7 +395,7 @@ export const BookService: React.FC = () => {
                           <p className="text-[11px] text-slate-400 line-clamp-1">{s.description}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <span className="text-base font-black text-emerald-600">${s.price}</span>
+                          <span className="text-base font-black text-emerald-600">₹{s.price}</span>
                           <p className="text-[10px] text-slate-400 flex items-center gap-1 justify-end mt-0.5">
                             <Clock size={10} /> {s.duration} min
                           </p>
@@ -544,7 +544,7 @@ export const BookService: React.FC = () => {
                 <div className="mt-2 p-4 bg-blue-50 border border-blue-100 rounded-xl space-y-2">
                   <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3">Booking Summary</p>
                   {[
-                    ['Service',  bookingData.service?.name,  `$${bookingData.service?.price}`],
+                    ['Service',  bookingData.service?.name,  `₹${bookingData.service?.price}`],
                     ['Location',  serviceType === 'Home' ? 'Doorstep Service' : 'Shop Visit', null],
                     ['Date',      selectedDate, null],
                     ['Time',     bookingData.slot?.startTime, null],

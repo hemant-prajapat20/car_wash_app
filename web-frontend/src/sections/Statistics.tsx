@@ -11,7 +11,7 @@ const stats = [
   { icon: Heart, value: '98%', label: 'Satisfaction', color: 'text-rose-600' },
   { icon: TrendingUp, value: '+45%', label: 'Revenue Growth', color: 'text-amber-600' },
   { icon: RefreshCw, value: '72%', label: 'Repeat Bookings', color: 'text-indigo-600' },
-  { icon: BarChart3, value: '$250k', label: 'Monthly Rev', color: 'text-blue-500' },
+  { icon: BarChart3, value: '₹250k', label: 'Monthly Rev', color: 'text-blue-500' },
   { icon: AppWindow, value: '8.5k', label: 'Engagement', color: 'text-slate-600' },
 ];
 

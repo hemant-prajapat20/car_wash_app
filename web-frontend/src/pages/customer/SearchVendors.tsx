@@ -157,7 +157,7 @@ export const SearchVendors: React.FC = () => {
               <div className="grid grid-cols-2 gap-2 mb-5">
                 <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Starting at</span>
-                  <span className="text-sm font-bold text-emerald-600">${vendor.startingPrice || 15}</span>
+                  <span className="text-sm font-bold text-emerald-600">₹{vendor.startingPrice || 15}</span>
                 </div>
                 <div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100/50">
                   <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest block mb-1">Availability</span>
