@@ -499,7 +499,7 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
   try {
     const bookings = await Booking.find({ vendor: vendorId })
       .populate('customer vendor', 'fullName email phone address companyName businessLocation')
-      .select('transactionId totalAmount paymentStatus status createdAt customer vendor service');
+      .select('transactionId totalAmount paymentStatus status createdAt customer vendor service paymentMode');
 
     const plans = await CustomerPlan.find({ vendor: vendorId, paymentStatus: 'Success' })
       .populate('customer vendor servicePlan')
@@ -518,8 +518,8 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
       const invoiceNo = `INV/${dateObj.getFullYear()}/${(dateObj.getMonth()+1).toString().padStart(2,'0')}/${tx._id.toString().slice(-4).toUpperCase()}`;
       
       const displayTxnId = tx.transactionId?.startsWith('TXN') 
-        ? tx.transactionId 
-        : `TXN-${dateStr}-${tx._id.toString().slice(-6).toUpperCase()}`;
+         ? tx.transactionId 
+         : `TXN-${dateStr}-${tx._id.toString().slice(-6).toUpperCase()}`;
 
       return {
         id: displayTxnId,
@@ -529,6 +529,7 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
         date: dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
         time: dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
         status: tx.paymentStatus === 'Success' ? 'Success' : tx.paymentStatus === 'Failed' ? 'Failed' : tx.status === 'Cancelled' ? 'Refund' : 'Pending',
+        paymentMode: txAny.paymentMode || 'Online',
         createdAt: tx.createdAt,
         invoiceData: {
           invoiceNo,
@@ -541,7 +542,8 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
           grandTotal: subtotal,
           customer: tx.customer,
           vendor: tx.vendor, 
-          service: tx.service
+          service: tx.service,
+          paymentMode: txAny.paymentMode || 'Online'
         }
       };
     });
@@ -567,6 +569,7 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
         date: dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
         time: dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
         status: 'Success',
+        paymentMode: planAny.paymentMode || 'Online',
         createdAt: planAny.purchasedAt || planAny.createdAt,
         invoiceData: {
           invoiceNo,
@@ -579,7 +582,8 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
           grandTotal: subtotal,
           customer: plan.customer,
           vendor: plan.vendor, 
-          service: { name: planAny.servicePlan?.title || 'Service Subscription' }
+          service: { name: planAny.servicePlan?.title || 'Service Subscription' },
+          paymentMode: planAny.paymentMode || 'Online'
         }
       };
     });

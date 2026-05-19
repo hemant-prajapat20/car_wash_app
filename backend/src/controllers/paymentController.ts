@@ -191,7 +191,8 @@ export const getInvoiceData = asyncHandler(async (req: AuthRequest, res: Respons
           grandTotal: subtotal,
           customer: plan.customer,
           vendor: plan.vendor,
-          service: { name: (plan.servicePlan as any)?.title || 'Service Subscription' }
+          service: { name: (plan.servicePlan as any)?.title || 'Service Subscription' },
+          paymentMode: plan.paymentMode || 'Online'
         }
       });
     }
@@ -225,7 +226,8 @@ export const getInvoiceData = asyncHandler(async (req: AuthRequest, res: Respons
         grandTotal: subtotal,
         customer: booking.customer,
         vendor: booking.vendor,
-        service: booking.service
+        service: booking.service,
+        paymentMode: booking.paymentMode || 'Online'
       }
     });
   } catch (error) {

@@ -189,7 +189,11 @@ export const InvoicePage: React.FC = () => {
 
           {/* Summary - Compact */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
-            <div className="space-y-4">
+            <div className="space-y-3">
+               <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-1">Payment Method</span>
+                  <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{data.paymentMode === 'Cash' ? '💵 Cash on Delivery' : '💳 Online / UPI / Card'}</p>
+               </div>
                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <span className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-1">Amount In Words</span>
                   <p className="text-[9px] font-black text-slate-900 leading-relaxed italic">{numberToWords(data.grandTotal)}</p>

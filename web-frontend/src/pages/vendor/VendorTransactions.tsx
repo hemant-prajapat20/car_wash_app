@@ -68,7 +68,8 @@ export const VendorTransactions: React.FC = () => {
           <div className="hidden md:grid grid-cols-6 gap-4 px-6 py-2 bg-slate-50 rounded-xl text-[9px] font-bold text-slate-400 uppercase tracking-widest border border-slate-100/50">
             <div className="col-span-1">Trans. ID</div>
             <div className="col-span-1">Customer</div>
-            <div className="col-span-2">Date & Time</div>
+            <div className="col-span-1">Date & Time</div>
+            <div className="col-span-1">Method</div>
             <div className="col-span-1">Status</div>
             <div className="col-span-1 text-right">Amount</div>
           </div>
@@ -94,13 +95,21 @@ export const VendorTransactions: React.FC = () => {
                 </div>
 
                 {/* Date & Time */}
-                <div className="w-full md:w-auto flex items-center justify-between md:block col-span-2">
+                <div className="w-full md:w-auto flex items-center justify-between md:block col-span-1">
                    <span className="md:hidden text-[9px] font-bold text-slate-300 uppercase tracking-widest">Date & Time</span>
-                   <div className="flex items-center gap-2">
+                   <div className="flex flex-col">
                      <p className="text-[11px] font-bold text-slate-500">{tx.date}</p>
-                     <span className="w-1 h-1 bg-slate-200 rounded-full hidden md:block" />
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{tx.time}</p>
+                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{tx.time}</p>
                    </div>
+                </div>
+
+                {/* Payment Method */}
+                <div className="w-full md:w-auto flex items-center justify-between md:block col-span-1">
+                   <span className="md:hidden text-[9px] font-bold text-slate-300 uppercase tracking-widest">Method</span>
+                   <span className={cn(
+                     "text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-lg",
+                     tx.paymentMode === 'Cash' ? "bg-amber-50 text-amber-600 border border-amber-100" : "bg-blue-50 text-blue-600 border border-blue-100"
+                   )}>{tx.paymentMode === 'Cash' ? '💵 Cash' : '💳 Online'}</span>
                 </div>
 
                 {/* Status */}
