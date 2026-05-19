@@ -162,9 +162,9 @@ export const InvoicePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Table - Optimized Height */}
-          <div className="mb-10 border border-slate-100 rounded-xl overflow-hidden">
-            <table className="w-full text-left">
+          {/* Table - Responsive Horizontal Scroll Wrapper */}
+          <div className="mb-10 border border-slate-100 rounded-xl overflow-x-auto">
+            <table className="w-full text-left min-w-[500px] md:min-w-full">
               <thead>
                 <tr className="bg-slate-50 text-slate-400 uppercase text-[9px] font-black tracking-[0.2em]">
                   <th className="px-6 py-4">Service Description</th>
