@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Search, History,
-  User, LogOut, Waves, ChevronLeft, Menu, X
+  User, LogOut, Waves, ChevronLeft, Menu, X, CreditCard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
@@ -17,6 +17,7 @@ function cn(...inputs: ClassValue[]) {
 const MENU_ITEMS = [
   { id: 'search',   label: 'Search Vendors',  icon: Search,  path: '/customer/search'   },
   { id: 'bookings', label: 'My Bookings',      icon: History, path: '/customer/bookings' },
+  { id: 'my-plans', label: 'My Plans',         icon: CreditCard, path: '/customer/my-plans' },
   { id: 'profile',  label: 'Profile Settings', icon: User,    path: '/customer/profile'  },
 ];
 

@@ -6,6 +6,7 @@ import http from 'http';
 import os from 'os';
 import apiRoutes from './routes/apiRoutes';
 import { initSocket } from './socket';
+import { startExpireCustomerPlansJob } from './jobs/expireCustomerPlans';
 
 dotenv.config();
 
@@ -55,6 +56,9 @@ const server = http.createServer(app);
 initSocket(server);
 
 connectDB();
+
+// Start cron jobs
+startExpireCustomerPlansJob();
 
 console.log('⏳ Starting server on port', PORT, '...');
 

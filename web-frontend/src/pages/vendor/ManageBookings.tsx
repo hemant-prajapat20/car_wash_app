@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { 
   Calendar, Clock, Filter, 
   Search, MoreVertical, CheckCircle2, 
-  XCircle, PlayCircle, Loader2
+  XCircle, PlayCircle, Loader2, Home, MapPin, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/axiosConfig';
@@ -32,6 +32,7 @@ export const ManageBookings: React.FC = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
 
   const fetchBookings = async () => {
     try {
@@ -88,11 +89,19 @@ export const ManageBookings: React.FC = () => {
             <motion.div 
               key={booking._id}
               layout
-              className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group"
+              className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group cursor-pointer"
+              onClick={() => setSelectedBooking(booking)}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="min-w-0">
-                  <h3 className="text-[12px] font-bold text-slate-900 truncate leading-tight">{booking.customer?.fullName}</h3>
+                  <h3 className="text-[12px] font-bold text-slate-900 truncate leading-tight flex items-center gap-2">
+                    {booking.customer?.fullName}
+                    {booking.serviceType === 'Home' && (
+                      <span className="bg-purple-100 text-purple-700 text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 uppercase tracking-widest font-bold">
+                        <Home size={10} /> Home
+                      </span>
+                    )}
+                  </h3>
                   <p className="text-[10px] font-medium text-slate-400 truncate tracking-tight">{booking.service?.name}</p>
                 </div>
                 <div className="flex flex-col items-end shrink-0">
@@ -180,6 +189,124 @@ export const ManageBookings: React.FC = () => {
             </motion.div>
         ))}
       </div>
+
+      {/* Booking Details Modal */}
+      <AnimatePresence>
+        {selectedBooking && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedBooking(null)}
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100]"
+            />
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="w-full max-w-lg bg-white rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] pointer-events-auto"
+              >
+              <div className="p-4 md:p-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    Booking Details
+                    {selectedBooking.serviceType === 'Home' && (
+                      <span className="bg-purple-100 text-purple-700 text-[10px] px-2 py-1 rounded-md flex items-center gap-1 uppercase tracking-widest font-bold">
+                        <Home size={12} /> Home Service
+                      </span>
+                    )}
+                  </h2>
+                  <p className="text-[11px] font-medium text-slate-500 mt-0.5 tracking-wide">ID: {selectedBooking.bookingId || selectedBooking._id}</p>
+                </div>
+                <button
+                  onClick={() => setSelectedBooking(null)}
+                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                {/* Status & Amount */}
+                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">Current Status</p>
+                    <StatusBadge status={selectedBooking.status} />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">Total Amount</p>
+                    <p className="text-lg font-black text-slate-900">₹{selectedBooking.totalAmount}</p>
+                  </div>
+                </div>
+
+                {/* Customer Info */}
+                <div>
+                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">Customer Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-[10px] font-medium text-slate-500">Name</p>
+                      <p className="text-sm font-bold text-slate-900">{selectedBooking.customer?.fullName || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-medium text-slate-500">Phone</p>
+                      <p className="text-sm font-bold text-slate-900">{selectedBooking.customer?.phone || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Service Details */}
+                <div>
+                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">Service Details</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-slate-600">{selectedBooking.service?.name}</span>
+                      <span className="text-sm font-bold text-slate-900">₹{selectedBooking.service?.price}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Calendar size={14} className="text-blue-500" />
+                      <span className="font-bold">Date:</span> {new Date(selectedBooking.slot?.date).toLocaleDateString()}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Clock size={14} className="text-indigo-500" />
+                      <span className="font-bold">Time:</span> {selectedBooking.slot?.time}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vehicle Details */}
+                <div>
+                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">Vehicle Information</h3>
+                  <div className="bg-slate-50 p-3 rounded-xl flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
+                      <CheckCircle2 size={18} className="text-emerald-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{selectedBooking.vehicle?.make} {selectedBooking.vehicle?.model}</p>
+                      <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">{selectedBooking.vehicle?.plateNumber}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address (If Home Service) */}
+                {selectedBooking.serviceType === 'Home' && selectedBooking.homeAddress && (
+                  <div>
+                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2 flex items-center gap-2">
+                      <MapPin size={12} /> Service Address
+                    </h3>
+                    <div className="bg-purple-50 p-3 rounded-xl">
+                      <p className="text-sm font-medium text-slate-800">{selectedBooking.homeAddress.address}</p>
+                      <p className="text-xs font-bold text-slate-600 mt-1 uppercase tracking-widest">{selectedBooking.homeAddress.city}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

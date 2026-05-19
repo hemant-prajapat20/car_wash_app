@@ -40,11 +40,15 @@ import {
 import { getHostedPaymentPage } from '../controllers/hostedPaymentController';
 import { protect, authorize } from '../middleware/auth';
 import notificationRoutes from './notificationRoutes';
+import servicePlanRoutes from './servicePlanRoutes';
 
 const router = express.Router();
 
 // NOTIFICATION ROUTES
 router.use('/notifications', notificationRoutes);
+
+// SERVICE PLAN ROUTES
+router.use('/plans', servicePlanRoutes);
 
 // AUTH ROUTES
 router.post('/auth/signup', registerCustomer);

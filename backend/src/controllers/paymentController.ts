@@ -3,6 +3,7 @@ import { asyncHandler, AuthRequest } from '../middleware/auth';
 import { razorpayInstance } from '../config/razorpay';
 import crypto from 'crypto';
 import Booking from '../models/Booking';
+import CustomerPlan from '../models/CustomerPlan';
 
 export const createRazorpayOrder = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { amount, currency = 'INR', receipt } = req.body;
@@ -28,9 +29,9 @@ export const createRazorpayOrder = asyncHandler(async (req: AuthRequest, res: Re
 });
 
 export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId } = req.body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, bookingId, planId } = req.body;
 
-  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !bookingId) {
+  if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || (!bookingId && !planId)) {
     return res.status(400).json({ success: false, message: 'Missing required parameters' });
   }
 
@@ -44,59 +45,80 @@ export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: 
 
   if (generated_signature === razorpay_signature || isDemoSuccess) {
     try {
-      const booking = await Booking.findById(bookingId).populate('customer vendor');
-      if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+      if (bookingId) {
+        const booking = await Booking.findById(bookingId).populate('customer vendor');
+        if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
 
-      // Finalize booking and generate Standardized Transaction & Invoice Metadata
-      const date = new Date();
-      const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
-      const txnId = `TXN-${dateStr}-${booking._id.toString().slice(-6).toUpperCase()}`;
+        // Finalize booking and generate Standardized Transaction & Invoice Metadata
+        const date = new Date();
+        const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
+        const txnId = `TXN-${dateStr}-${booking._id.toString().slice(-6).toUpperCase()}`;
 
-      booking.paymentStatus = 'Success'; 
-      booking.status = 'Confirmed';
-      booking.transactionId = txnId;
-      booking.razorpayPaymentId = razorpay_payment_id;
-      
-      // Generate professional invoice number: INV / YEAR / MONTH / 4-DIGIT-ID
-      const invoiceNo = `INV/${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${booking._id.toString().slice(-4).toUpperCase()}`;
-      
-      // Calculate itemized taxes (Assuming 18% total GST: 9% CGST + 9% SGST)
-      const subtotal = booking.totalAmount;
-      const taxableAmount = parseFloat((subtotal / 1.18).toFixed(2));
-      const totalTax = parseFloat((subtotal - taxableAmount).toFixed(2));
-      const cgst = parseFloat((totalTax / 2).toFixed(2));
-      const sgst = parseFloat((totalTax / 2).toFixed(2));
+        booking.paymentStatus = 'Success'; 
+        booking.status = 'Confirmed';
+        booking.transactionId = txnId;
+        booking.razorpayPaymentId = razorpay_payment_id;
+        
+        // Generate professional invoice number: INV / YEAR / MONTH / 4-DIGIT-ID
+        const invoiceNo = `INV/${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${booking._id.toString().slice(-4).toUpperCase()}`;
+        
+        // Calculate itemized taxes (Assuming 18% total GST: 9% CGST + 9% SGST)
+        const subtotal = booking.totalAmount;
+        const taxableAmount = parseFloat((subtotal / 1.18).toFixed(2));
+        const totalTax = parseFloat((subtotal - taxableAmount).toFixed(2));
+        const cgst = parseFloat((totalTax / 2).toFixed(2));
+        const sgst = parseFloat((totalTax / 2).toFixed(2));
 
-      await booking.save();
+        await booking.save();
 
-      return res.status(200).json({ 
-        success: true, 
-        message: 'Payment verified successfully',
-        invoiceData: {
-          invoiceNo,
-          transactionId: razorpay_payment_id,
-          date: booking.createdAt,
-          subtotal,
-          taxableAmount,
-          cgst,
-          sgst,
-          grandTotal: subtotal,
-          customer: booking.customer,
-          vendor: booking.vendor,
-          service: booking.service
-        }
-      });
+        return res.status(200).json({ 
+          success: true, 
+          message: 'Payment verified successfully',
+          invoiceData: {
+            invoiceNo,
+            transactionId: razorpay_payment_id,
+            date: booking.createdAt,
+            subtotal,
+            taxableAmount,
+            cgst,
+            sgst,
+            grandTotal: subtotal,
+            customer: booking.customer,
+            vendor: booking.vendor,
+            service: booking.service
+          }
+        });
+      } else if (planId) {
+        const customerPlan = await CustomerPlan.findById(planId);
+        if (!customerPlan) return res.status(404).json({ success: false, message: 'Plan not found' });
+        
+        customerPlan.paymentStatus = 'Success';
+        customerPlan.status = 'Active';
+        customerPlan.purchasedAt = new Date();
+        await customerPlan.save();
+        
+        return res.status(200).json({
+          success: true,
+          message: 'Payment verified successfully for plan',
+          data: customerPlan
+        });
+      }
     } catch (error) {
-      res.status(500).json({ success: false, message: 'Error updating booking' });
+      res.status(500).json({ success: false, message: 'Error updating payment status' });
     }
   } else {
-    // Payment verification failed - DELETE the booking to satisfy "no booking without payment"
+    // Payment verification failed - DELETE the booking or plan
     try {
-      await Booking.findByIdAndDelete(bookingId);
+      if (bookingId) {
+        await Booking.findByIdAndDelete(bookingId);
+      } else if (planId) {
+        await CustomerPlan.findByIdAndDelete(planId);
+      }
     } catch (e) {}
-    res.status(400).json({ success: false, message: 'Payment verification failed. Booking discarded.' });
+    res.status(400).json({ success: false, message: 'Payment verification failed. Item discarded.' });
   }
 });
+
 export const getInvoiceData = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { bookingId } = req.params;
 

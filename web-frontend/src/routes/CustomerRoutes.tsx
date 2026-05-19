@@ -7,6 +7,7 @@ import { MyBookings } from '../pages/customer/MyBookings';
 import { CustomerProfile } from '../pages/customer/CustomerProfile';
 import { BookService } from '../pages/customer/BookService';
 import CustomerNotifications from '../pages/customer/CustomerNotifications';
+import { MyPlans } from '../pages/customer/MyPlans';
 
 export const CustomerRoutes: React.FC = () => {
   return (
@@ -17,6 +18,7 @@ export const CustomerRoutes: React.FC = () => {
         <Route path="vendor/:vendorId" element={<VendorProfile />} />
         <Route path="book" element={<BookService />} />
         <Route path="bookings" element={<MyBookings />} />
+        <Route path="my-plans" element={<MyPlans />} />
         <Route path="notifications" element={<CustomerNotifications />} />
         <Route path="profile" element={<CustomerProfile />} />
         <Route path="*" element={<Navigate to="/customer/search" replace />} />

@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Inbox, Clock, Package,
   Users, Bell, UserCircle, LogOut,
   BarChart3, Users2, Receipt,
-  Waves, ChevronLeft, Menu, X
+  Waves, ChevronLeft, Menu, X, CreditCard, ScanLine
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
@@ -19,6 +19,8 @@ function cn(...inputs: ClassValue[]) {
 const VENDOR_MENU_ITEMS = [
   { id: 'dashboard',     label: 'Dashboard',        icon: LayoutDashboard, path: '/vendor/dashboard' },
   { id: 'bookings',      label: 'Manage Bookings',  icon: Inbox,           path: '/vendor/bookings' },
+  { id: 'plans',         label: 'Subscription Plans', icon: CreditCard,    path: '/vendor/plans' },
+  { id: 'scan-qr',       label: 'Scan Plan QR',     icon: ScanLine,        path: '/vendor/scan-qr' },
   { id: 'slots',         label: 'Slot Management',  icon: Clock,           path: '/vendor/slots' },
   { id: 'services',      label: 'Services & Packages', icon: Package,      path: '/vendor/services' },
   { id: 'workers',       label: 'Manage Workers',   icon: Users2,          path: '/vendor/workers' },

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { 
   ShoppingBag, Users, BarChart3, TrendingUp, 
   Clock, CheckCircle2, ChevronRight, AlertCircle,
-  Crown, Star, UserCheck
+  Crown, Star, UserCheck, Home
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/axiosConfig';
@@ -112,12 +112,19 @@ export const VendorDashboard: React.FC = () => {
                   key={i} 
                   className="flex items-center justify-between p-3.5 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group border border-transparent hover:border-slate-100"
                 >
-                  <div className="flex items-center gap-4 min-w-0">
+                  <div className="flex items-center gap-4 min-w-0 flex-1" onClick={() => {/* Can hook up a modal here too if desired */}}>
                     <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
                       <UserCheck size={18} />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[12px] font-bold text-slate-900 truncate leading-tight">{bk.customer?.fullName || 'Walk-in Customer'}</p>
+                      <p className="text-[12px] font-bold text-slate-900 truncate leading-tight flex items-center gap-2">
+                        {bk.customer?.fullName || 'Walk-in Customer'}
+                        {bk.serviceType === 'Home' && (
+                          <span className="bg-purple-100 text-purple-700 text-[8px] px-1 rounded flex items-center gap-0.5 uppercase tracking-widest font-bold">
+                            <Home size={8} /> Home
+                          </span>
+                        )}
+                      </p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{bk.service?.name || 'Standard Wash'}</span>
                         <span className="w-1 h-1 bg-slate-200 rounded-full" />
