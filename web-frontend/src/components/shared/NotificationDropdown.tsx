@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bell, CheckCircle2, Info, AlertTriangle, XCircle, MoreVertical, Check, Trash2, Loader2, ArrowRight, X } from 'lucide-react';
+import { Bell, CheckCircle2, Info, AlertTriangle, XCircle, MoreVertical, Check, Trash2, Loader2, ArrowRight, X, FileText } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { AppDispatch, RootState } from '../../store';
 import { fetchNotifications, fetchUnreadCount, markRead, markAllRead, removeNotification, Notification } from '../../store/notificationSlice';
@@ -7,6 +7,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import api from '../../services/axiosConfig';
+import { InvoiceModal } from './InvoiceModal';
 
 import { socketService } from '../../services/socketService';
 import { addNotification } from '../../store/notificationSlice';
@@ -16,6 +18,10 @@ export const NotificationDropdown: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  
+  const [invoiceData, setInvoiceData] = useState<any>(null);
+  const [invoiceOpen, setInvoiceOpen] = useState<boolean>(false);
+  const [fetchingInvoice, setFetchingInvoice] = useState<string | null>(null);
   
   const { notifications, unreadCount, loading } = useSelector((state: RootState) => state.notifications);
   const { user } = useSelector((state: RootState) => state.auth);
@@ -115,6 +121,24 @@ export const NotificationDropdown: React.FC = () => {
     dispatch(removeNotification(id));
   };
 
+  const handleViewInvoice = async (e: React.MouseEvent, bookingId: string) => {
+    e.stopPropagation();
+    try {
+      setFetchingInvoice(bookingId);
+      const response = await api.get(`/payment/invoice/${bookingId}`);
+      if (response.data.success) {
+        setInvoiceData(response.data.data);
+        setInvoiceOpen(true);
+      } else {
+        toast.error("Failed to fetch invoice details");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to load invoice");
+    } finally {
+      setFetchingInvoice(null);
+    }
+  };
+
   const getRedirectPath = () => {
     if (!user) return '/notifications';
     switch (user.role) {
@@ -191,6 +215,21 @@ export const NotificationDropdown: React.FC = () => {
                           <p className={`text-[11px] line-clamp-2 mb-2 ${!notification.isRead ? 'font-bold text-slate-800' : 'font-normal text-slate-400'}`}>
                             {notification.message}
                           </p>
+
+                          {notification.bookingId && (
+                            <button 
+                              onClick={(e) => handleViewInvoice(e, notification.bookingId!)}
+                              disabled={fetchingInvoice === notification.bookingId}
+                              className="mb-2 text-[9px] font-black text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/70 border border-blue-100 rounded-lg px-2.5 py-1.5 transition-all flex items-center gap-1.5 self-start uppercase tracking-wider disabled:opacity-50"
+                            >
+                              {fetchingInvoice === notification.bookingId ? (
+                                <Loader2 size={10} className="animate-spin" />
+                              ) : (
+                                <FileText size={10} />
+                              )}
+                              View Invoice
+                            </button>
+                          )}
                           
                           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             {!notification.isRead && (
@@ -237,6 +276,12 @@ export const NotificationDropdown: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <InvoiceModal 
+        isOpen={invoiceOpen} 
+        onClose={() => setInvoiceOpen(false)} 
+        data={invoiceData} 
+      />
     </div>
   );
 };

@@ -6,6 +6,7 @@ export interface INotification extends Document {
   vendorId?: mongoose.Types.ObjectId;
   title: string;
   message: string;
+  bookingId?: string;
   type: 
     | 'booking_created'
     | 'booking_confirmed'
@@ -36,6 +37,7 @@ const NotificationSchema: Schema = new Schema(
     vendorId: { type: Schema.Types.ObjectId, ref: 'Vendor' },
     title: { type: String, required: true },
     message: { type: String, required: true },
+    bookingId: { type: String },
     type: { 
       type: String, 
       required: true,

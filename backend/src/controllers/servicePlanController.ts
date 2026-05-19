@@ -148,8 +148,9 @@ export const scanPlanQR = asyncHandler(async (req: AuthRequest, res: Response) =
     vendorId: vendorId,
     title: 'Prepaid Service Started! 🚗',
     message: `Wash #${washNumber} of your "${planTitle}" plan has started. Remaining: ${customerPlan.remainingServices} washes.`,
-    type: 'booking_update',
-    status: 'In Progress'
+    type: 'booking_confirmed',
+    status: 'success',
+    bookingId: booking._id.toString()
   });
 
   // Notify Vendor
@@ -159,8 +160,9 @@ export const scanPlanQR = asyncHandler(async (req: AuthRequest, res: Response) =
     vendorId: vendorId,
     title: 'Prepaid Service Started 🧼',
     message: `Plan QR scanned for vehicle "${customerPlan.vehicle.make} ${customerPlan.vehicle.model} (${customerPlan.vehicle.plateNumber})". Wash #${washNumber} is In Progress.`,
-    type: 'booking_update',
-    status: 'In Progress'
+    type: 'booking_confirmed',
+    status: 'info',
+    bookingId: booking._id.toString()
   });
 
   res.json({

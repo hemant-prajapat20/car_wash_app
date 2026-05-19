@@ -34,6 +34,7 @@ export const MyPlans: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedQRPlan, setSelectedQRPlan] = useState<Plan | null>(null);
+  const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
 
   useEffect(() => {
     fetchPlans();
@@ -51,8 +52,12 @@ export const MyPlans: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="p-6 text-center text-slate-500 font-semibold">Loading your plans...</div>;
+    return <div className="p-6 text-center text-slate-500 font-semibold animate-pulse font-inter">Loading your plans...</div>;
   }
+
+  const activePlans = plans.filter(p => p.status === 'Active');
+  const completedPlans = plans.filter(p => p.status !== 'Active');
+  const displayedPlans = activeTab === 'active' ? activePlans : completedPlans;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl font-inter relative">
@@ -66,19 +71,47 @@ export const MyPlans: React.FC = () => {
         </div>
       </div>
 
-      {plans.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center shadow-sm">
+      {/* Premium Tab Selector */}
+      <div className="flex gap-1 bg-slate-100 p-1 rounded-xl max-w-xs">
+        <button
+          onClick={() => setActiveTab('active')}
+          className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${
+            activeTab === 'active' 
+              ? 'bg-white text-slate-900 shadow-sm' 
+              : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Running Plans ({activePlans.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('completed')}
+          className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${
+            activeTab === 'completed' 
+              ? 'bg-white text-slate-900 shadow-sm' 
+              : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Past Plans ({completedPlans.length})
+        </button>
+      </div>
+
+      {displayedPlans.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center shadow-sm max-w-xl">
           <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-blue-600">
             <CreditCard size={28} />
           </div>
-          <h3 className="text-sm font-black text-slate-900 mb-2">No Plans Found</h3>
+          <h3 className="text-sm font-black text-slate-900 mb-2">
+            {activeTab === 'active' ? 'No Active Subscriptions' : 'No Past Subscriptions'}
+          </h3>
           <p className="text-slate-500 max-w-sm mx-auto text-xs font-semibold leading-relaxed">
-            You don't have any subscription plans yet. Browse vendors to find great prepaid deals!
+            {activeTab === 'active' 
+              ? "You don't have any running subscription plans. Explore vendors to find great prepaid wash deals!" 
+              : "No completed or expired subscription plans found in your transaction history."}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 max-w-xl">
-          {plans.map((plan) => (
+          {displayedPlans.map((plan) => (
             <div key={plan._id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col justify-between">
               {/* Plan Details */}
               <div className="p-5 flex-1">

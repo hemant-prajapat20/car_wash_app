@@ -1,10 +1,13 @@
-import React, { useEffect } from 'react';
-import { Bell, CheckCircle2, Info, AlertTriangle, XCircle, Trash2, Check, Loader2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Bell, CheckCircle2, Info, AlertTriangle, XCircle, Trash2, Check, Loader2, FileText } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { AppDispatch, RootState } from '../../store';
 import { fetchNotifications, markRead, markAllRead, removeNotification } from '../../store/notificationSlice';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import api from '../../services/axiosConfig';
+import { InvoiceModal } from './InvoiceModal';
+import toast from 'react-hot-toast';
 
 interface NotificationPageProps {
   title: string;
@@ -14,6 +17,28 @@ interface NotificationPageProps {
 export const NotificationPage: React.FC<NotificationPageProps> = ({ title, subtitle }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { notifications, loading, pagination } = useSelector((state: RootState) => state.notifications);
+
+  const [invoiceData, setInvoiceData] = useState<any>(null);
+  const [invoiceOpen, setInvoiceOpen] = useState<boolean>(false);
+  const [fetchingInvoice, setFetchingInvoice] = useState<string | null>(null);
+
+  const handleViewInvoice = async (e: React.MouseEvent, bookingId: string) => {
+    e.stopPropagation();
+    try {
+      setFetchingInvoice(bookingId);
+      const response = await api.get(`/payment/invoice/${bookingId}`);
+      if (response.data.success) {
+        setInvoiceData(response.data.data);
+        setInvoiceOpen(true);
+      } else {
+        toast.error("Failed to fetch invoice details");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to load invoice");
+    } finally {
+      setFetchingInvoice(null);
+    }
+  };
 
   useEffect(() => {
     dispatch(fetchNotifications(1));
@@ -74,6 +99,21 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({ title, subti
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 block">
                   {format(new Date(n.createdAt), 'MMM dd, yyyy • hh:mm a')}
                 </span>
+
+                {n.bookingId && (
+                  <button 
+                    onClick={(e) => handleViewInvoice(e, n.bookingId!)}
+                    disabled={fetchingInvoice === n.bookingId}
+                    className="mt-3 text-[9px] font-black text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/70 border border-blue-100 rounded-lg px-2.5 py-1.5 transition-all flex items-center gap-1.5 self-start uppercase tracking-wider disabled:opacity-50"
+                  >
+                    {fetchingInvoice === n.bookingId ? (
+                      <Loader2 size={10} className="animate-spin" />
+                    ) : (
+                      <FileText size={10} />
+                    )}
+                    View Invoice
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center gap-2 sm:opacity-0 group-hover:opacity-100 transition-opacity self-end sm:self-center">
@@ -124,6 +164,12 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({ title, subti
           ))}
         </div>
       )}
+
+      <InvoiceModal 
+        isOpen={invoiceOpen} 
+        onClose={() => setInvoiceOpen(false)} 
+        data={invoiceData} 
+      />
     </div>
   );
 };

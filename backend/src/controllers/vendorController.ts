@@ -199,7 +199,8 @@ export const updateBookingStatus = asyncHandler(async (req: any, res: Response) 
     title: notificationTitle,
     message: notificationMessage,
     type: notificationType,
-    status: status === 'Cancelled' ? 'error' : status === 'Completed' ? 'success' : 'info'
+    status: status === 'Cancelled' ? 'error' : status === 'Completed' ? 'success' : 'info',
+    bookingId: booking._id.toString()
   });
 
   res.json({ success: true, data: booking });

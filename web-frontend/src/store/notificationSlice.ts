@@ -8,6 +8,7 @@ export interface Notification {
   type: string;
   status: 'info' | 'success' | 'warning' | 'error';
   isRead: boolean;
+  bookingId?: string;
   createdAt: string;
 }
 

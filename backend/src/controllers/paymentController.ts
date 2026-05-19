@@ -118,7 +118,8 @@ export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: 
           title: 'Subscription Activated! 💳',
           message: `Your subscription to "${planDetails.title}" is now active! Services included: ${planDetails.servicesIncluded}.`,
           type: 'payment_success',
-          status: 'success'
+          status: 'success',
+          bookingId: customerPlan._id.toString()
         });
 
         // 2. Notify Vendor
@@ -128,7 +129,8 @@ export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: 
           title: 'New Plan Purchased',
           message: `Customer "${customerDetails.fullName}" purchased your "${planDetails.title}" subscription plan.`,
           type: 'payment_success',
-          status: 'info'
+          status: 'info',
+          bookingId: customerPlan._id.toString()
         });
         
         return res.status(200).json({

@@ -114,6 +114,7 @@ export const createNotification = async (data: {
   message: string;
   type: string;
   status?: string;
+  bookingId?: string;
 }) => {
   try {
     const notification = new Notification(data);
