@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Bell, CheckCircle2, Info, AlertTriangle, XCircle, MoreVertical, Check, Trash2, Loader2, ArrowRight } from 'lucide-react';
+import { Bell, CheckCircle2, Info, AlertTriangle, XCircle, MoreVertical, Check, Trash2, Loader2, ArrowRight, X } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { AppDispatch, RootState } from '../../store';
 import { fetchNotifications, fetchUnreadCount, markRead, markAllRead, removeNotification, Notification } from '../../store/notificationSlice';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 import { socketService } from '../../services/socketService';
 import { addNotification } from '../../store/notificationSlice';
@@ -41,6 +42,37 @@ export const NotificationDropdown: React.FC = () => {
       
       socketService.onNotification((notification) => {
         dispatch(addNotification(notification));
+        
+        // Show a premium real-time toast alert matching the theme
+        toast.custom((t) => (
+          <div 
+            className={`${
+              t.visible ? 'animate-in fade-in slide-in-from-top-4 duration-300' : 'animate-out fade-out slide-out-to-top-4 duration-200'
+            } max-w-sm w-full bg-white shadow-2xl rounded-2xl pointer-events-auto flex ring-1 ring-black ring-opacity-5 border border-slate-100 p-4 font-inter`}
+          >
+            <div className="flex-1 w-0">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 pt-0.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-[15px] shadow-sm">
+                    {notification.status === 'success' ? '✅' : notification.status === 'error' ? '❌' : '🔔'}
+                  </div>
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className="text-xs font-black text-slate-900 leading-tight">{notification.title}</p>
+                  <p className="mt-1 text-[11px] font-semibold text-slate-400 leading-normal">{notification.message}</p>
+                </div>
+              </div>
+            </div>
+            <div className="ml-4 flex-shrink-0 flex items-center">
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="rounded-xl p-1.5 text-slate-300 hover:text-slate-500 hover:bg-slate-50 transition-colors"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        ), { duration: 5000 });
       });
     }
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { 
   Search, MapPin, Star,
   ChevronRight, Car, ShieldCheck, Waves,
-  Loader2, Clock, CheckCircle2
+  Loader2, Clock, CheckCircle2, CreditCard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -165,6 +165,12 @@ export const SearchVendors: React.FC = () => {
                     <Clock size={14} /> {vendor.availableSlotsCount || 0} Slots
                   </span>
                 </div>
+                {vendor.hasActivePlans && (
+                  <div className="col-span-2 bg-purple-50 rounded-xl p-3 border border-purple-100 flex items-center gap-2">
+                    <CreditCard size={14} className="text-purple-600 shrink-0" />
+                    <span className="text-xs font-semibold text-purple-700" style={{ fontFamily: 'Inter, sans-serif' }}>Subscription Plans Available</span>
+                  </div>
+                )}
               </div>
 
               {/* Services List */}

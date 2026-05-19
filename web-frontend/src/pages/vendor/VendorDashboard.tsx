@@ -6,12 +6,15 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/axiosConfig';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 
 export const VendorDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
   const [topCustomers, setTopCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { notifications } = useSelector((state: RootState) => state.notifications);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -29,7 +32,7 @@ export const VendorDashboard: React.FC = () => {
       }
     };
     fetchDashboardData();
-  }, []);
+  }, [notifications]);
 
   if (loading) return (
     <div className="h-[calc(100vh-120px)] flex flex-col items-center justify-center gap-4">
@@ -112,14 +115,24 @@ export const VendorDashboard: React.FC = () => {
                   key={i} 
                   className="flex items-center justify-between p-3.5 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group border border-transparent hover:border-slate-100"
                 >
-                  <div className="flex items-center gap-4 min-w-0 flex-1" onClick={() => {/* Can hook up a modal here too if desired */}}>
-                    <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
-                      <UserCheck size={18} />
-                    </div>
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    {bk.isPlanPurchase ? (
+                      <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all shrink-0">
+                        <Crown size={18} />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
+                        <UserCheck size={18} />
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <p className="text-[12px] font-bold text-slate-900 truncate leading-tight flex items-center gap-2">
                         {bk.customer?.fullName || 'Walk-in Customer'}
-                        {bk.serviceType === 'Home' && (
+                        {bk.isPlanPurchase ? (
+                          <span className="bg-amber-100 text-amber-800 text-[8px] px-1 rounded flex items-center gap-0.5 uppercase tracking-widest font-black">
+                            👑 Plan
+                          </span>
+                        ) : bk.serviceType === 'Home' && (
                           <span className="bg-purple-100 text-purple-700 text-[8px] px-1 rounded flex items-center gap-0.5 uppercase tracking-widest font-bold">
                             <Home size={8} /> Home
                           </span>
@@ -128,16 +141,22 @@ export const VendorDashboard: React.FC = () => {
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{bk.service?.name || 'Standard Wash'}</span>
                         <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                        <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">{bk.slot?.time || '09:00 AM'}</span>
+                        <span className={`text-[9px] font-bold uppercase tracking-widest ${bk.isPlanPurchase ? 'text-amber-600' : 'text-blue-600'}`}>
+                          {bk.isPlanPurchase ? 'Prepaid Plan' : bk.slot?.time || '09:00 AM'}
+                        </span>
                       </div>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[12px] font-bold text-slate-900 mb-1">₹{bk.totalAmount}</p>
+                    <p className="text-[12px] font-bold text-slate-900 mb-1">₹{bk.totalAmount || bk.service?.price}</p>
                     <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-1 rounded-md ${
-                      bk.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                      bk.isPlanPurchase 
+                        ? 'bg-amber-50 text-amber-600' 
+                        : bk.status === 'Completed' 
+                          ? 'bg-emerald-50 text-emerald-600' 
+                          : 'bg-amber-50 text-amber-600'
                     }`}>
-                      {bk.status}
+                      {bk.isPlanPurchase ? 'Active' : bk.status}
                     </span>
                   </div>
                 </motion.div>

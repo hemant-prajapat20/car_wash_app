@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../services/axiosConfig';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -33,6 +35,7 @@ export const ManageBookings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
+  const { notifications } = useSelector((state: RootState) => state.notifications);
 
   const fetchBookings = async () => {
     try {
@@ -49,7 +52,7 @@ export const ManageBookings: React.FC = () => {
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [notifications]);
 
   const handleStatusUpdate = async (bookingId: string, newStatus: string) => {
     setActionLoading(bookingId);
@@ -85,109 +88,161 @@ export const ManageBookings: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {[...bookings]
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .map((booking) => (
-            <motion.div 
-              key={booking._id}
-              layout
-              className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group cursor-pointer"
-              onClick={() => setSelectedBooking(booking)}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="min-w-0">
-                  <h3 className="text-[12px] font-bold text-slate-900 truncate leading-tight flex items-center gap-2">
-                    {booking.customer?.fullName}
-                    {booking.serviceType === 'Home' && (
-                      <span className="bg-purple-100 text-purple-700 text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 uppercase tracking-widest font-bold">
-                        <Home size={10} /> Home
+          .map((booking) => {
+            const isPlan = booking.isPlanPurchase;
+            return (
+              <motion.div 
+                key={booking._id}
+                layout
+                className={cn(
+                  "border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group cursor-pointer relative overflow-hidden",
+                  isPlan 
+                    ? "bg-gradient-to-br from-white to-amber-50/20 border-amber-200/60 hover:border-amber-300 shadow-amber-50/10" 
+                    : "bg-white border-slate-100 hover:border-blue-100"
+                )}
+                onClick={() => setSelectedBooking(booking)}
+              >
+                {isPlan && (
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full translate-x-12 -translate-y-12 pointer-events-none" />
+                )}
+
+                <div className="flex items-start justify-between mb-4">
+                  <div className="min-w-0">
+                    <h3 className="text-[12px] font-bold text-slate-900 truncate leading-tight flex items-center gap-2">
+                      {booking.customer?.fullName}
+                      {isPlan ? (
+                        <span className="bg-amber-100 text-amber-800 text-[8px] px-1.5 py-0.5 rounded flex items-center gap-1 uppercase tracking-widest font-black shrink-0">
+                          👑 Plan
+                        </span>
+                      ) : booking.totalAmount === 0 && booking.service?.name?.includes('Wash #') ? (
+                        <span className="bg-amber-50 text-amber-700 text-[8px] px-1.5 py-0.5 rounded flex items-center gap-1 uppercase tracking-widest font-bold shrink-0">
+                          👑 Plan Wash
+                        </span>
+                      ) : booking.serviceType === 'Home' ? (
+                        <span className="bg-purple-100 text-purple-700 text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 uppercase tracking-widest font-bold">
+                          <Home size={10} /> Home
+                        </span>
+                      ) : null}
+                    </h3>
+                    <p className="text-[10px] font-medium text-slate-400 truncate tracking-tight">{booking.service?.name}</p>
+                  </div>
+                  <div className="flex flex-col items-end shrink-0">
+                    {isPlan ? (
+                      <span className={cn(
+                        "px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest",
+                        booking.remainingServices === 0 ? "text-slate-500 bg-slate-100" : "text-amber-700 bg-amber-50"
+                      )}>
+                        {booking.remainingServices === 0 ? 'Completed' : 'Active'}
                       </span>
+                    ) : (
+                      <StatusBadge status={booking.status} />
                     )}
-                  </h3>
-                  <p className="text-[10px] font-medium text-slate-400 truncate tracking-tight">{booking.service?.name}</p>
+                    <span className="text-[11px] font-bold text-slate-900 mt-1">₹{booking.totalAmount || booking.service?.price}</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-end shrink-0">
-                  <StatusBadge status={booking.status} />
-                  <span className="text-[11px] font-bold text-slate-900 mt-1">₹{booking.totalAmount}</span>
+
+                <div className="space-y-2 mb-4 pt-3 border-t border-slate-50 text-[10px]">
+                  {isPlan ? (
+                    <>
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Calendar size={12} className="shrink-0 text-amber-500" />
+                        <span className="font-bold text-amber-700">
+                          Prepaid Active Plan
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Clock size={12} className="shrink-0 text-amber-500" />
+                        <span className="font-bold">
+                          Washes: {booking.remainingServices} / {booking.totalServices} Services Left
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Calendar size={12} className="shrink-0 text-blue-500" />
+                        <span className="font-bold truncate">
+                          Scheduled: {new Date(booking.slot?.date).toLocaleDateString()} at {booking.slot?.time}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Clock size={12} className="shrink-0 text-indigo-500" />
+                        <span className="font-bold truncate">
+                          Placed: {new Date(booking.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <CheckCircle2 size={12} className={cn("shrink-0", isPlan ? "text-amber-500" : "text-emerald-500")} />
+                    <span className="font-bold truncate">
+                      {booking.vehicle?.make} {booking.vehicle?.model} • {booking.vehicle?.plateNumber}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-dashed border-slate-100 text-[9px] font-bold text-slate-400">
+                    <div>
+                      <span className="uppercase tracking-widest block text-[8px] text-slate-300">Payment Mode</span>
+                      <span className="text-slate-700 font-black">{booking.paymentMode || 'Online'}</span>
+                    </div>
+                    <div>
+                      <span className="uppercase tracking-widest block text-[8px] text-slate-300">Customer ID</span>
+                      <span className="font-mono text-slate-600 block truncate">{booking.customer?._id || booking.customer}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2 mb-4 pt-3 border-t border-slate-50 text-[10px]">
-                 <div className="flex items-center gap-2 text-slate-500">
-                   <Calendar size={12} className="shrink-0 text-blue-500" />
-                   <span className="font-bold truncate">
-                     Scheduled: {new Date(booking.slot?.date).toLocaleDateString()} at {booking.slot?.time}
-                   </span>
-                 </div>
-                 <div className="flex items-center gap-2 text-slate-500">
-                   <Clock size={12} className="shrink-0 text-indigo-500" />
-                   <span className="font-bold truncate">
-                     Placed: {new Date(booking.createdAt).toLocaleString()}
-                   </span>
-                 </div>
-                 <div className="flex items-center gap-2 text-slate-600">
-                   <CheckCircle2 size={12} className="shrink-0 text-emerald-500" />
-                   <span className="font-bold truncate">
-                     {booking.vehicle?.make} {booking.vehicle?.model} • {booking.vehicle?.plateNumber}
-                   </span>
-                 </div>
-                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-dashed border-slate-100 text-[9px] font-bold text-slate-400">
-                   <div>
-                     <span className="uppercase tracking-widest block text-[8px] text-slate-300">Payment Mode</span>
-                     <span className="text-slate-700 font-black">{booking.paymentMode || 'Online'}</span>
-                   </div>
-                   <div>
-                     <span className="uppercase tracking-widest block text-[8px] text-slate-300">Customer ID</span>
-                     <span className="font-mono text-slate-600 block truncate">{booking.customer?._id || booking.customer}</span>
-                   </div>
-                 </div>
-              </div>
+                <div className="flex items-center gap-2">
+                  {isPlan ? (
+                    <div className="w-full py-2 bg-amber-50 border border-amber-200/50 text-amber-700 rounded-xl text-[9px] font-black uppercase tracking-widest text-center">
+                      Subscription Active
+                    </div>
+                  ) : booking.status === 'Pending' && (
+                    <>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleStatusUpdate(booking._id, 'Confirmed'); }}
+                        disabled={!!actionLoading}
+                        className="flex-1 py-2 bg-blue-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+                      >
+                        {actionLoading === booking._id ? <Loader2 size={10} className="animate-spin" /> : <PlayCircle size={12}/>}
+                        Accept
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleStatusUpdate(booking._id, 'Cancelled'); }}
+                        disabled={!!actionLoading}
+                        className="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-all"
+                      >
+                        <XCircle size={14}/>
+                      </button>
+                    </>
+                  )}
 
-              <div className="flex items-center gap-2">
-                 {booking.status === 'Pending' && (
-                   <>
-                     <button 
-                      onClick={() => handleStatusUpdate(booking._id, 'Confirmed')}
-                      disabled={!!actionLoading}
-                      className="flex-1 py-2 bg-blue-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
-                     >
-                       {actionLoading === booking._id ? <Loader2 size={10} className="animate-spin" /> : <PlayCircle size={12}/>}
-                       Accept
-                     </button>
-                     <button 
-                      onClick={() => handleStatusUpdate(booking._id, 'Cancelled')}
-                      disabled={!!actionLoading}
-                      className="p-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition-all"
-                     >
-                       <XCircle size={14}/>
-                     </button>
-                   </>
-                 )}
+                  {!isPlan && booking.status === 'Confirmed' && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleStatusUpdate(booking._id, 'In Progress'); }}
+                      className="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all"
+                    >
+                      Start Service
+                    </button>
+                  )}
 
-                 {booking.status === 'Confirmed' && (
-                   <button 
-                    onClick={() => handleStatusUpdate(booking._id, 'In Progress')}
-                    className="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all"
-                   >
-                     Start Service
-                   </button>
-                 )}
+                  {!isPlan && booking.status === 'In Progress' && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleStatusUpdate(booking._id, 'Completed'); }}
+                      className="flex-1 py-2 bg-emerald-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all"
+                    >
+                      Mark as Completed
+                    </button>
+                  )}
 
-                 {booking.status === 'In Progress' && (
-                   <button 
-                    onClick={() => handleStatusUpdate(booking._id, 'Completed')}
-                    className="flex-1 py-2 bg-emerald-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all"
-                   >
-                     Mark as Completed
-                   </button>
-                 )}
-
-                 {booking.status === 'Completed' && (
-                   <div className="w-full py-2 bg-slate-50 text-slate-400 rounded-xl text-[9px] font-bold uppercase tracking-widest text-center">
-                     Closed Request
-                   </div>
-                 )}
-              </div>
-            </motion.div>
-        ))}
+                  {!isPlan && booking.status === 'Completed' && (
+                    <div className="w-full py-2 bg-slate-50 text-slate-400 rounded-xl text-[9px] font-bold uppercase tracking-widest text-center">
+                      Closed Request
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
       </div>
 
       {/* Booking Details Modal */}
@@ -206,107 +261,153 @@ export const ManageBookings: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="w-full max-w-lg bg-white rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] pointer-events-auto"
-              >
-              <div className="p-4 md:p-6 border-b border-slate-100 flex items-center justify-between shrink-0">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    Booking Details
-                    {selectedBooking.serviceType === 'Home' && (
-                      <span className="bg-purple-100 text-purple-700 text-[10px] px-2 py-1 rounded-md flex items-center gap-1 uppercase tracking-widest font-bold">
-                        <Home size={12} /> Home Service
-                      </span>
-                    )}
-                  </h2>
-                  <p className="text-[11px] font-medium text-slate-500 mt-0.5 tracking-wide">ID: {selectedBooking.bookingId || selectedBooking._id}</p>
-                </div>
-                <button
-                  onClick={() => setSelectedBooking(null)}
-                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
-                {/* Status & Amount */}
-                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">Current Status</p>
-                    <StatusBadge status={selectedBooking.status} />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">Total Amount</p>
-                    <p className="text-lg font-black text-slate-900">₹{selectedBooking.totalAmount}</p>
-                  </div>
-                </div>
-
-                {/* Customer Info */}
-                <div>
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">Customer Information</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-[10px] font-medium text-slate-500">Name</p>
-                      <p className="text-sm font-bold text-slate-900">{selectedBooking.customer?.fullName || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-medium text-slate-500">Phone</p>
-                      <p className="text-sm font-bold text-slate-900">{selectedBooking.customer?.phone || 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Service Details */}
-                <div>
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">Service Details</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-slate-600">{selectedBooking.service?.name}</span>
-                      <span className="text-sm font-bold text-slate-900">₹{selectedBooking.service?.price}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Calendar size={14} className="text-blue-500" />
-                      <span className="font-bold">Date:</span> {new Date(selectedBooking.slot?.date).toLocaleDateString()}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <Clock size={14} className="text-indigo-500" />
-                      <span className="font-bold">Time:</span> {selectedBooking.slot?.time}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Vehicle Details */}
-                <div>
-                  <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">Vehicle Information</h3>
-                  <div className="bg-slate-50 p-3 rounded-xl flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
-                      <CheckCircle2 size={18} className="text-emerald-500" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-900">{selectedBooking.vehicle?.make} {selectedBooking.vehicle?.model}</p>
-                      <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">{selectedBooking.vehicle?.plateNumber}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Address (If Home Service) */}
-                {selectedBooking.serviceType === 'Home' && selectedBooking.homeAddress && (
-                  <div>
-                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2 flex items-center gap-2">
-                      <MapPin size={12} /> Service Address
-                    </h3>
-                    <div className="bg-purple-50 p-3 rounded-xl">
-                      <p className="text-sm font-medium text-slate-800">{selectedBooking.homeAddress.address}</p>
-                      <p className="text-xs font-bold text-slate-600 mt-1 uppercase tracking-widest">{selectedBooking.homeAddress.city}</p>
-                    </div>
-                  </div>
+                className={cn(
+                  "w-full max-w-lg bg-white rounded-[24px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] pointer-events-auto border",
+                  selectedBooking.isPlanPurchase ? "border-amber-200" : "border-slate-100"
                 )}
-              </div>
-            </motion.div>
-          </div>
-        </>
+              >
+                <div className="p-4 md:p-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                      {selectedBooking.isPlanPurchase 
+                        ? "Subscription Plan Details" 
+                        : selectedBooking.totalAmount === 0 && selectedBooking.service?.name?.includes('Wash #')
+                          ? "Plan Wash Details"
+                          : "Booking Details"}
+                      {selectedBooking.isPlanPurchase ? (
+                        <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-1 rounded-md flex items-center gap-1 uppercase tracking-widest font-black">
+                          👑 Plan
+                        </span>
+                      ) : selectedBooking.totalAmount === 0 && selectedBooking.service?.name?.includes('Wash #') ? (
+                        <span className="bg-amber-50 text-amber-700 text-[10px] px-2 py-1 rounded-md flex items-center gap-1 uppercase tracking-widest font-bold shrink-0">
+                          👑 Plan Wash
+                        </span>
+                      ) : selectedBooking.serviceType === 'Home' ? (
+                        <span className="bg-purple-100 text-purple-700 text-[10px] px-2 py-1 rounded-md flex items-center gap-1 uppercase tracking-widest font-bold">
+                          <Home size={12} /> Home Service
+                        </span>
+                      ) : null}
+                    </h2>
+                    <p className="text-[11px] font-medium text-slate-500 mt-0.5 tracking-wide">ID: {selectedBooking.bookingId || selectedBooking._id}</p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedBooking(null)}
+                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="p-4 md:p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+                  {/* Status & Amount */}
+                  <div className={cn(
+                    "flex items-center justify-between p-4 rounded-2xl",
+                    selectedBooking.isPlanPurchase ? "bg-amber-50/30 border border-amber-100" : "bg-slate-50"
+                  )}>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">Current Status</p>
+                      {selectedBooking.isPlanPurchase ? (
+                        <span className={cn(
+                          "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider",
+                          selectedBooking.remainingServices === 0 ? "bg-slate-100 text-slate-500" : "bg-amber-100 text-amber-800"
+                        )}>
+                          {selectedBooking.remainingServices === 0 ? 'Exhausted' : 'Active Subscription'}
+                        </span>
+                      ) : (
+                        <StatusBadge status={selectedBooking.status} />
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">Total Paid</p>
+                      <p className="text-lg font-black text-slate-900">₹{selectedBooking.totalAmount || selectedBooking.service?.price}</p>
+                    </div>
+                  </div>
+
+                  {/* Customer Info */}
+                  <div>
+                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">Customer Information</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[10px] font-medium text-slate-500">Name</p>
+                        <p className="text-sm font-bold text-slate-900">{selectedBooking.customer?.fullName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-medium text-slate-500">Phone</p>
+                        <p className="text-sm font-bold text-slate-900">{selectedBooking.customer?.phone || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Service/Plan Details */}
+                  <div>
+                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">
+                      {selectedBooking.isPlanPurchase ? "Plan Details" : "Service Details"}
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-slate-600">{selectedBooking.service?.name}</span>
+                        <span className="text-sm font-bold text-slate-900">₹{selectedBooking.service?.price}</span>
+                      </div>
+                      
+                      {selectedBooking.isPlanPurchase ? (
+                        <div className="bg-amber-50/20 border border-amber-100/50 rounded-xl p-3 space-y-2">
+                          <p className="text-xs font-bold text-amber-800 flex justify-between">
+                            <span>Services Included:</span>
+                            <span>{selectedBooking.totalServices} Services</span>
+                          </p>
+                          <p className="text-xs font-black text-amber-900 flex justify-between">
+                            <span>Services Remaining:</span>
+                            <span>{selectedBooking.remainingServices} Services Left</span>
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <Calendar size={14} className="text-blue-500" />
+                            <span className="font-bold">Date:</span> {new Date(selectedBooking.slot?.date).toLocaleDateString()}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                            <Clock size={14} className="text-indigo-500" />
+                            <span className="font-bold">Time:</span> {selectedBooking.slot?.time}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Vehicle Details */}
+                  <div>
+                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2">Vehicle Information</h3>
+                    <div className="bg-slate-50 p-3 rounded-xl flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm shrink-0">
+                        <CheckCircle2 size={18} className={cn(selectedBooking.isPlanPurchase ? "text-amber-500" : "text-emerald-500")} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-900">{selectedBooking.vehicle?.make} {selectedBooking.vehicle?.model}</p>
+                        <p className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">{selectedBooking.vehicle?.plateNumber}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Address (If Home Service) */}
+                  {!selectedBooking.isPlanPurchase && selectedBooking.serviceType === 'Home' && selectedBooking.homeAddress && (
+                    <div>
+                      <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-3 border-b border-slate-100 pb-2 flex items-center gap-2">
+                        <MapPin size={12} /> Service Address
+                      </h3>
+                      <div className="bg-purple-50 p-3 rounded-xl">
+                        <p className="text-sm font-medium text-slate-800">{selectedBooking.homeAddress.address}</p>
+                        <p className="text-xs font-bold text-slate-600 mt-1 uppercase tracking-widest">{selectedBooking.homeAddress.city}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          </>
         )}
       </AnimatePresence>
+
     </div>
   );
 };

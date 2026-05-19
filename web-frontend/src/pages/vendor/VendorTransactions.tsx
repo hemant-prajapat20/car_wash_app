@@ -6,6 +6,8 @@ import {
 import api from '../../services/axiosConfig';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -14,6 +16,7 @@ function cn(...inputs: ClassValue[]) {
 export const VendorTransactions: React.FC = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { notifications } = useSelector((state: RootState) => state.notifications);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -30,7 +33,7 @@ export const VendorTransactions: React.FC = () => {
     };
 
     fetchTransactions();
-  }, []);
+  }, [notifications]);
 
   if (loading) {
     return (
