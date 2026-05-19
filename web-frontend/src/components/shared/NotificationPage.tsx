@@ -5,9 +5,7 @@ import { AppDispatch, RootState } from '../../store';
 import { fetchNotifications, markRead, markAllRead, removeNotification } from '../../store/notificationSlice';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
-import api from '../../services/axiosConfig';
-import { InvoiceModal } from './InvoiceModal';
-import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface NotificationPageProps {
   title: string;
@@ -16,29 +14,8 @@ interface NotificationPageProps {
 
 export const NotificationPage: React.FC<NotificationPageProps> = ({ title, subtitle }) => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { notifications, loading, pagination } = useSelector((state: RootState) => state.notifications);
-
-  const [invoiceData, setInvoiceData] = useState<any>(null);
-  const [invoiceOpen, setInvoiceOpen] = useState<boolean>(false);
-  const [fetchingInvoice, setFetchingInvoice] = useState<string | null>(null);
-
-  const handleViewInvoice = async (e: React.MouseEvent, bookingId: string) => {
-    e.stopPropagation();
-    try {
-      setFetchingInvoice(bookingId);
-      const response = await api.get(`/payment/invoice/${bookingId}`);
-      if (response.data.success) {
-        setInvoiceData(response.data.data);
-        setInvoiceOpen(true);
-      } else {
-        toast.error("Failed to fetch invoice details");
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load invoice");
-    } finally {
-      setFetchingInvoice(null);
-    }
-  };
 
   useEffect(() => {
     dispatch(fetchNotifications(1));
@@ -102,15 +79,13 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({ title, subti
 
                 {n.bookingId && (
                   <button 
-                    onClick={(e) => handleViewInvoice(e, n.bookingId!)}
-                    disabled={fetchingInvoice === n.bookingId}
-                    className="mt-3 text-[9px] font-black text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/70 border border-blue-100 rounded-lg px-2.5 py-1.5 transition-all flex items-center gap-1.5 self-start uppercase tracking-wider disabled:opacity-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/invoice/${n.bookingId}`);
+                    }}
+                    className="mt-3 text-[9px] font-black text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/70 border border-blue-100 rounded-lg px-2.5 py-1.5 transition-all flex items-center gap-1.5 self-start uppercase tracking-wider"
                   >
-                    {fetchingInvoice === n.bookingId ? (
-                      <Loader2 size={10} className="animate-spin" />
-                    ) : (
-                      <FileText size={10} />
-                    )}
+                    <FileText size={10} />
                     View Invoice
                   </button>
                 )}
@@ -164,12 +139,6 @@ export const NotificationPage: React.FC<NotificationPageProps> = ({ title, subti
           ))}
         </div>
       )}
-
-      <InvoiceModal 
-        isOpen={invoiceOpen} 
-        onClose={() => setInvoiceOpen(false)} 
-        data={invoiceData} 
-      />
     </div>
   );
 };

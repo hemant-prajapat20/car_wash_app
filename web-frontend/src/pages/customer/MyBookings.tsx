@@ -7,8 +7,7 @@ import { motion } from 'framer-motion';
 import api from '../../services/axiosConfig';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { InvoiceModal } from '../../components/shared/InvoiceModal';
-import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,28 +31,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 export const MyBookings: React.FC = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  const [invoiceData, setInvoiceData] = useState<any>(null);
-  const [invoiceOpen, setInvoiceOpen] = useState<boolean>(false);
-  const [fetchingInvoice, setFetchingInvoice] = useState<string | null>(null);
-
-  const handleViewInvoice = async (e: React.MouseEvent, bookingId: string) => {
-    e.stopPropagation();
-    try {
-      setFetchingInvoice(bookingId);
-      const response = await api.get(`/payment/invoice/${bookingId}`);
-      if (response.data.success) {
-        setInvoiceData(response.data.data);
-        setInvoiceOpen(true);
-      } else {
-        toast.error("Failed to fetch invoice details");
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load invoice");
-    } finally {
-      setFetchingInvoice(null);
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMyBookings = async () => {
@@ -116,16 +94,14 @@ export const MyBookings: React.FC = () => {
                  )}
                  {booking.status !== 'Pending' && booking.status !== 'Cancelled' && (
                    <button 
-                     onClick={(e) => handleViewInvoice(e, booking._id)}
-                     disabled={fetchingInvoice === booking._id}
-                     className="p-1.5 bg-slate-50 border border-slate-100 text-slate-500 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center justify-center disabled:opacity-50"
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       navigate(`/invoice/${booking._id}`);
+                     }}
+                     className="p-1.5 bg-slate-50 border border-slate-100 text-slate-500 rounded-lg hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center justify-center"
                      title="View Invoice"
                    >
-                     {fetchingInvoice === booking._id ? (
-                       <Loader2 size={10} className="animate-spin" />
-                     ) : (
-                       <FileText size={10} />
-                     )}
+                     <FileText size={10} />
                    </button>
                  )}
                  <ChevronRight size={14} className="text-slate-300 group-hover:text-slate-600" />
@@ -139,12 +115,6 @@ export const MyBookings: React.FC = () => {
           </div>
         )}
       </div>
-
-      <InvoiceModal 
-        isOpen={invoiceOpen} 
-        onClose={() => setInvoiceOpen(false)} 
-        data={invoiceData} 
-      />
     </div>
   );
 };
