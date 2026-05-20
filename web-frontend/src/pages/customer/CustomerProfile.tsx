@@ -168,7 +168,7 @@ export const CustomerProfile: React.FC = () => {
                         <Car size={20} />
                       </div>
                       <div className="min-w-0 flex-1 pr-2">
-                        <p className="text-[14px] font-black text-slate-900 truncate">{v.make} {v.model}</p>
+                        <p className="text-[14px] font-black text-slate-900 leading-tight">{v.make} {v.model}</p>
                         <p className="text-[10px] font-black text-blue-600 tracking-wider uppercase mt-1 px-1.5 py-0.5 bg-blue-50 rounded inline-block truncate">{v.plateNumber}</p>
                       </div>
                     </div>
@@ -180,17 +180,17 @@ export const CustomerProfile: React.FC = () => {
                     </button>
                   </div>
                 ))}
-                
-                <button 
-                  onClick={() => setShowAddVehicle(true)}
-                  className="p-5 border-2 border-dashed border-slate-100 rounded-3xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-blue-200 hover:bg-blue-50/30 hover:text-blue-600 transition-all duration-300 group"
-                >
-                  <div className="w-10 h-10 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center group-hover:border-blue-300 transition-colors">
-                    <Plus size={20} />
-                  </div>
-                  <span className="text-[11px] font-black uppercase tracking-widest">Add New Vehicle</span>
-                </button>
              </div>
+             
+             <button 
+               onClick={() => setShowAddVehicle(true)}
+               className="mt-4 w-full p-4 border-2 border-dashed border-slate-100 rounded-3xl flex items-center justify-center gap-2 text-slate-400 hover:border-blue-200 hover:bg-blue-50/30 hover:text-blue-600 transition-all duration-300 group"
+             >
+               <div className="w-8 h-8 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center group-hover:border-blue-300 transition-colors">
+                 <Plus size={16} />
+               </div>
+               <span className="text-[11px] font-black uppercase tracking-widest">Add New Vehicle</span>
+             </button>
            </div>
 
            {/* Addresses Section */}
@@ -207,7 +207,7 @@ export const CustomerProfile: React.FC = () => {
                         <MapPin size={20} />
                       </div>
                       <div className="min-w-0 flex-1 pr-2">
-                        <p className="text-[14px] font-black text-slate-900 truncate">{a.label}</p>
+                        <p className="text-[14px] font-black text-slate-900 leading-tight">{a.label}</p>
                         <p className="text-[10px] font-black text-slate-500 tracking-wider uppercase mt-1 leading-relaxed">{a.address}, {a.city}</p>
                       </div>
                     </div>
@@ -219,17 +219,17 @@ export const CustomerProfile: React.FC = () => {
                     </button>
                   </div>
                 ))}
-                
-                <button 
-                  onClick={() => setShowAddAddress(true)}
-                  className="p-5 border-2 border-dashed border-slate-100 rounded-3xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-emerald-200 hover:bg-emerald-50/30 hover:text-emerald-600 transition-all duration-300 group"
-                >
-                  <div className="w-10 h-10 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center group-hover:border-emerald-300 transition-colors">
-                    <Plus size={20} />
-                  </div>
-                  <span className="text-[11px] font-black uppercase tracking-widest">Add New Address</span>
-                </button>
              </div>
+             
+             <button 
+               onClick={() => setShowAddAddress(true)}
+               className="mt-4 w-full p-4 border-2 border-dashed border-slate-100 rounded-3xl flex items-center justify-center gap-2 text-slate-400 hover:border-emerald-200 hover:bg-emerald-50/30 hover:text-emerald-600 transition-all duration-300 group"
+             >
+               <div className="w-8 h-8 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center group-hover:border-emerald-300 transition-colors">
+                 <Plus size={16} />
+               </div>
+               <span className="text-[11px] font-black uppercase tracking-widest">Add New Address</span>
+             </button>
            </div>
 
         </div>

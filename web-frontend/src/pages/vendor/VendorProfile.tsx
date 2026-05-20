@@ -3,20 +3,37 @@ import {
   User, ShieldCheck, MapPin, 
   Settings, Camera, Lock, 
   Mail, Phone, Globe, Edit2,
-  ArrowRight, CheckCircle2, Loader2
+  ArrowRight, CheckCircle2, Loader2,
+  Image as ImageIcon, Trash2, Upload, Calendar, FileText
 } from 'lucide-react';
 import api from '../../services/axiosConfig';
+import toast from 'react-hot-toast';
 
 export const VendorProfile: React.FC = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [availabilityForm, setAvailabilityForm] = useState({
+    isAvailable: true,
+    reason: '',
+    unavailableUntil: ''
+  });
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await api.get('/vendor/profile');
-        if (res.data.success) setProfile(res.data.data);
+        if (res.data.success) {
+          setProfile(res.data.data);
+          if (res.data.data.availability) {
+            setAvailabilityForm({
+              isAvailable: res.data.data.availability.isAvailable,
+              reason: res.data.data.availability.reason || '',
+              unavailableUntil: res.data.data.availability.unavailableUntil ? new Date(res.data.data.availability.unavailableUntil).toISOString().split('T')[0] : ''
+            });
+          }
+        }
       } catch (err) {
         console.error('Fetch profile failed');
       } finally {
@@ -25,6 +42,61 @@ export const VendorProfile: React.FC = () => {
     };
     fetchProfile();
   }, []);
+
+  const handleAvailabilityUpdate = async () => {
+    setSaving(true);
+    try {
+      const res = await api.patch('/vendor/availability', availabilityForm);
+      if (res.data.success) {
+        setProfile((prev: any) => ({ ...prev, availability: res.data.data }));
+        toast.success('Availability settings updated');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to update availability');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    const formData = new FormData();
+    Array.from(e.target.files).forEach(file => {
+      formData.append('images', file);
+    });
+
+    setUploading(true);
+    try {
+      const res = await api.post('/vendor/gallery', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setProfile((prev: any) => ({ ...prev, gallery: res.data.data }));
+        toast.success('Images uploaded successfully');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to upload images');
+    } finally {
+      setUploading(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleImageDelete = async (publicId: string) => {
+    setSaving(true);
+    try {
+      const res = await api.delete('/vendor/gallery', { data: { publicId } });
+      if (res.data.success) {
+        setProfile((prev: any) => ({ ...prev, gallery: res.data.data }));
+        toast.success('Image deleted');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete image');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleUpdate = async (field: string, value: any) => {
     setSaving(true);
@@ -125,7 +197,109 @@ export const VendorProfile: React.FC = () => {
                   />
                 </button>
               </div>
+
+              {/* Vendor Availability Settings */}
+              <div className="col-span-2 p-4 bg-white border border-slate-100 rounded-xl shadow-sm mt-2">
+                <div className="flex items-center justify-between mb-3 border-b border-slate-50 pb-3">
+                  <div>
+                    <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <Calendar size={12} className={availabilityForm.isAvailable ? 'text-emerald-500' : 'text-rose-500'} /> 
+                      Business Availability
+                    </h3>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Temporarily disable new bookings if you're closed</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAvailabilityForm(prev => ({ ...prev, isAvailable: !prev.isAvailable }))}
+                    className={`w-12 h-6 rounded-full p-0.5 transition-colors duration-200 focus:outline-none flex items-center ${
+                      availabilityForm.isAvailable ? 'bg-emerald-500' : 'bg-rose-500'
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 bg-white rounded-full shadow-sm transform transition-transform duration-200 ${
+                        availabilityForm.isAvailable ? 'translate-x-6' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {!availabilityForm.isAvailable && (
+                  <div className="space-y-3 mt-3 bg-rose-50/30 p-3 rounded-lg border border-rose-100/50">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Unavailable Reason</label>
+                      <input 
+                        type="text" 
+                        value={availabilityForm.reason}
+                        onChange={(e) => setAvailabilityForm(prev => ({ ...prev, reason: e.target.value }))}
+                        placeholder="e.g., Holiday break, Shop closed"
+                        className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-rose-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 block">Unavailable Until (Optional)</label>
+                      <input 
+                        type="date" 
+                        value={availabilityForm.unavailableUntil}
+                        onChange={(e) => setAvailabilityForm(prev => ({ ...prev, unavailableUntil: e.target.value }))}
+                        className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-rose-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-3 flex justify-end">
+                  <button 
+                    onClick={handleAvailabilityUpdate}
+                    className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase hover:bg-slate-800 transition-all flex items-center gap-2"
+                  >
+                    {saving && <Loader2 size={10} className="animate-spin" />} Update Availability
+                  </button>
+                </div>
+              </div>
            </div>
+        </div>
+
+        {/* Gallery Section */}
+        <div className="md:col-span-3 bg-white border border-slate-100 rounded-2xl p-4 shadow-sm mt-4">
+          <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+            <div>
+              <h3 className="text-[12px] font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                <ImageIcon size={14} className="text-blue-500" /> Image Gallery
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">Showcase your best car washes and services to attract more customers.</p>
+            </div>
+            <div>
+              <label className="cursor-pointer bg-blue-50 text-blue-600 px-3 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-blue-100 transition-all flex items-center gap-2">
+                {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                {uploading ? 'Uploading...' : 'Upload Photos'}
+                <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+              </label>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            {profile?.gallery?.length > 0 ? (
+              profile.gallery.map((img: any) => (
+                <div key={img.publicId} className="relative group rounded-xl overflow-hidden aspect-square border border-slate-100 bg-slate-50 shadow-sm">
+                  <img src={img.url} alt="Gallery" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button 
+                      onClick={() => handleImageDelete(img.publicId)}
+                      className="bg-rose-500 text-white p-2 rounded-full hover:bg-rose-600 transition-colors transform hover:scale-110"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full py-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <ImageIcon size={24} className="mx-auto mb-2 opacity-50" />
+                <p className="text-[10px] uppercase font-bold tracking-widest">No images uploaded yet</p>
+                <p className="text-xs mt-1">Upload images to build your public portfolio</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Car, Clock, ChevronRight, ArrowLeft, CheckCircle2, 
-  Loader2, Plus, X, Printer, Star
+  Loader2, Plus, X, Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -67,7 +67,10 @@ export const BookService: React.FC = () => {
   const [vendor,   setVendor]   = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [slots,    setSlots]    = useState<any[]>([]);
-  const [reviews,  setReviews]  = useState<any[]>([]);
+
+  // Customer's active premium plan for this vendor (if any)
+  const [customerPlan, setCustomerPlan] = useState<any>(null);
+  const [packageMode, setPackageMode] = useState<'premium' | 'normal'>('normal');
 
   const [bookingData, setBookingData] = useState<BookingData>({
     vehicle: null, service: null, slot: null,
@@ -109,12 +112,25 @@ export const BookService: React.FC = () => {
           setVendor(res.data.data.vendor);
           setServices(res.data.data.services);
           setSlots(res.data.data.slots);
-          setReviews(res.data.data.reviews || []);
         }
       } catch { toast.error('Failed to load vendor schedule.'); }
       finally { setFetching(false); }
     })();
   }, [vendorId, navigate, selectedDate]);
+
+  // Fetch customer's active plan for this vendor
+  useEffect(() => {
+    if (!vendorId) return;
+    (async () => {
+      try {
+        const res = await api.get(`/plans/customer/vendor/${vendorId}`);
+        if (res.data.success && res.data.data.length > 0) {
+          const active = res.data.data.find((p: any) => p.status === 'Active');
+          if (active) { setCustomerPlan(active); setPackageMode('premium'); }
+        }
+      } catch { /* silent */ }
+    })();
+  }, [vendorId]);
 
   const fetchData = async () => {
     try {
@@ -370,7 +386,7 @@ export const BookService: React.FC = () => {
             </motion.div>
           )}
 
-          {/* ── STEP 2: Service ──────────────────────── */}
+          {/* ── STEP 2: Package ──────────────────────── */}
           {currentStep === 2 && (
             <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
               <div className="pb-4 border-b border-slate-100">
@@ -378,40 +394,106 @@ export const BookService: React.FC = () => {
                 <p className="text-xs text-slate-400 mt-0.5">Pick the service that suits your car</p>
               </div>
 
-              {services.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-12 border-2 border-dashed border-slate-100 rounded-2xl">
-                  No services available from this vendor.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {services.map((s: any) => {
-                    const selected = bookingData.service?._id === s._id;
-                    return (
-                      <button
-                        key={s._id}
-                        onClick={() => setBookingData({ ...bookingData, service: s })}
-                        className={cn(
-                          'w-full p-4 border-2 rounded-xl flex items-center justify-between gap-4 text-left transition-all',
-                          selected ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
-                        )}
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-bold text-slate-900">{s.name}</span>
-                            <span className="text-[9px] font-bold uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{s.category}</span>
-                          </div>
-                          <p className="text-[11px] text-slate-400 line-clamp-1">{s.description}</p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-base font-black text-emerald-600">₹{s.price}</span>
-                          <p className="text-[10px] text-slate-400 flex items-center gap-1 justify-end mt-0.5">
-                            <Clock size={10} /> {s.duration} min
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
+              {/* Package Mode Toggle — only shown if customer has an active premium plan */}
+              {customerPlan && (
+                <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => { setPackageMode('premium'); setBookingData({ ...bookingData, service: null }); }}
+                    className={cn(
+                      'flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                      packageMode === 'premium' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'
+                    )}
+                  >
+                    ⭐ Premium Plan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setPackageMode('normal'); setBookingData({ ...bookingData, service: null }); }}
+                    className={cn(
+                      'flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all',
+                      packageMode === 'normal' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400'
+                    )}
+                  >
+                    Normal Services
+                  </button>
                 </div>
+              )}
+
+              {/* Premium Plan Info Card */}
+              {customerPlan && packageMode === 'premium' && (
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-100 rounded-2xl space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Active Plan</p>
+                      <h3 className="text-sm font-black text-slate-900 mt-0.5">{customerPlan.servicePlan?.title}</h3>
+                      <p className="text-[11px] text-slate-500 mt-0.5">{customerPlan.servicePlan?.description}</p>
+                    </div>
+                    <div className="text-right shrink-0 ml-4">
+                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Remaining</p>
+                      <p className="text-xl font-black text-slate-900">{customerPlan.remainingServices}<span className="text-xs font-bold text-slate-400">/{customerPlan.totalServices}</span></p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Car size={12} className="text-slate-400" />
+                    <p className="text-[11px] font-bold text-slate-500">{customerPlan.vehicle?.make} {customerPlan.vehicle?.model} — {customerPlan.vehicle?.plateNumber}</p>
+                  </div>
+                  {customerPlan.remainingServices > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setBookingData({ ...bookingData, service: { _id: 'plan_use', name: customerPlan.servicePlan?.title, price: 0, isPlanService: true, planId: customerPlan._id } })}
+                      className={cn(
+                        'w-full py-3 rounded-xl border-2 text-xs font-black uppercase tracking-widest transition-all',
+                        bookingData.service?._id === 'plan_use'
+                          ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-100'
+                          : 'border-blue-200 text-blue-600 hover:bg-blue-50'
+                      )}
+                    >
+                      {bookingData.service?._id === 'plan_use' ? '✓ Plan Service Selected' : 'Use This Plan for Booking'}
+                    </button>
+                  ) : (
+                    <p className="text-[11px] font-bold text-rose-500 text-center py-2">No services remaining in this plan.</p>
+                  )}
+                </div>
+              )}
+
+              {/* Normal Services List */}
+              {(!customerPlan || packageMode === 'normal') && (
+                services.length === 0 ? (
+                  <p className="text-sm text-slate-400 text-center py-12 border-2 border-dashed border-slate-100 rounded-2xl">
+                    No services available from this vendor.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {services.map((s: any) => {
+                      const selected = bookingData.service?._id === s._id;
+                      return (
+                        <button
+                          key={s._id}
+                          onClick={() => setBookingData({ ...bookingData, service: s })}
+                          className={cn(
+                            'w-full p-4 border-2 rounded-xl flex items-center justify-between gap-4 text-left transition-all',
+                            selected ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
+                          )}
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-bold text-slate-900">{s.name}</span>
+                              <span className="text-[9px] font-bold uppercase tracking-widest bg-slate-100 text-slate-500 px-2 py-0.5 rounded">{s.category}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 line-clamp-1">{s.description}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-base font-black text-emerald-600">₹{s.price}</span>
+                            <p className="text-[10px] text-slate-400 flex items-center gap-1 justify-end mt-0.5">
+                              <Clock size={10} /> {s.duration} min
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )
               )}
             </motion.div>
           )}
@@ -456,6 +538,7 @@ export const BookService: React.FC = () => {
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Select Saved Address</label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  
                         {addresses.map(addr => {
                           const isSelected = homeAddress.address === addr.address && homeAddress.city === addr.city;
                           return (
@@ -464,12 +547,22 @@ export const BookService: React.FC = () => {
                               type="button"
                               onClick={() => setHomeAddress({ address: addr.address, city: addr.city })}
                               className={cn(
-                                'p-3 border-2 rounded-xl text-left transition-all',
+                                'w-full p-3 border-2 rounded-xl flex items-center justify-between text-left transition-all',
                                 isSelected ? 'border-emerald-600 bg-emerald-50/50 shadow-md shadow-emerald-50' : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'
                               )}
                             >
-                              <p className="text-xs font-black text-slate-800">{addr.label}</p>
-                              <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{addr.address}, {addr.city}</p>
+                              <div>
+                                <p className="text-xs font-black text-slate-800">{addr.label}</p>
+                                <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{addr.address}, {addr.city}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={e => { e.stopPropagation(); deleteAddress(addr._id); }}
+                                className="p-1 text-slate-400 hover:text-slate-600"
+                                title="Delete address"
+                              >
+                                <X size={14} />
+                              </button>
                             </button>
                           );
                         })}
@@ -723,6 +816,20 @@ export const BookService: React.FC = () => {
               </div>
 
               <form onSubmit={handleAddVehicle} className="p-6 space-y-4">
+                {/* Delete address handler */}
+                <script>
+                {`
+                  const deleteAddress = async (addressId: string) => {
+                    try {
+                      await api.delete(\`/customer/addresses/\${addressId}\`);
+                      toast.success('Address deleted');
+                      fetchData();
+                    } catch (err: any) {
+                      toast.error(err.response?.data?.message || 'Failed to delete address');
+                    }
+                  };
+                `}
+                </script>
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: 'Make',  key: 'make',  placeholder: 'e.g. Toyota' },
@@ -773,62 +880,6 @@ export const BookService: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ── Vendor Reviews Section ────────────────── */}
-      <div className="mt-8 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-50 mb-4 gap-3">
-          <div>
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <Star size={16} className="text-amber-500 fill-amber-500 animate-pulse" />
-              Customer Reviews & Feedback
-            </h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Real feedback left by previous customers</p>
-          </div>
-          {reviews.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-100 rounded-xl px-3 py-1.5 self-start sm:self-auto">
-              <Star size={14} className="text-amber-500 fill-amber-500" />
-              <span className="text-xs font-black text-amber-700">
-                {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)} / 5.0
-              </span>
-              <span className="text-[9px] font-bold text-slate-400">({reviews.length})</span>
-            </div>
-          )}
-        </div>
-
-        {reviews.length === 0 ? (
-          <div className="py-8 text-center text-slate-400">
-            <p className="text-xs font-semibold italic">No feedback left for this vendor yet. Be the first to try their service!</p>
-          </div>
-        ) : (
-          <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
-            {reviews.map((r) => (
-              <div key={r._id} className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white text-[10px] font-bold flex items-center justify-center uppercase">
-                      {r.customer?.fullName?.slice(0, 2) || 'CS'}
-                    </div>
-                    <span className="text-xs font-black text-slate-800">{r.customer?.fullName || 'Customer'}</span>
-                  </div>
-                  <div className="flex items-center gap-0.5">
-                    {Array.from({ length: 5 }).map((_, idx) => (
-                      <Star 
-                        key={idx} 
-                        size={11} 
-                        className={idx < r.rating ? 'text-amber-500 fill-amber-500' : 'text-slate-200'} 
-                      />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-[11px] font-medium leading-relaxed text-slate-600 italic">"{r.comment}"</p>
-                <div className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">
-                  Submitted {new Date(r.createdAt || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
     </div>
   );

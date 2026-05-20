@@ -10,6 +10,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
+import toast from 'react-hot-toast';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -60,9 +61,11 @@ export const ManageBookings: React.FC = () => {
       const response = await api.patch(`/vendor/bookings/${bookingId}/status`, { status: newStatus });
       if (response.data.success) {
         setBookings(prev => prev.map(bk => bk._id === bookingId ? { ...bk, status: newStatus } : bk));
+        toast.success(`Booking status updated to ${newStatus}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Status update failed:', err);
+      toast.error(err.response?.data?.message || 'Status update failed');
     } finally {
       setActionLoading(null);
     }

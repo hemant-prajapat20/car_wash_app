@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin, Star, Clock, Info, Loader2, ChevronRight, CheckCircle2, ShieldCheck, ArrowLeft,
-  Mail, Phone, CreditCard, Calendar, X
+  Mail, Phone, CreditCard, Calendar, X, Image as ImageIcon
 } from 'lucide-react';
 import api from '../../services/axiosConfig';
 
@@ -143,16 +143,26 @@ export const VendorProfile: React.FC = () => {
               <span className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-xl border border-blue-100">
                 <Clock size={14} className="text-blue-500" /> {slots.length} Slots Available
               </span>
+              {vendor.availability && vendor.availability.isAvailable === false && (
+                <span className="flex items-center gap-1.5 bg-rose-50 text-rose-700 px-3 py-1.5 rounded-xl border border-rose-100">
+                  <Info size={14} className="text-rose-500" /> {vendor.availability.reason || 'Temporarily Closed'}
+                </span>
+              )}
             </div>
           </div>
 
           <div className="w-full sm:w-auto mt-4 sm:mt-0 flex flex-col gap-3">
             <button
-              onClick={() => navigate('/customer/book?vendor=' + vendor._id)}
-              className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 flex items-center justify-center gap-2"
+              onClick={() => !(vendor.availability?.isAvailable === false) && navigate('/customer/book?vendor=' + vendor._id)}
+              disabled={vendor.availability?.isAvailable === false}
+              className={`w-full sm:w-auto px-8 py-3.5 text-white rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
+                vendor.availability?.isAvailable === false
+                  ? 'bg-slate-300 shadow-none cursor-not-allowed'
+                  : 'bg-blue-600 shadow-blue-200 hover:bg-blue-700 active:scale-95'
+              }`}
             >
-              <span>Book Appointment</span>
-              <ChevronRight size={16} />
+              <span>{vendor.availability?.isAvailable === false ? 'Unavailable' : 'Book Appointment'}</span>
+              {!(vendor.availability?.isAvailable === false) && <ChevronRight size={16} />}
             </button>
             <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               Services from &#8377;{startingPrice}
@@ -256,6 +266,24 @@ export const VendorProfile: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Vendor Gallery Section */}
+        {vendor.gallery && vendor.gallery.length > 0 && (
+          <div className="bg-white border border-slate-100 rounded-[2.5rem] p-6 sm:p-8 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <ImageIcon size={20} className="text-blue-500" /> Image Gallery
+              <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-xs">{vendor.gallery.length}</span>
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {vendor.gallery.map((img: any) => (
+                <div key={img.publicId} className="relative group rounded-2xl overflow-hidden aspect-square border border-slate-100 shadow-sm cursor-pointer">
+                  <img src={img.url} alt="Gallery" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/30 transition-colors" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Subscription Plans — full width below grid */}
         {plans.length > 0 && (
