@@ -162,19 +162,19 @@ export const CustomerProfile: React.FC = () => {
              </div>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {vehicles.map((v: any) => (
-                  <div key={v._id} className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-between group hover:border-blue-200 hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-blue-500/5 duration-300">
-                    <div className="flex items-center gap-4">
-                      <div className="w-11 h-11 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all duration-300">
+                  <div key={v._id} className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-between gap-3 group hover:border-blue-200 hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-blue-500/5 duration-300">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <div className="w-11 h-11 shrink-0 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all duration-300">
                         <Car size={20} />
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1 pr-2">
                         <p className="text-[14px] font-black text-slate-900 truncate">{v.make} {v.model}</p>
-                        <p className="text-[10px] font-black text-blue-600 tracking-wider uppercase mt-1 px-1.5 py-0.5 bg-blue-50 rounded inline-block">{v.plateNumber}</p>
+                        <p className="text-[10px] font-black text-blue-600 tracking-wider uppercase mt-1 px-1.5 py-0.5 bg-blue-50 rounded inline-block truncate">{v.plateNumber}</p>
                       </div>
                     </div>
                     <button 
                       onClick={() => handleDeleteVehicle(v._id)}
-                      className="w-8 h-8 flex items-center justify-center text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                      className="w-8 h-8 shrink-0 flex items-center justify-center text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
                     >
                       <Trash2 size={16}/>
                     </button>
@@ -201,19 +201,19 @@ export const CustomerProfile: React.FC = () => {
              </div>
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {addresses.map((a: any) => (
-                  <div key={a._id} className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-between group hover:border-blue-200 hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-blue-500/5 duration-300">
-                    <div className="flex items-center gap-4">
-                      <div className="w-11 h-11 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 transition-all duration-300">
+                  <div key={a._id} className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-between gap-3 group hover:border-emerald-200 hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-emerald-500/5 duration-300">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <div className="w-11 h-11 shrink-0 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 transition-all duration-300">
                         <MapPin size={20} />
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1 pr-2">
                         <p className="text-[14px] font-black text-slate-900 truncate">{a.label}</p>
-                        <p className="text-[10px] font-black text-slate-500 tracking-wider uppercase mt-1 truncate max-w-[120px]">{a.address}, {a.city}</p>
+                        <p className="text-[10px] font-black text-slate-500 tracking-wider uppercase mt-1 leading-relaxed">{a.address}, {a.city}</p>
                       </div>
                     </div>
                     <button 
                       onClick={() => handleDeleteAddress(a._id)}
-                      className="w-8 h-8 flex items-center justify-center text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                      className="w-8 h-8 shrink-0 flex items-center justify-center text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
                     >
                       <Trash2 size={16}/>
                     </button>

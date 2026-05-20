@@ -469,7 +469,7 @@ export const BookService: React.FC = () => {
                               )}
                             >
                               <p className="text-xs font-black text-slate-800">{addr.label}</p>
-                              <p className="text-[10px] text-slate-500 mt-0.5 truncate">{addr.address}, {addr.city}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{addr.address}, {addr.city}</p>
                             </button>
                           );
                         })}
