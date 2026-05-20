@@ -14,24 +14,34 @@ import { motion } from 'framer-motion';
 export const CustomerProfile: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [addresses, setAddresses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [newVehicle, setNewVehicle] = useState({ make: '', model: '', plateNumber: '' });
+  
+  const [showAddAddress, setShowAddAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState({ label: '', address: '', city: '' });
+  
   const [actionLoading, setActionLoading] = useState(false);
 
-  const fetchVehicles = async () => {
+  const fetchData = async () => {
     try {
-      const res = await api.get('/customer/vehicles');
-      if (res.data.success) setVehicles(res.data.data);
+      const [vehRes, addrRes] = await Promise.all([
+        api.get('/customer/vehicles'),
+        api.get('/customer/addresses')
+      ]);
+      if (vehRes.data.success) setVehicles(vehRes.data.data);
+      if (addrRes.data.success) setAddresses(addrRes.data.data);
     } catch (err) {
-      console.error('Fetch vehicles failed');
+      console.error('Fetch data failed');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchVehicles();
+    fetchData();
   }, []);
 
   const handleAddVehicle = async (e: React.FormEvent) => {
@@ -62,6 +72,37 @@ export const CustomerProfile: React.FC = () => {
       }
     } catch (err) {
       toast.error("Failed to remove vehicle");
+    }
+  };
+
+  const handleAddAddress = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionLoading(true);
+    try {
+      const res = await api.post('/customer/addresses', newAddress);
+      if (res.data.success) {
+        setAddresses(res.data.data);
+        setShowAddAddress(false);
+        setNewAddress({ label: '', address: '', city: '' });
+        toast.success("Address added!");
+      }
+    } catch (err) {
+      toast.error("Failed to add address");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteAddress = async (id: string) => {
+    if (!window.confirm("Are you sure you want to remove this address?")) return;
+    try {
+      const res = await api.delete(`/customer/addresses/${id}`);
+      if (res.data.success) {
+        setAddresses(res.data.data);
+        toast.success("Address removed");
+      }
+    } catch (err) {
+      toast.error("Failed to remove address");
     }
   };
 
@@ -151,10 +192,50 @@ export const CustomerProfile: React.FC = () => {
                 </button>
              </div>
            </div>
+
+           {/* Addresses Section */}
+           <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-sm">
+             <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Saved Addresses</h3>
+                <span className="bg-emerald-50 text-emerald-600 text-[10px] font-black px-3 py-1 rounded-full uppercase">{addresses.length} Addresses</span>
+             </div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {addresses.map((a: any) => (
+                  <div key={a._id} className="p-5 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-between group hover:border-blue-200 hover:bg-white transition-all shadow-sm hover:shadow-xl hover:shadow-blue-500/5 duration-300">
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 bg-white border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 transition-all duration-300">
+                        <MapPin size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[14px] font-black text-slate-900 truncate">{a.label}</p>
+                        <p className="text-[10px] font-black text-slate-500 tracking-wider uppercase mt-1 truncate max-w-[120px]">{a.address}, {a.city}</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteAddress(a._id)}
+                      className="w-8 h-8 flex items-center justify-center text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
+                    >
+                      <Trash2 size={16}/>
+                    </button>
+                  </div>
+                ))}
+                
+                <button 
+                  onClick={() => setShowAddAddress(true)}
+                  className="p-5 border-2 border-dashed border-slate-100 rounded-3xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-emerald-200 hover:bg-emerald-50/30 hover:text-emerald-600 transition-all duration-300 group"
+                >
+                  <div className="w-10 h-10 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center group-hover:border-emerald-300 transition-colors">
+                    <Plus size={20} />
+                  </div>
+                  <span className="text-[11px] font-black uppercase tracking-widest">Add New Address</span>
+                </button>
+             </div>
+           </div>
+
         </div>
       </div>
 
-      {/* Add Vehicle Modal (Reusable Logic) */}
+      {/* Add Vehicle Modal */}
       {showAddVehicle && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl border border-slate-100 relative">
@@ -171,7 +252,7 @@ export const CustomerProfile: React.FC = () => {
                     required 
                     type="text" 
                     placeholder="e.g. Tesla" 
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none font-semibold text-slate-700"
                     value={newVehicle.make}
                     onChange={e => setNewVehicle({...newVehicle, make: e.target.value})}
                   />
@@ -182,7 +263,7 @@ export const CustomerProfile: React.FC = () => {
                     required 
                     type="text" 
                     placeholder="e.g. Model 3" 
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none font-semibold text-slate-700"
                     value={newVehicle.model}
                     onChange={e => setNewVehicle({...newVehicle, model: e.target.value})}
                   />
@@ -194,7 +275,7 @@ export const CustomerProfile: React.FC = () => {
                   required 
                   type="text" 
                   placeholder="e.g. XYZ-1234" 
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold tracking-wider focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold tracking-wider focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none font-semibold text-slate-700"
                   value={newVehicle.plateNumber}
                   onChange={e => setNewVehicle({...newVehicle, plateNumber: e.target.value.toUpperCase()})}
                 />
@@ -204,6 +285,61 @@ export const CustomerProfile: React.FC = () => {
                 <button type="button" onClick={() => setShowAddVehicle(false)} className="flex-1 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors">Cancel</button>
                 <button type="submit" disabled={actionLoading} className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50">
                   {actionLoading ? "Adding..." : "Save Vehicle"}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Add Address Modal */}
+      {showAddAddress && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl border border-slate-100 relative">
+            <div className="mb-6 text-center">
+              <h3 className="text-xl font-black text-slate-900">Add New Address</h3>
+              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">Save location for Home Service</p>
+            </div>
+
+            <form onSubmit={handleAddAddress} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Label</label>
+                <input 
+                  required 
+                  type="text" 
+                  placeholder="e.g. Home, Office" 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none font-semibold text-slate-700"
+                  value={newAddress.label}
+                  onChange={e => setNewAddress({...newAddress, label: e.target.value})}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Address</label>
+                <input 
+                  required 
+                  type="text" 
+                  placeholder="e.g. Flat 101, Green Meadows" 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none font-semibold text-slate-700"
+                  value={newAddress.address}
+                  onChange={e => setNewAddress({...newAddress, address: e.target.value})}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">City</label>
+                <input 
+                  required 
+                  type="text" 
+                  placeholder="e.g. Pune" 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-blue-600/5 focus:bg-white transition-all outline-none font-semibold text-slate-700"
+                  value={newAddress.city}
+                  onChange={e => setNewAddress({...newAddress, city: e.target.value})}
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={() => setShowAddAddress(false)} className="flex-1 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors">Cancel</button>
+                <button type="submit" disabled={actionLoading} className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50">
+                  {actionLoading ? "Adding..." : "Save Address"}
                 </button>
               </div>
             </form>

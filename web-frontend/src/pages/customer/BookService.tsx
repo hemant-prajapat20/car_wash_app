@@ -77,6 +77,8 @@ export const BookService: React.FC = () => {
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [newVehicle,     setNewVehicle]     = useState({ make: '', model: '', plateNumber: '' });
 
+  const [addresses, setAddresses] = useState<any[]>([]);
+
   // Invoice State
   const [invoiceId, setInvoiceId] = useState<string | null>(null);
 
@@ -92,7 +94,7 @@ export const BookService: React.FC = () => {
   });
 
   /* ── Fetch ────────────────────────────────────────── */
-  useEffect(() => { fetchVehicles(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   useEffect(() => {
     setBookingData(prev => ({ ...prev, slot: null }));
@@ -114,10 +116,14 @@ export const BookService: React.FC = () => {
     })();
   }, [vendorId, navigate, selectedDate]);
 
-  const fetchVehicles = async () => {
+  const fetchData = async () => {
     try {
-      const res = await api.get('/customer/vehicles');
-      if (res.data.success) setVehicles(res.data.data);
+      const [vehRes, addrRes] = await Promise.all([
+        api.get('/customer/vehicles'),
+        api.get('/customer/addresses')
+      ]);
+      if (vehRes.data.success) setVehicles(vehRes.data.data);
+      if (addrRes.data.success) setAddresses(addrRes.data.data);
     } catch { /* silent */ }
   };
 
@@ -443,32 +449,61 @@ export const BookService: React.FC = () => {
                 </div>
               )}
 
-              {/* Home address form fields */}
+              {/* Home address form fields & Saved Addresses */}
               {serviceType === 'Home' && (
-                <div className="p-4 bg-slate-50/80 border border-slate-100 rounded-xl space-y-3 animate-in slide-in-from-top-2 duration-200">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Home Service Address</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="sm:col-span-2 space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Street Address</label>
-                      <input
-                        required
-                        type="text"
-                        placeholder="e.g. Flat 101, Green Meadows"
-                        value={homeAddress.address}
-                        onChange={e => setHomeAddress({ ...homeAddress, address: e.target.value })}
-                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400 transition-all font-semibold text-slate-700"
-                      />
+                <div className="space-y-4 animate-in slide-in-from-top-2 duration-200">
+                  {addresses.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">Select Saved Address</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {addresses.map(addr => {
+                          const isSelected = homeAddress.address === addr.address && homeAddress.city === addr.city;
+                          return (
+                            <button
+                              key={addr._id}
+                              type="button"
+                              onClick={() => setHomeAddress({ address: addr.address, city: addr.city })}
+                              className={cn(
+                                'p-3 border-2 rounded-xl text-left transition-all',
+                                isSelected ? 'border-emerald-600 bg-emerald-50/50 shadow-md shadow-emerald-50' : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'
+                              )}
+                            >
+                              <p className="text-xs font-black text-slate-800">{addr.label}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5 truncate">{addr.address}, {addr.city}</p>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">City</label>
-                      <input
-                        required
-                        type="text"
-                        placeholder="e.g. Pune"
-                        value={homeAddress.city}
-                        onChange={e => setHomeAddress({ ...homeAddress, city: e.target.value })}
-                        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400 transition-all font-semibold text-slate-700"
-                      />
+                  )}
+
+                  <div className="p-4 bg-slate-50/80 border border-slate-100 rounded-xl space-y-3">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {addresses.length > 0 ? "Or Enter Custom Address" : "Home Service Address"}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="sm:col-span-2 space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Street Address</label>
+                        <input
+                          required
+                          type="text"
+                          placeholder="e.g. Flat 101, Green Meadows"
+                          value={homeAddress.address}
+                          onChange={e => setHomeAddress({ ...homeAddress, address: e.target.value })}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400 transition-all font-semibold text-slate-700"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">City</label>
+                        <input
+                          required
+                          type="text"
+                          placeholder="e.g. Pune"
+                          value={homeAddress.city}
+                          onChange={e => setHomeAddress({ ...homeAddress, city: e.target.value })}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-blue-400 transition-all font-semibold text-slate-700"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

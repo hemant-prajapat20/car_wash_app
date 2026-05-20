@@ -269,3 +269,30 @@ export const deleteVehicle = asyncHandler(async (req: AuthRequest, res: Response
 
   res.json({ success: true, data: user.vehicles, message: 'Vehicle removed' });
 });
+
+export const addAddress = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const user = await User.findById(req.user?._id);
+  if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+  if (!user.addresses) user.addresses = [];
+  user.addresses.push(req.body);
+  await user.save();
+
+  res.json({ success: true, data: user.addresses, message: 'Address added successfully' });
+});
+
+export const getAddresses = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const user = await User.findById(req.user?._id).select('addresses');
+  res.json({ success: true, data: user?.addresses || [] });
+});
+
+export const deleteAddress = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const { addressId } = req.params;
+  const user = await User.findById(req.user?._id);
+  if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+  user.addresses = user.addresses?.filter((a: any) => a._id.toString() !== addressId);
+  await user.save();
+
+  res.json({ success: true, data: user.addresses, message: 'Address removed' });
+});

@@ -31,7 +31,10 @@ import {
   submitReview,
   addVehicle,
   getVehicles,
-  deleteVehicle
+  deleteVehicle,
+  addAddress,
+  getAddresses,
+  deleteAddress
 } from '../controllers/customerController';
 import { 
   createRazorpayOrder, 
@@ -108,6 +111,11 @@ router.route('/customer/vehicles')
   .get(protect, authorize('customer'), getVehicles)
   .post(protect, authorize('customer'), addVehicle);
 router.delete('/customer/vehicles/:vehicleId', protect, authorize('customer'), deleteVehicle);
+
+router.route('/customer/addresses')
+  .get(protect, authorize('customer'), getAddresses)
+  .post(protect, authorize('customer'), addAddress);
+router.delete('/customer/addresses/:addressId', protect, authorize('customer'), deleteAddress);
 
 // PAYMENT ROUTES (Protected)
 router.post('/payment/create-order', protect, authorize('customer'), createRazorpayOrder);
