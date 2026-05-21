@@ -23,7 +23,7 @@ app.use(express.json());
 // DATABASE CONNECTION
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/chakachak');
+    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/chakachak');
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error: any) {
     console.error(`❌ Error: ${error.message}`);
