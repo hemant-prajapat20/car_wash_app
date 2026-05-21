@@ -9,6 +9,7 @@ import { CustomerRoutes } from './routes/CustomerRoutes';
 import { AdminRoutes } from './routes/AdminRoutes';
 import { VendorRoutes } from './routes/VendorRoutes';
 import { InvoicePage } from './pages/InvoicePage';
+import { VendorDemoLogin } from './pages/auth/VendorDemoLogin';
 import { RoleProtectedRoute } from './components/auth/RoleProtectedRoute';
 
 // Secret path from environment variables
