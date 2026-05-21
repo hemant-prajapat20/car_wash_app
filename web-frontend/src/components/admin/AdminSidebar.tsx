@@ -24,11 +24,11 @@ export const AdminSidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    dispatch(logout());
-    // After admin logout, redirect to the secret admin login page
-    navigate('/admin-access');
-  };
+    const handleLogout = () => {
+      dispatch(logout());
+      // After admin logout, redirect to landing page
+      navigate('/');
+    };
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
