@@ -4,7 +4,8 @@ import {
   addSlot, getSlots,
   addService, getServices, updateService, deleteService,
   addWorker, getWorkers, updateWorker, deleteWorker,
-  uploadGalleryImages, deleteGalleryImage, updateAvailability
+  uploadGalleryImages, deleteGalleryImage, updateAvailability,
+  getVendorGallery, getVendorAvailability
 } from '../controllers/vendorController';
 import { uploadImage } from '../middleware/upload';
 

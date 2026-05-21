@@ -297,6 +297,17 @@ export const deleteGalleryImage = asyncHandler(async (req: any, res: Response) =
   res.json({ success: true, data: user.gallery, message: 'Image deleted successfully' });
 });
 
+export const getVendorGallery = asyncHandler(async (req: any, res: Response) => {
+  const user = await User.findById(req.user._id).select('gallery');
+  if (!user) return res.status(404).json({ success: false, message: 'Vendor not found' });
+  res.json({ success: true, data: user.gallery || [] });
+});
+
+export const getVendorAvailability = asyncHandler(async (req: any, res: Response) => {
+  const user = await User.findById(req.user._id).select('availability');
+  if (!user) return res.status(404).json({ success: false, message: 'Vendor not found' });
+  res.json({ success: true, data: user.availability });
+});
 export const updateAvailability = asyncHandler(async (req: any, res: Response) => {
   const { isAvailable, reason, unavailableUntil } = req.body;
   const user = await User.findById(req.user._id);
