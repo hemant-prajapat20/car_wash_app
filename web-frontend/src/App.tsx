@@ -10,7 +10,6 @@ import { AdminRoutes } from './routes/AdminRoutes';
 import { VendorRoutes } from './routes/VendorRoutes';
 import { VendorDemoLogin } from './pages/auth/VendorDemoLogin';
 import { InvoicePage } from './pages/InvoicePage';
-import { DesktopOnlyRoute } from './components/auth/DesktopOnlyRoute';
 
 // Secret path from environment variables
 const ADMIN_ACCESS_PATH = '/admin-access';
@@ -41,7 +40,7 @@ function App() {
       <Route path="/vendor-demo" element={<VendorDemoLogin />} />
       
       {/* Secret Admin Login Route */}
-      <Route path={ADMIN_ACCESS_PATH} element={<DesktopOnlyRoute>{isAuthenticated ? <Navigate to={getHomeRedirect()} /> : <AdminAccessPage />}</DesktopOnlyRoute>} />
+      <Route path={ADMIN_ACCESS_PATH} element={isAuthenticated ? <Navigate to={getHomeRedirect()} /> : <AdminAccessPage />} />
       
       {/* Shared Invoice Page */}
       <Route path="/invoice/:bookingId" element={isAuthenticated ? <InvoicePage /> : <Navigate to="/login" />} />
@@ -61,7 +60,7 @@ function App() {
       {/* SuperAdmin Panel Routes (Nested & Protected) */}
       <Route 
         path="/admin/*" 
-        element={<DesktopOnlyRoute>{isAuthenticated && (user?.role === 'admin' || user?.role === 'superAdmin') ? <AdminRoutes /> : <Navigate to={isAuthenticated ? getHomeRedirect() : ADMIN_ACCESS_PATH} />}</DesktopOnlyRoute>} 
+        element={isAuthenticated && (user?.role === 'admin' || user?.role === 'superAdmin') ? <AdminRoutes /> : <Navigate to={isAuthenticated ? getHomeRedirect() : ADMIN_ACCESS_PATH} />} 
       />
       
       <Route path="*" element={<Navigate to="/" />} />
