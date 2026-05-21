@@ -159,6 +159,16 @@ export const BookService: React.FC = () => {
     } finally { setLoading(false); }
   };
 
+  const deleteAddress = async (addressId: string) => {
+    try {
+      await api.delete(`/customer/addresses/${addressId}`);
+      toast.success('Address deleted');
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to delete address');
+    }
+  };
+
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
       const script = document.createElement('script');
@@ -816,20 +826,7 @@ export const BookService: React.FC = () => {
               </div>
 
               <form onSubmit={handleAddVehicle} className="p-6 space-y-4">
-                {/* Delete address handler */}
-                <script>
-                {`
-                  const deleteAddress = async (addressId: string) => {
-                    try {
-                      await api.delete(\`/customer/addresses/\${addressId}\`);
-                      toast.success('Address deleted');
-                      fetchData();
-                    } catch (err: any) {
-                      toast.error(err.response?.data?.message || 'Failed to delete address');
-                    }
-                  };
-                `}
-                </script>
+                {/* Address management */}
                 <div className="grid grid-cols-2 gap-3">
                   {[
                     { label: 'Make',  key: 'make',  placeholder: 'e.g. Toyota' },
