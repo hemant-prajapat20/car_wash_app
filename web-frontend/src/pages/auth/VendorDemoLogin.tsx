@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { setCredentials } from '@shared/store/authSlice';
 import { Loader2 } from 'lucide-react';
 
-export const VendorDemoLogin: React.FC = () => {
+const VendorDemoLogin = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
