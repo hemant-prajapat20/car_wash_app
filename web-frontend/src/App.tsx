@@ -60,7 +60,7 @@ function App() {
       <Route 
         path="/vendor/*" 
         element={
-          <RoleProtectedRoute allowedRoles={['vendor']}>
+          <RoleProtectedRoute allowedRoles={['vendor']} fallbackPath="/login">
             <VendorRoutes />
           </RoleProtectedRoute>
         } 
@@ -70,7 +70,7 @@ function App() {
       <Route 
         path="/customer/*" 
         element={
-          <RoleProtectedRoute allowedRoles={['customer']}>
+          <RoleProtectedRoute allowedRoles={['customer']} fallbackPath="/login">
             <CustomerRoutes />
           </RoleProtectedRoute>
         } 

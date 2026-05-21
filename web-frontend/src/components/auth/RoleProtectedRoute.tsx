@@ -5,7 +5,7 @@ import { RootState } from '../../store';
 
 interface RoleProtectedRouteProps {
   allowedRoles: string[];
-  // Path to go when not authenticated (defaults to admin-access secret path)
+  // Path to go when not authenticated (defaults to login page)
   fallbackPath?: string;
   // Path to go when unauthorized (defaults to role-based home)
   unauthorizedPath?: string;
