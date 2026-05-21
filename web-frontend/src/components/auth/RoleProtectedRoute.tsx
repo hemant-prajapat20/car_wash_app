@@ -7,11 +7,15 @@ interface RoleProtectedRouteProps {
   allowedRoles: string[];
   // Path to go when not authenticated (defaults to admin-access secret path)
   fallbackPath?: string;
+  // Path to go when unauthorized (defaults to role-based home)
+  unauthorizedPath?: string;
 }
 
-export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
+export const RoleProtectedRoute: React.FC<React.PropsWithChildren<RoleProtectedRouteProps>> = ({
   allowedRoles,
   fallbackPath,
+  unauthorizedPath,
+  children,
 }) => {
   const { user } = useSelector((state: RootState) => state.auth);
   const isAuthenticated = !!user;
@@ -37,6 +41,6 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
     return <Navigate to={home} replace />;
   }
 
-  // Role matches – render the nested route(s)
-  return <Outlet />;
+  // Role matches – render the nested route(s) or passed children
+  return children ? <>{children}</> : <Outlet />;
 };
