@@ -34,6 +34,7 @@ interface Vendor {
 
 export const VendorManagement: React.FC = () => {
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -167,7 +168,10 @@ export const VendorManagement: React.FC = () => {
                 </div>
                 <span className="text-[8px] font-bold text-slate-400 tracking-widest uppercase">12 Services</span>
               </div>
-              <button className="w-full sm:w-auto flex items-center justify-center gap-2 text-blue-600 font-bold text-[9px] hover:translate-x-1 transition-transform uppercase tracking-widest">
+              <button 
+                onClick={() => setSelectedVendor(vendor)}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 text-blue-600 font-bold text-[9px] hover:translate-x-1 transition-transform uppercase tracking-widest"
+              >
                 Manage
                 <ExternalLink size={12} />
               </button>
@@ -183,6 +187,87 @@ export const VendorManagement: React.FC = () => {
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-1">No vendors found</h3>
           <p className="text-sm font-medium text-slate-500">Try adjusting your search or onboarding a new vendor.</p>
+        </div>
+      )}
+
+      {/* Manage Vendor Modal */}
+      {selectedVendor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Vendor Details</h3>
+                <p className="text-xs font-medium text-slate-500 mt-1">Manage vendor profile and status</p>
+              </div>
+              <button 
+                onClick={() => setSelectedVendor(null)}
+                className="p-2 bg-slate-50 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                <UserX size={18} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-slate-200 shrink-0">
+                  {selectedVendor.companyName.charAt(0)}
+                </div>
+                <div>
+                  <h4 className="text-xl font-bold text-slate-900">{selectedVendor.companyName}</h4>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">ID: {selectedVendor.vendorId}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-4 rounded-2xl">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Contact Name</span>
+                  <p className="text-sm font-semibold text-slate-900">{selectedVendor.fullName}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Phone Number</span>
+                  <p className="text-sm font-semibold text-slate-900">{selectedVendor.phone}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl col-span-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Email Address</span>
+                  <p className="text-sm font-semibold text-slate-900">{selectedVendor.email}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl col-span-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Business Location</span>
+                  <p className="text-sm font-semibold text-slate-900">{selectedVendor.businessLocation}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Joined Date</span>
+                  <p className="text-sm font-semibold text-slate-900">{new Date(selectedVendor.createdAt).toLocaleDateString()}</p>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Current Status</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`w-2 h-2 rounded-full ${selectedVendor.isActive ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                    <span className={`text-sm font-bold ${selectedVendor.isActive ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {selectedVendor.isActive ? 'Active' : 'Suspended'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-4">
+              <button
+                onClick={() => {
+                  handleToggleStatus(selectedVendor._id);
+                  setSelectedVendor(null);
+                }}
+                className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm ${
+                  selectedVendor.isActive 
+                    ? 'bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700' 
+                    : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700'
+                }`}
+              >
+                {selectedVendor.isActive ? <UserX size={16} /> : <UserCheck size={16} />}
+                {selectedVendor.isActive ? 'Suspend Vendor' : 'Activate Vendor'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { asyncHandler } from '../middleware/auth';
+import { createNotification } from './notificationController';
 
 const generateToken = (id: string) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', {
@@ -29,6 +30,19 @@ export const registerCustomer = asyncHandler(async (req: Request, res: Response)
     role: 'customer'
   });
 
+  // Notify SuperAdmin
+  const superAdmin = await User.findOne({ role: 'superAdmin' });
+  if (superAdmin) {
+    await createNotification({
+      receiverId: superAdmin._id,
+      receiverRole: 'superAdmin',
+      title: 'New Customer Registered',
+      message: `A new customer "${fullName}" has joined the platform.`,
+      type: 'system_alert', // Wait, looking at Notification model, maybe 'system_alert' is best since customer_registration isn't in the enum
+      status: 'info'
+    });
+  }
+
   res.status(201).json({
     success: true,
     message: 'Customer registered successfully',
@@ -51,6 +65,12 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   if (!user) {
     console.log('❌ User not found');
     return res.status(401).json({ success: false, message: 'Email address not found', field: 'email' });
+  }
+
+  // Account suspension check for any role
+  if (!user.isActive) {
+    console.log('❌ Account suspended');
+    return res.status(403).json({ success: false, message: 'Your account has been suspended. Please contact the administrator.' });
   }
 
   const isMatch = await user.matchPassword(password);
@@ -81,10 +101,18 @@ export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
     return res.status(401).json({ success: false, message: 'Invalid Admin Secret Key' });
   }
 
-  // 2. Credentials Validation
-  const admin = await User.findOne({ email, role: 'superAdmin' }).select('+password');
-  
+  // 2. Fetch admin user
+  const admin = await User.findOne({ email, role: { $in: ['superAdmin', 'admin'] } }).select('+password');
+
+  // 3. Account suspension check
+  if (admin && !admin.isActive) {
+    console.log('❌ Admin account suspended');
+    return res.status(403).json({ success: false, message: 'Your account has been suspended. Please contact the system administrator.' });
+  }
+
+  // 4. Password validation
   if (admin && (await admin.matchPassword(password))) {
+    console.log('✅ Admin login successful');
     res.json({
       success: true,
       data: {

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  Building2, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Navigation, 
-  User, 
-  ShieldCheck, 
-  Loader2, 
+import {
+  Building2,
+  Mail,
+  Phone,
+  MapPin,
+  Navigation,
+  User,
+  ShieldCheck,
+  Loader2,
   Image as ImageIcon,
   CheckCircle2,
   Lock,
@@ -27,33 +27,85 @@ export const VendorRegistration: React.FC = () => {
     companyName: '',
     businessLocation: '',
     serviceArea: '',
+    amount: '', // numeric amount for payment
+    paymentMethod: '',
+    paymentCompleted: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
-      const response = await axiosInstance.post('/admin/register-vendor', formData);
-      if (response.data.success) {
-        toast.success("Vendor Registered Successfully!");
-        setSuccess(true);
-        setFormData({
-          fullName: '',
-          email: '',
-          phone: '',
-          password: '',
-          companyName: '',
-          businessLocation: '',
-          serviceArea: '',
+      // If online payment selected, create Razorpay order and open checkout
+      if (formData.paymentMethod === 'online') {
+        // Create Razorpay order via admin endpoint for vendor registration
+        const orderRes = await axiosInstance.post('/admin/create-order', {
+          amount: Number(formData.amount) * 100,
+          currency: 'INR',
         });
+        const { orderId } = orderRes.data;
+        const options = {
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+          amount: Number(formData.amount) * 100,
+          currency: 'INR',
+          name: 'Car Wash SaaS',
+          description: 'Vendor Registration',
+          order_id: orderId,
+          handler: async function (response: any) {
+            // Verify payment on backend (admin route)
+            await axiosInstance.post('/admin/verify-payment', {
+              orderId,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+            });
+            // After verification, continue registration
+            await registerVendor();
+          },
+          prefill: {
+            name: formData.fullName,
+            email: formData.email,
+            contact: formData.phone,
+          },
+        } as any;
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+        setIsSubmitting(false);
+        return; // exit, registration will continue in handler
       }
+      // Cash or default flow
+      await registerVendor();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to register vendor");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const registerVendor = async () => {
+    const response = await axiosInstance.post('/admin/register-vendor', formData);
+    if (response.data.success) {
+      toast.success("Vendor Registered Successfully!");
+      setSuccess(true);
+      setFormData({
+        fullName: '',
+        email: '',
+        phone: '',
+        password: '',
+        companyName: '',
+        businessLocation: '',
+        serviceArea: '',
+        amount: '',
+        paymentMethod: '',
+        paymentCompleted: false,
+      });
     }
   };
 
@@ -73,7 +125,7 @@ export const VendorRegistration: React.FC = () => {
           The vendor account has been successfully initialized. They can now access their dedicated panel using the credentials you provided.
         </p>
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full px-4">
-          <button 
+          <button
             onClick={() => setSuccess(false)}
             className="w-full py-4 bg-slate-900 text-white rounded-[24px] font-bold text-sm shadow-2xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-2"
           >
@@ -106,7 +158,7 @@ export const VendorRegistration: React.FC = () => {
               <h4 className="text-sm font-bold text-slate-900">Administrative Identity</h4>
               <p className="text-[10px] font-medium text-slate-400 leading-relaxed">Core credentials for the primary account holder.</p>
             </div>
-            
+
             <div className="space-y-5">
               <div className="space-y-1">
                 <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Full Identity Name</label>
@@ -116,7 +168,7 @@ export const VendorRegistration: React.FC = () => {
                     type="text"
                     autoComplete="off"
                     value={formData.fullName}
-                    onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     placeholder="e.g. Rahul Sharma"
                     className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-50 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300"
                     required
@@ -132,7 +184,7 @@ export const VendorRegistration: React.FC = () => {
                     type="email"
                     autoComplete="off"
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="vendor@chakachak.com"
                     className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-50 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300"
                     required
@@ -150,7 +202,7 @@ export const VendorRegistration: React.FC = () => {
                       maxLength={10}
                       autoComplete="off"
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
                       placeholder="9876543210"
                       className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-50 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300"
                       required
@@ -165,7 +217,7 @@ export const VendorRegistration: React.FC = () => {
                       type="password"
                       autoComplete="new-password"
                       value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       placeholder="••••••••"
                       className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-50 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-slate-300"
                       required
@@ -192,7 +244,7 @@ export const VendorRegistration: React.FC = () => {
                     type="text"
                     autoComplete="off"
                     value={formData.companyName}
-                    onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                     placeholder="e.g. Crystal Clean Detailers"
                     className="w-full pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 transition-all placeholder:text-slate-300"
                     required
@@ -208,7 +260,7 @@ export const VendorRegistration: React.FC = () => {
                     type="text"
                     autoComplete="off"
                     value={formData.businessLocation}
-                    onChange={(e) => setFormData({...formData, businessLocation: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, businessLocation: e.target.value })}
                     placeholder="Building, Street Name, Floor"
                     className="w-full pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 transition-all placeholder:text-slate-300"
                     required
@@ -224,7 +276,7 @@ export const VendorRegistration: React.FC = () => {
                     type="text"
                     autoComplete="off"
                     value={formData.serviceArea}
-                    onChange={(e) => setFormData({...formData, serviceArea: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, serviceArea: e.target.value })}
                     placeholder="e.g. South Bengaluru Cluster"
                     className="w-full pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 transition-all placeholder:text-slate-300"
                     required
@@ -232,12 +284,7 @@ export const VendorRegistration: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-1">
-                <button type="button" className="w-full flex items-center justify-center gap-2 p-3 bg-white border border-dashed border-slate-200 rounded-xl text-slate-300 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all text-[10px] font-bold uppercase tracking-widest">
-                  <ImageIcon size={16} />
-                  Upload Logo
-                </button>
-              </div>
+
             </div>
           </div>
         </div>
@@ -255,7 +302,7 @@ export const VendorRegistration: React.FC = () => {
               </p>
             </div>
           </div>
-          
+
           <button
             type="submit"
             disabled={isSubmitting}

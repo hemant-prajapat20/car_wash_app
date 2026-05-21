@@ -130,6 +130,9 @@ router.delete('/customer/addresses/:addressId', protect, authorize('customer'), 
 // PAYMENT ROUTES (Protected)
 router.post('/payment/create-order', protect, authorize('customer'), createRazorpayOrder);
 router.post('/payment/verify', protect, authorize('customer'), verifyRazorpayPayment);
+// Admin routes for Razorpay payment during vendor registration
+router.post('/admin/create-order', protect, authorize('superAdmin'), createRazorpayOrder);
+router.post('/admin/verify-payment', protect, authorize('superAdmin'), verifyRazorpayPayment);
 router.get('/payment/invoice/:bookingId', protect, getInvoiceData);
 router.get('/payment/hosted', getHostedPaymentPage);
 

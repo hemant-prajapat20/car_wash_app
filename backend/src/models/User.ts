@@ -18,6 +18,16 @@ export interface IUser extends Document {
   companyName?: string;
   businessLocation?: string;
   serviceArea?: string;
+  // New subscription & payment fields
+  planName?: string;
+  subscriptionStart?: Date;
+  subscriptionEnd?: Date;
+  subscriptionStatus?: string;
+  paymentStatus?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  transactionId?: string;
+  amountPaid?: number;
   isHomeServiceAvailable?: boolean;
   services?: Array<{
     name: string;
@@ -70,6 +80,17 @@ const UserSchema: Schema = new Schema({
   companyName: { type: String },
   businessLocation: { type: String },
   serviceArea: { type: String },
+  // Subscription & Payment fields
+  planName: { type: String },
+  subscriptionStart: { type: Date },
+  subscriptionEnd: { type: Date },
+  subscriptionStatus: { type: String, enum: ['active', 'inactive', 'expired'], default: 'inactive' },
+  paymentStatus: { type: String, enum: ['pending', 'paid', 'failed'], default: 'pending' },
+  razorpayOrderId: { type: String },
+  razorpayPaymentId: { type: String },
+  transactionId: { type: String },
+  amountPaid: { type: Number },
+  paymentCompleted: { type: Boolean, default: false },
   isHomeServiceAvailable: { type: Boolean, default: false },
   services: [{
     name: String,

@@ -15,6 +15,11 @@ import {
 import axiosInstance from '../../services/axiosConfig';
 import toast from 'react-hot-toast';
 
+import { NotificationDropdown } from '../../components/shared/NotificationDropdown';
+
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
+
 interface Stats {
   totalVendors: number;
   activeVendors: number;
@@ -28,8 +33,8 @@ interface Stats {
 export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const lastNotifRef = React.useRef<string>('');
 
   useEffect(() => {
     // Failsafe timeout
@@ -40,22 +45,44 @@ export const AdminDashboard: React.FC = () => {
       }
     }, 3000);
 
-    const fetchStats = async () => {
+    const fetchStats = async (isPolling = false) => {
       try {
         const response = await axiosInstance.get('/admin/stats');
         if (response.data && response.data.success) {
           setStats(response.data.data.stats);
-          // Map real registrations to activity feed
-          const activities = response.data.data.recentRegistrations.map((v: any) => ({
-            type: 'Vendor Registration',
-            desc: `New vendor "${v.companyName}" onboarded successfully`,
-            time: new Date(v.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            date: new Date(v.createdAt).toLocaleDateString(),
-            status: 'Success',
-            icon: ShieldCheck
-          }));
           
-          // Add a system audit log if no recent vendors
+          const rawNotifs = response.data.data.recentNotifications || [];
+          
+          if (rawNotifs.length > 0) {
+            const latestNotifId = rawNotifs[0]._id;
+            
+            // If polling and we see a new notification, play sound
+            if (isPolling && lastNotifRef.current && lastNotifRef.current !== latestNotifId) {
+              const audio = new Audio('/sounds/notification.mp3');
+              audio.play().catch(e => console.error('Audio play failed:', e));
+              toast.success('New System Activity Detected');
+            }
+            
+            lastNotifRef.current = latestNotifId;
+          }
+
+          // Map notifications to activity feed
+          const activities = rawNotifs.map((n: any) => {
+            let icon = ShieldCheck;
+            if (n.type === 'vendor_registration') icon = UserPlus;
+            if (n.status === 'warning') icon = MoreVertical;
+            
+            return {
+              type: n.title,
+              desc: n.message,
+              time: new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              date: new Date(n.createdAt).toLocaleDateString(),
+              status: n.status === 'success' ? 'Success' : n.status === 'warning' ? 'Warning' : 'Info',
+              icon
+            };
+          });
+          
+          // Add a system audit log if no recent notifications
           if (activities.length === 0) {
             activities.push({
               type: 'System Audit',
@@ -72,12 +99,21 @@ export const AdminDashboard: React.FC = () => {
       } catch (err) {
         console.error("Dashboard error:", err);
       } finally {
-        setLoading(false);
+        if (!isPolling) setLoading(false);
         clearTimeout(failsafe);
       }
     };
+    
+    // Initial fetch
     fetchStats();
-    return () => clearTimeout(failsafe);
+    
+    // Poll every 15 seconds
+    const intervalId = setInterval(() => fetchStats(true), 15000);
+    
+    return () => {
+      clearTimeout(failsafe);
+      clearInterval(intervalId);
+    };
   }, []);
 
   if (loading && !stats) {

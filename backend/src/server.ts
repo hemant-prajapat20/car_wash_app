@@ -26,8 +26,8 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/chakachak');
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error: any) {
-    console.error(`❌ Error: ${error.message}`);
-    process.exit(1);
+    console.error(`❌ Error connecting to MongoDB: ${error.message}`);
+    console.warn('⚠️ Continuing without DB – many routes will be unavailable');
   }
 };
 

@@ -138,6 +138,17 @@ export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: 
           message: 'Payment verified successfully for plan',
           data: customerPlan
         });
+      } else {
+        // No bookingId nor planId – likely vendor registration
+        // Return a minimal generic invoice payload
+        const invoiceData = {
+          invoiceNo: `INV-VEND/${new Date().toISOString().slice(0,10)}`,
+          transactionId: razorpay_payment_id,
+          date: new Date().toISOString(),
+          amount: undefined,
+          status: 'Success'
+        };
+        return res.status(200).json({ success: true, message: 'Payment verified for vendor registration', invoiceData });
       }
     } catch (error) {
       console.error('Payment verification error:', error);
