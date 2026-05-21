@@ -26,7 +26,8 @@ export const AdminSidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate('/login');
+    // After admin logout, redirect to the secret admin login page
+    navigate('/admin-access');
   };
 
   const navItems = [

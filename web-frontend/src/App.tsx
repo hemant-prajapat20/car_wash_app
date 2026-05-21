@@ -9,7 +9,7 @@ import { CustomerRoutes } from './routes/CustomerRoutes';
 import { AdminRoutes } from './routes/AdminRoutes';
 import { VendorRoutes } from './routes/VendorRoutes';
 import { VendorDemoLogin } from './pages/auth/VendorDemoLogin';
-import { InvoicePage } from './pages/InvoicePage';
+import { RoleProtectedRoute } from './components/auth/RoleProtectedRoute';
 
 // Secret path from environment variables
 const ADMIN_ACCESS_PATH = '/admin-access';
@@ -45,22 +45,34 @@ function App() {
       {/* Shared Invoice Page */}
       <Route path="/invoice/:bookingId" element={isAuthenticated ? <InvoicePage /> : <Navigate to="/login" />} />
       
-      {/* Customer Panel Routes (Nested) */}
-      <Route 
-        path="/customer/*" 
-        element={isAuthenticated && user?.role === 'customer' ? <CustomerRoutes /> : <Navigate to="/login" />} 
-      />
-      
-      {/* Vendor Portal Routes (Nested) */}
-      <Route 
-        path="/vendor/*" 
-        element={isAuthenticated && user?.role === 'vendor' ? <VendorRoutes /> : <Navigate to="/login" />} 
-      />
-      
       {/* SuperAdmin Panel Routes (Nested & Protected) */}
       <Route 
         path="/admin/*" 
-        element={isAuthenticated && (user?.role === 'admin' || user?.role === 'superAdmin') ? <AdminRoutes /> : <Navigate to={isAuthenticated ? getHomeRedirect() : ADMIN_ACCESS_PATH} />} 
+        element={
+          <RoleProtectedRoute allowedRoles={['admin','superAdmin']}>
+            <AdminRoutes />
+          </RoleProtectedRoute>
+        } 
+      />
+      
+      {/* Vendor Portal Routes (Nested & Protected) */}
+      <Route 
+        path="/vendor/*" 
+        element={
+          <RoleProtectedRoute allowedRoles={['vendor']}>
+            <VendorRoutes />
+          </RoleProtectedRoute>
+        } 
+      />
+      
+      {/* Customer Panel Routes (Nested & Protected) */}
+      <Route 
+        path="/customer/*" 
+        element={
+          <RoleProtectedRoute allowedRoles={['customer']}>
+            <CustomerRoutes />
+          </RoleProtectedRoute>
+        } 
       />
       
       <Route path="*" element={<Navigate to="/" />} />
