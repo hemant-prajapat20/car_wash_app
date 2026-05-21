@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -31,7 +31,7 @@ api.interceptors.response.use(
 
       // Prevent refreshing if we are already on a login page
       const currentPath = window.location.pathname;
-      if (currentPath !== '/login' && currentPath !== '/admin-portal-login') {
+      if (currentPath !== '/login' && currentPath !== '/admin-portal-login' && currentPath !== '/admin-access') {
         window.location.href = '/login';
       }
     }

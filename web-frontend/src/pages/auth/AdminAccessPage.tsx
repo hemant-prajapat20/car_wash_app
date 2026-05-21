@@ -32,7 +32,20 @@ export const AdminAccessPage: React.FC = () => {
         navigate('/admin/dashboard');
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Invalid Secret Key. Access Denied.';
+      console.error("Login Error:", err);
+      let msg = 'An unexpected error occurred.';
+      
+      if (err.response) {
+        // The request was made and the server responded with a status code out of the range of 2xx
+        msg = err.response.data?.message || 'Invalid Secret Key. Access Denied.';
+      } else if (err.request) {
+        // The request was made but no response was received (Network error, CORS, or server down)
+        msg = 'Network Error: Cannot connect to the server. Please check your backend URL and connection.';
+      } else {
+        // Something happened in setting up the request
+        msg = err.message;
+      }
+
       setError(msg);
       toast.error(msg);
     } finally {
