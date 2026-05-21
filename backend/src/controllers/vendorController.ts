@@ -152,6 +152,40 @@ export const updateBookingStatus = asyncHandler(async (req: any, res: Response) 
   const currentBooking = await Booking.findOne({ _id: id, vendor: req.user._id });
   if (!currentBooking) return res.status(404).json({ success: false, message: 'Booking not found' });
 
+  if (status === 'In Progress') {
+    const currentDate = new Date();
+    const bookingDate = new Date(currentBooking.slot.date);
+    
+    currentDate.setHours(0, 0, 0, 0);
+    bookingDate.setHours(0, 0, 0, 0);
+
+    if (currentDate.getTime() !== bookingDate.getTime()) {
+      return res.status(400).json({ success: false, message: 'Service can only be started on the scheduled date.' });
+    }
+
+    const slotDoc = await Slot.findOne({ vendorId: req.user._id, startTime: currentBooking.slot.time });
+    if (slotDoc) {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMin = now.getMinutes();
+      const currentMinutes = currentHour * 60 + currentMin;
+
+      const [startHour, startMin] = slotDoc.startTime.split(':').map(Number);
+      const startMinutes = startHour * 60 + startMin;
+      
+      const [endHour, endMin] = slotDoc.endTime.split(':').map(Number);
+      const endMinutes = endHour * 60 + endMin;
+
+      if (currentMinutes < startMinutes - 15) {
+        return res.status(400).json({ success: false, message: `Cannot start service yet. The allotted time slot is ${slotDoc.startTime} - ${slotDoc.endTime}.` });
+      }
+
+      if (currentMinutes > endMinutes) {
+        return res.status(400).json({ success: false, message: `Cannot start service. The allotted time slot (${slotDoc.startTime} - ${slotDoc.endTime}) has already passed.` });
+      }
+    }
+  }
+
   const updateFields: any = { status };
 
   if (status === 'Completed') {
@@ -182,6 +216,10 @@ export const updateBookingStatus = asyncHandler(async (req: any, res: Response) 
     notificationTitle = 'Booking Confirmed';
     notificationMessage = 'Your car wash booking has been confirmed by the vendor.';
     notificationType = 'booking_confirmed';
+  } else if (status === 'In Progress') {
+    notificationTitle = 'Service Started';
+    notificationMessage = 'Your car wash service has just started!';
+    notificationType = 'service_started';
   } else if (status === 'Completed') {
     notificationTitle = 'Service Completed';
     notificationMessage = 'Great news! Your car wash service is complete. Please rate your experience.';
@@ -215,6 +253,63 @@ export const getVendorProfile = asyncHandler(async (req: any, res: Response) => 
 export const updateVendorProfile = asyncHandler(async (req: any, res: Response) => {
   const user = await User.findByIdAndUpdate(req.user._id, req.body, { new: true });
   res.json({ success: true, data: user });
+});
+
+import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinary';
+
+export const uploadGalleryImages = asyncHandler(async (req: any, res: Response) => {
+  const user = await User.findById(req.user._id);
+  if (!user) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+  if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+    return res.status(400).json({ success: false, message: 'No images provided' });
+  }
+
+  const uploadPromises = (req.files as Express.Multer.File[]).map((file) => 
+    uploadToCloudinary(file.buffer, 'chakachak/gallery')
+  );
+
+  const uploadedImages = await Promise.all(uploadPromises);
+  
+  if (!user.gallery) user.gallery = [];
+  user.gallery.push(...uploadedImages);
+  
+  await user.save();
+  res.json({ success: true, data: user.gallery, message: 'Images uploaded successfully' });
+});
+
+export const deleteGalleryImage = asyncHandler(async (req: any, res: Response) => {
+  const { publicId } = req.body;
+  const user = await User.findById(req.user._id);
+  if (!user) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+  if (!user.gallery) user.gallery = [];
+  
+  const imageIndex = user.gallery.findIndex(img => img.publicId === publicId);
+  if (imageIndex === -1) {
+    return res.status(404).json({ success: false, message: 'Image not found in gallery' });
+  }
+
+  await deleteFromCloudinary(publicId);
+  user.gallery.splice(imageIndex, 1);
+  await user.save();
+
+  res.json({ success: true, data: user.gallery, message: 'Image deleted successfully' });
+});
+
+export const updateAvailability = asyncHandler(async (req: any, res: Response) => {
+  const { isAvailable, reason, unavailableUntil } = req.body;
+  const user = await User.findById(req.user._id);
+  if (!user) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+  user.availability = {
+    isAvailable,
+    reason: reason || '',
+    unavailableUntil: unavailableUntil ? new Date(unavailableUntil) : undefined
+  };
+
+  await user.save();
+  res.json({ success: true, data: user.availability, message: 'Availability updated successfully' });
 });
 
 // --- SLOT MANAGEMENT ---

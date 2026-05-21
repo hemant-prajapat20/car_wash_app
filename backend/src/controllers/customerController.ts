@@ -16,7 +16,7 @@ export const searchVendors = asyncHandler(async (req: Request, res: Response) =>
   if (city) query.businessLocation = { $regex: city, $options: 'i' };
 
   // Basic match for vendors
-  const vendors = await User.find(query).select('fullName companyName businessLocation phone vendorId avatar');
+  const vendors = await User.find(query).select('fullName companyName businessLocation phone vendorId avatar availability gallery');
 
   const detailedVendors = await Promise.all(vendors.map(async (v) => {
     // Get their active services
@@ -93,13 +93,22 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
   const customerId = req.user?._id;
   const { vendorId, vehicle, service, slot, paymentMode = 'Online', serviceType = 'Shop', homeAddress } = req.body;
 
+  const vendorDoc = await User.findById(vendorId);
+  if (!vendorDoc) {
+    return res.status(404).json({ success: false, message: 'Vendor not found' });
+  }
+
+  // Check vendor availability
+  if (vendorDoc.availability && vendorDoc.availability.isAvailable === false) {
+    return res.status(400).json({ success: false, message: 'Vendor is currently unavailable for new bookings.' });
+  }
+
   // 1. Validate Home Service parameters if selected
   if (serviceType === 'Home') {
     if (!homeAddress || !homeAddress.address || !homeAddress.city) {
       return res.status(400).json({ success: false, message: 'Home address and city are required for home service bookings.' });
     }
-    const vendorDoc = await User.findById(vendorId);
-    if (!vendorDoc || !vendorDoc.isHomeServiceAvailable) {
+    if (!vendorDoc.isHomeServiceAvailable) {
       return res.status(400).json({ success: false, message: 'This vendor does not support home service.' });
     }
   }

@@ -25,6 +25,15 @@ export interface IUser extends Document {
     duration: string;
     description: string;
   }>;
+  gallery?: Array<{
+    url: string;
+    publicId: string;
+  }>;
+  availability?: {
+    isAvailable: boolean;
+    reason?: string;
+    unavailableUntil?: Date;
+  };
   
   // Customer Specific Fields
   vehicles?: Array<{
@@ -68,6 +77,15 @@ const UserSchema: Schema = new Schema({
     duration: String,
     description: String
   }],
+  gallery: [{
+    url: String,
+    publicId: String
+  }],
+  availability: {
+    isAvailable: { type: Boolean, default: true },
+    reason: { type: String },
+    unavailableUntil: { type: Date }
+  },
   
   // Customer Fields
   vehicles: [{

@@ -20,7 +20,10 @@ import {
   searchVendorData,
   getVendorCustomers,
   getVendorTransactions,
-  getVendorReports
+  getVendorReports,
+  uploadGalleryImages,
+  deleteGalleryImage,
+  updateAvailability
 } from '../controllers/vendorController';
 import { 
   searchVendors, 
@@ -43,6 +46,7 @@ import {
 } from '../controllers/paymentController';
 import { getHostedPaymentPage } from '../controllers/hostedPaymentController';
 import { protect, authorize } from '../middleware/auth';
+import { uploadImage } from '../middleware/upload';
 import notificationRoutes from './notificationRoutes';
 import servicePlanRoutes from './servicePlanRoutes';
 
@@ -77,6 +81,12 @@ router.patch('/vendor/bookings/:id/status', protect, authorize('vendor'), update
 router.route('/vendor/profile')
   .get(protect, authorize('vendor'), getVendorProfile)
   .put(protect, authorize('vendor'), updateVendorProfile);
+
+router.patch('/vendor/availability', protect, authorize('vendor'), updateAvailability);
+
+router.route('/vendor/gallery')
+  .post(protect, authorize('vendor'), uploadImage.array('images', 5), uploadGalleryImages)
+  .delete(protect, authorize('vendor'), deleteGalleryImage);
 
 router.route('/vendor/slots')
   .get(protect, authorize('vendor'), manageSlots)

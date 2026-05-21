@@ -9,7 +9,7 @@ import { CustomerRoutes } from './routes/CustomerRoutes';
 import { AdminRoutes } from './routes/AdminRoutes';
 import { VendorRoutes } from './routes/VendorRoutes';
 import { InvoicePage } from './pages/InvoicePage';
-import { VendorDemoLogin } from './pages/auth/VendorDemoLogin';
+
 import { RoleProtectedRoute } from './components/auth/RoleProtectedRoute';
 
 // Secret path from environment variables
@@ -38,7 +38,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
-      <Route path="/vendor-demo" element={<VendorDemoLogin />} />
+      
       
       {/* Secret Admin Login Route */}
       <Route path={ADMIN_ACCESS_PATH} element={isAuthenticated ? <Navigate to={getHomeRedirect()} /> : <AdminAccessPage />} />
