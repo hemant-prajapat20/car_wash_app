@@ -60,7 +60,7 @@ export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: 
         // Finalize booking and generate Standardized Transaction & Invoice Metadata
         const date = new Date();
         const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
-        const txnId = `TXN-${dateStr}-${booking._id.toString().slice(-6).toUpperCase()}`;
+        const txnId = `TXN-${dateStr}-${(booking._id as any).toString().slice(-6).toUpperCase()}`;
 
         booking.paymentStatus = 'Success'; 
         booking.status = 'Confirmed';
@@ -68,7 +68,7 @@ export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: 
         booking.razorpayPaymentId = razorpay_payment_id;
         
         // Generate professional invoice number: INV / YEAR / MONTH / 4-DIGIT-ID
-        const invoiceNo = `INV/${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${booking._id.toString().slice(-4).toUpperCase()}`;
+        const invoiceNo = `INV/${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${(booking._id as any).toString().slice(-4).toUpperCase()}`;
         
         // Calculate itemized taxes (Assuming 18% total GST: 9% CGST + 9% SGST)
         const subtotal = booking.totalAmount;
@@ -113,24 +113,24 @@ export const verifyRazorpayPayment = asyncHandler(async (req: AuthRequest, res: 
 
         // 1. Notify Customer
         await createNotification({
-          receiverId: customerDetails._id,
+          receiverId: (customerDetails._id as any),
           receiverRole: 'customer',
           title: 'Subscription Activated! 💳',
           message: `Your subscription to "${planDetails.title}" is now active! Services included: ${planDetails.servicesIncluded}.`,
           type: 'payment_success',
           status: 'success',
-          bookingId: customerPlan._id.toString()
+          bookingId: (customerPlan._id as any).toString()
         });
 
         // 2. Notify Vendor
         await createNotification({
-          receiverId: vendorDetails._id,
+          receiverId: (vendorDetails._id as any),
           receiverRole: 'vendor',
           title: 'New Plan Purchased',
           message: `Customer "${customerDetails.fullName}" purchased your "${planDetails.title}" subscription plan.`,
           type: 'payment_success',
           status: 'info',
-          bookingId: customerPlan._id.toString()
+          bookingId: (customerPlan._id as any).toString()
         });
         
         return res.status(200).json({
@@ -186,8 +186,8 @@ export const getInvoiceData = asyncHandler(async (req: AuthRequest, res: Respons
       
       const date = new Date(plan.purchasedAt || plan.createdAt);
       const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
-      const invoiceNo = `PLN/${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${plan._id.toString().slice(-4).toUpperCase()}`;
-      const displayTxnId = `TXN-PLN-${dateStr}-${plan._id.toString().slice(-6).toUpperCase()}`;
+      const invoiceNo = `PLN/${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${(plan._id as any).toString().slice(-4).toUpperCase()}`;
+      const displayTxnId = `TXN-PLN-${dateStr}-${(plan._id as any).toString().slice(-6).toUpperCase()}`;
 
       return res.json({
         success: true,
@@ -218,11 +218,11 @@ export const getInvoiceData = asyncHandler(async (req: AuthRequest, res: Respons
     // Generate standardized IDs
     const date = new Date(booking.createdAt);
     const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
-    const invoiceNo = `INV/${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${booking._id.toString().slice(-4).toUpperCase()}`;
+    const invoiceNo = `INV/${date.getFullYear()}/${(date.getMonth()+1).toString().padStart(2,'0')}/${(booking._id as any).toString().slice(-4).toUpperCase()}`;
     
     const displayTxnId = booking.transactionId?.startsWith('TXN') 
       ? booking.transactionId 
-      : `TXN-${dateStr}-${booking._id.toString().slice(-6).toUpperCase()}`;
+      : `TXN-${dateStr}-${(booking._id as any).toString().slice(-6).toUpperCase()}`;
 
     res.json({
       success: true,

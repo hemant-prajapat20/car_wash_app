@@ -110,7 +110,7 @@ export const scanPlanQR = asyncHandler(async (req: AuthRequest, res: Response) =
 
   customerPlan.serviceHistory.push({
     usedAt: new Date(),
-    vendor: vendorId,
+    vendor: vendorId as any,
     notes: `Service consumed via QR scan. Wash #${washNumber}`
   });
 
@@ -150,7 +150,7 @@ export const scanPlanQR = asyncHandler(async (req: AuthRequest, res: Response) =
     message: `Wash #${washNumber} of your "${planTitle}" plan has started. Remaining: ${customerPlan.remainingServices} washes.`,
     type: 'booking_confirmed',
     status: 'success',
-    bookingId: booking._id.toString()
+    bookingId: (booking._id as any).toString()
   });
 
   // Notify Vendor
@@ -162,7 +162,7 @@ export const scanPlanQR = asyncHandler(async (req: AuthRequest, res: Response) =
     message: `Plan QR scanned for vehicle "${customerPlan.vehicle.make} ${customerPlan.vehicle.model} (${customerPlan.vehicle.plateNumber})". Wash #${washNumber} is In Progress.`,
     type: 'booking_confirmed',
     status: 'info',
-    bookingId: booking._id.toString()
+    bookingId: (booking._id as any).toString()
   });
 
   res.json({

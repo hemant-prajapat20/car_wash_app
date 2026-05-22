@@ -1,18 +1,17 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Chakachak Car Wash Backend",
+  "type": "commonjs",
+  "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "nodemon src/server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon --exec ts-node src/server.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.10.0",
@@ -21,9 +20,9 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-validator": "^7.3.2",
-    "helmet": "^8.1.0",
+    "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.6.2",
+    "mongoose": "^8.19.1",
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "node-cron": "^4.2.1",
@@ -39,12 +38,12 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.1.0",
-    "@types/node": "^25.6.2",
+    "@types/node": "^25.9.1",
     "@types/node-cron": "^3.0.11",
     "mongodb-memory-server": "^11.1.0",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^6.0.3"
+    "typescript": "^5.8.3"
   }
 }

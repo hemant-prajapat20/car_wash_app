@@ -186,7 +186,7 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
     message: `You have a new booking for ${vehicle.make} ${vehicle.model} on ${slot.time}.${serviceType === 'Home' ? ' [HOME SERVICE]' : ''}`,
     type: 'booking_created',
     status: 'info',
-    bookingId: booking._id.toString()
+    bookingId: (booking as any)._id.toString()
   });
 
   // 6. Create Confirmation Notification for Customer
@@ -197,7 +197,7 @@ export const createBooking = asyncHandler(async (req: AuthRequest, res: Response
     message: `Your booking for ${service.name} has been placed successfully for ${slot.time}.${paymentMode === 'Cash' ? ' Payment mode: Cash.' : ''}`,
     type: 'booking_created',
     status: 'success',
-    bookingId: booking._id.toString()
+    bookingId: (booking as any)._id.toString()
   });
 
   res.status(201).json({ success: true, message: 'Booking created successfully', data: booking });

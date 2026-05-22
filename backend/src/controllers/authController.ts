@@ -47,11 +47,11 @@ export const registerCustomer = asyncHandler(async (req: Request, res: Response)
     success: true,
     message: 'Customer registered successfully',
     data: {
-      id: user._id,
+      id: (user as any)._id,
       fullName: user.fullName,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id.toString())
+      token: generateToken((user as any)._id.toString())
     }
   });
 });
@@ -80,11 +80,11 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     res.json({
       success: true,
       data: {
-        id: user._id,
+        id: (user as any)._id,
         fullName: user.fullName,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id.toString())
+        token: generateToken((user as any)._id.toString())
       }
     });
   } else {
@@ -116,10 +116,10 @@ export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
     res.json({
       success: true,
       data: {
-        id: admin._id,
+        id: (admin as any)._id,
         fullName: admin.fullName,
         role: admin.role,
-        token: generateToken(admin._id.toString())
+        token: generateToken((admin as any)._id.toString())
       }
     });
   } else {
@@ -139,7 +139,7 @@ export const adminLogin = asyncHandler(async (req: Request, res: Response) => {
           id: newAdmin._id,
           fullName: newAdmin.fullName,
           role: newAdmin.role,
-          token: generateToken(newAdmin._id.toString())
+          token: generateToken((newAdmin as any)._id.toString())
         }
       });
     }
@@ -167,10 +167,10 @@ export const adminAccess = asyncHandler(async (req: Request, res: Response) => {
     res.json({
       success: true,
       data: {
-        id: admin._id,
+        id: (admin as any)._id,
         fullName: admin.fullName,
         role: admin.role,
-        token: generateToken(admin._id.toString())
+        token: generateToken((admin as any)._id.toString())
       }
     });
   } else {

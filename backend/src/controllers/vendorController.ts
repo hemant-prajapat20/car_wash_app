@@ -103,7 +103,7 @@ export const getVendorDashboard = asyncHandler(async (req: any, res: Response) =
       const plObj = pl.toObject();
       return {
         ...plObj,
-        bookingId: `PLN-${pl._id.toString().slice(-6).toUpperCase()}`,
+        bookingId: `PLN-${(pl as any)._id.toString().slice(-6).toUpperCase()}`,
         service: {
           name: (pl.servicePlan as any)?.title || 'Service Plan',
           price: (pl.servicePlan as any)?.price || 0,
@@ -195,7 +195,7 @@ export const updateBookingStatus = asyncHandler(async (req: any, res: Response) 
       if (!currentBooking.transactionId) {
         const date = new Date();
         const dateStr = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,'0')}${date.getDate().toString().padStart(2,'0')}`;
-        updateFields.transactionId = `TXN-CSH-${dateStr}-${currentBooking._id.toString().slice(-6).toUpperCase()}`;
+        updateFields.transactionId = `TXN-CSH-${dateStr}-${(currentBooking as any)._id.toString().slice(-6).toUpperCase()}`;
       }
     }
   }
@@ -238,7 +238,7 @@ export const updateBookingStatus = asyncHandler(async (req: any, res: Response) 
     message: notificationMessage,
     type: notificationType,
     status: status === 'Cancelled' ? 'error' : status === 'Completed' ? 'success' : 'info',
-    bookingId: booking._id.toString()
+    bookingId: (booking as any)._id.toString()
   });
 
   res.json({ success: true, data: booking });
@@ -621,15 +621,15 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
       
       const dateObj = new Date(txAny.createdAt);
       const dateStr = `${dateObj.getFullYear()}${(dateObj.getMonth()+1).toString().padStart(2,'0')}${dateObj.getDate().toString().padStart(2,'0')}`;
-      const invoiceNo = `INV/${dateObj.getFullYear()}/${(dateObj.getMonth()+1).toString().padStart(2,'0')}/${tx._id.toString().slice(-4).toUpperCase()}`;
+      const invoiceNo = `INV/${dateObj.getFullYear()}/${(dateObj.getMonth()+1).toString().padStart(2,'0')}/${(tx as any)._id.toString().slice(-4).toUpperCase()}`;
       
       const displayTxnId = tx.transactionId?.startsWith('TXN') 
          ? tx.transactionId 
-         : `TXN-${dateStr}-${tx._id.toString().slice(-6).toUpperCase()}`;
+         : `TXN-${dateStr}-${(tx as any)._id.toString().slice(-6).toUpperCase()}`;
 
       return {
         id: displayTxnId,
-        bookingId: tx._id.toString(),
+        bookingId: (tx as any)._id.toString(),
         cust: (tx.customer as any)?.fullName || 'Walk-in',
         amt: `${tx.status === 'Cancelled' ? '-' : '+'}₹${tx.totalAmount}`,
         date: dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
@@ -664,12 +664,12 @@ export const getVendorTransactions = asyncHandler(async (req: any, res: Response
       
       const dateObj = new Date(planAny.purchasedAt || planAny.createdAt);
       const dateStr = `${dateObj.getFullYear()}${(dateObj.getMonth()+1).toString().padStart(2,'0')}${dateObj.getDate().toString().padStart(2,'0')}`;
-      const invoiceNo = `PLN/${dateObj.getFullYear()}/${(dateObj.getMonth()+1).toString().padStart(2,'0')}/${plan._id.toString().slice(-4).toUpperCase()}`;
-      const displayTxnId = `TXN-PLN-${dateStr}-${plan._id.toString().slice(-6).toUpperCase()}`;
+      const invoiceNo = `PLN/${dateObj.getFullYear()}/${(dateObj.getMonth()+1).toString().padStart(2,'0')}/${(plan as any)._id.toString().slice(-4).toUpperCase()}`;
+      const displayTxnId = `TXN-PLN-${dateStr}-${(plan as any)._id.toString().slice(-6).toUpperCase()}`;
 
       return {
         id: displayTxnId,
-        bookingId: plan._id.toString(),
+        bookingId: (plan as any)._id.toString(),
         cust: (plan.customer as any)?.fullName || 'Customer',
         amt: `+₹${subtotal}`,
         date: dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
