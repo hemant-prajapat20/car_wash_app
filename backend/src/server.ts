@@ -22,14 +22,19 @@ app.use(express.json());
 
 // DATABASE CONNECTION
 const connectDB = async () => {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.error('❌ MONGODB_URI not defined in environment');
+    process.exit(1);
+  }
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/chakachak');
+    const conn = await mongoose.connect(uri);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error: any) {
     console.error(`❌ Error connecting to MongoDB: ${error.message}`);
-    console.warn('⚠️ Continuing without DB – many routes will be unavailable');
+    process.exit(1);
   }
-};
+};;
 
 // API ROUTES
 app.use('/api', apiRoutes);
@@ -55,27 +60,25 @@ const server = http.createServer(app);
 // Initialize Socket.io
 initSocket(server);
 
-connectDB();
-
-// Start cron jobs
-startExpireCustomerPlansJob();
-
-console.log('⏳ Starting server on port', PORT, '...');
-
-server.listen(PORT, '0.0.0.0', () => {
-  // Dynamically get the local IP address
-  const nets = os.networkInterfaces();
-  let localIp = 'localhost';
-
-  for (const name of Object.keys(nets)) {
-    for (const net of nets[name] || []) {
-      if (net.family === 'IPv4' && !net.internal) {
-        localIp = net.address;
-        break;
+connectDB().then(() => {
+  console.log('✅ MongoDB connection established');
+  // Start server after DB is ready
+  server.listen(PORT, '0.0.0.0', () => {
+    // Dynamically get the local IP address
+    const nets = os.networkInterfaces();
+    let localIp = 'localhost';
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name] || []) {
+        if (net.family === 'IPv4' && !net.internal) {
+          localIp = net.address;
+          break;
+        }
       }
     }
-  }
-
-  console.log(`🚀 Backend is running on: http://localhost:${PORT}`);
-  console.log(`📡 Network access: http://${localIp}:${PORT}`);
+    console.log(`🚀 Backend is running on: http://localhost:${PORT}`);
+    console.log(`📡 Network access: http://${localIp}:${PORT}`);
+  });
+}).catch(err => {
+  console.error('❌ Failed to connect to MongoDB:', err);
+  process.exit(1);
 });

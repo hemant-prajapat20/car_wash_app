@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 async function runTest() {
-  const baseURL = 'http://127.0.0.1:5000/api/auth';
+  const baseURL = `http://127.0.0.1:${process.env.PORT || 5002}/api/auth`;
   const testUser = {
     fullName: "Integration Tester",
     email: `test_${Date.now()}@gmail.com`,
