@@ -203,7 +203,7 @@ export const updateBookingStatus = asyncHandler(async (req: any, res: Response) 
   const booking = await Booking.findByIdAndUpdate(
     currentBooking._id,
     updateFields,
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
 
@@ -251,7 +251,7 @@ export const getVendorProfile = asyncHandler(async (req: any, res: Response) => 
 });
 
 export const updateVendorProfile = asyncHandler(async (req: any, res: Response) => {
-  const user = await User.findByIdAndUpdate(req.user._id, req.body, { new: true });
+  const user = await User.findByIdAndUpdate(req.user._id, req.body, { returnDocument: 'after' });
   res.json({ success: true, data: user });
 });
 
@@ -359,7 +359,7 @@ export const updateSlot = asyncHandler(async (req: any, res: Response) => {
   const slot = await Slot.findOneAndUpdate(
     { _id: req.params.id, vendorId },
     req.body,
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!slot) return res.status(404).json({ success: false, message: 'Slot not found' });
 
@@ -421,7 +421,7 @@ export const updateService = asyncHandler(async (req: any, res: Response) => {
   const service = await Service.findOneAndUpdate(
     { _id: req.params.id, vendorId },
     req.body,
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!service) return res.status(404).json({ success: false, message: 'Service not found' });
 
@@ -485,7 +485,7 @@ export const updateWorker = asyncHandler(async (req: any, res: Response) => {
   const worker = await Worker.findOneAndUpdate(
     { _id: req.params.id, vendorId },
     req.body,
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!worker) return res.status(404).json({ success: false, message: 'Worker not found' });
 

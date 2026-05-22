@@ -41,7 +41,7 @@ export const updateServicePlan = asyncHandler(async (req: AuthRequest, res: Resp
   const plan = await ServicePlan.findOneAndUpdate(
     { _id: id, vendor: vendorId },
     req.body,
-    { new: true, runValidators: true }
+    { returnDocument: 'after', runValidators: true }
   );
 
   if (!plan) {

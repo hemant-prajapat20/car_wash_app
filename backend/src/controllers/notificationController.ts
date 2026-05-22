@@ -49,7 +49,7 @@ export const markAsRead = async (req: Request, res: Response) => {
     const notification = await Notification.findOneAndUpdate(
       { _id: id, receiverId: userId },
       { isRead: true },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!notification) {
