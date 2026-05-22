@@ -1,50 +1,46 @@
 import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import mongoose from 'mongoose';
 import http from 'http';
 import os from 'os';
 import apiRoutes from './routes/apiRoutes';
 import { initSocket } from './socket';
-import { startExpireCustomerPlansJob } from './jobs/expireCustomerPlans';
+import { connectDB } from './config/db';
+
+// ---------------------------------------------------------------------------
+// Load and validate environment variables
+// ---------------------------------------------------------------------------
 
 dotenv.config();
 
-const PORT_START = Number(process.env.PORT) || 5001;
-process.stdout.write(`\n\x1b[32m[SYSTEM] Backend attempting to start on port ${PORT_START}...\x1b[0m\n`);
-process.stdout.write(`\x1b[34m[LINK] http://localhost:${PORT_START}\x1b[0m\n\n`);
+function ensureEnv(varName: string): string {
+  const value = process.env[varName];
+  if (!value) {
+    console.error(`❌ Environment variable ${varName} is required but not set.`);
+    process.exit(1);
+  }
+  return value;
+}
 
+const PORT = Number(ensureEnv('PORT')) || 5000;
+const MONGODB_URI = ensureEnv('MONGODB_URI');
+
+// ---------------------------------------------------------------------------
+// Express app setup
+// ---------------------------------------------------------------------------
 const app = express();
-
-// MIDDLEWARE
 app.use(cors());
 app.use(express.json());
 
-// DATABASE CONNECTION
-const connectDB = async () => {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) {
-    console.error('❌ MONGODB_URI not defined in environment');
-    process.exit(1);
-  }
-  try {
-    const conn = await mongoose.connect(uri);
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-  } catch (error: any) {
-    console.error(`❌ Error connecting to MongoDB: ${error.message}`);
-    process.exit(1);
-  }
-};;
-
-// API ROUTES
+// API routes
 app.use('/api', apiRoutes);
 
-// BASE ROUTE
-app.get('/', (req, res) => {
+// Base route
+app.get('/', (req: Request, res: Response) => {
   res.send('Chakachak API is running...');
 });
 
-// GLOBAL ERROR HANDLER
+// Global error handler
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   res.status(statusCode).json({
@@ -54,31 +50,85 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-const PORT = Number(process.env.PORT) || 5001;
+// ---------------------------------------------------------------------------
+// Server & DB startup
+// ---------------------------------------------------------------------------
 const server = http.createServer(app);
+initSocket(server); // initialize socket.io
 
-// Initialize Socket.io
-initSocket(server);
+async function startServer() {
+  try {
+    // ---------------------------------------------------------------
+    // 1️⃣ Connect to MongoDB (must succeed before we listen)
+    // ---------------------------------------------------------------
+    await connectDB(MONGODB_URI);
+    console.log('✅ MongoDB Connected Successfully');
 
-connectDB().then(() => {
-  console.log('✅ MongoDB connection established');
-  // Start server after DB is ready
-  server.listen(PORT, '0.0.0.0', () => {
-    // Dynamically get the local IP address
-    const nets = os.networkInterfaces();
-    let localIp = 'localhost';
-    for (const name of Object.keys(nets)) {
-      for (const net of nets[name] || []) {
-        if (net.family === 'IPv4' && !net.internal) {
-          localIp = net.address;
-          break;
-        }
+    // ---------------------------------------------------------------
+    // 2️⃣ Start Express server
+    // ---------------------------------------------------------------
+// Try to listen on the configured port, fallback to a random free port on conflict
+const attemptListen = (listenPort: number) => {
+  server.listen(listenPort, '0.0.0.0');
+};
+
+server.on('listening', () => {
+  const addressInfo = server.address();
+  const actualPort = typeof addressInfo === 'string' ? addressInfo : (addressInfo && addressInfo.port);
+  // Dynamically resolve the local IP for convenient logging
+  const nets = os.networkInterfaces();
+  let localIp = 'localhost';
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name] || []) {
+      if (net.family === 'IPv4' && !net.internal) {
+        localIp = net.address;
+        break;
       }
     }
-    console.log(`🚀 Backend is running on: http://localhost:${PORT}`);
-    console.log(`📡 Network access: http://${localIp}:${PORT}`);
-  });
-}).catch(err => {
-  console.error('❌ Failed to connect to MongoDB:', err);
-  process.exit(1);
+  }
+  console.log(`🚀 Backend is running on: http://localhost:${actualPort}`);
+  console.log(`📡 Network access: http://${localIp}:${actualPort}`);
 });
+
+server.on('error', (err: any) => {
+  if (err.code === 'EADDRINUSE') {
+    console.warn(`⚠️ Port ${PORT} is already in use. Trying a random free port...`);
+    attemptListen(0); // 0 = let OS pick a free port
+  } else {
+    console.error('❌ Server error:', err);
+    process.exit(1);
+  }
+});
+
+// Initial attempt
+attemptListen(PORT);
+  } catch (err: any) {
+    console.error('❌ Failed to start backend:', err.message);
+    process.exit(1);
+  }
+}
+
+// Graceful shutdown handling
+function shutdown(signal: string) {
+  console.log(`🛑 Received ${signal}. Closing server...`);
+  server.close(() => {
+    console.log('🛑 HTTP server closed.');
+    // Disconnect Mongoose
+    import('mongoose')
+      .then((mongoose) => mongoose.disconnect())
+      .then(() => {
+        console.log('🛑 MongoDB connection closed.');
+        process.exit(0);
+      })
+      .catch((e) => {
+        console.error('🛑 Error during shutdown:', e);
+        process.exit(1);
+      });
+  });
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+// Kick off the startup sequence
+startServer();
