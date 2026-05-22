@@ -5,9 +5,10 @@ import { asyncHandler } from '../middleware/auth';
 import { createNotification } from './notificationController';
 
 const generateToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', {
-    expiresIn: '30d',
-  });
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
 export const registerCustomer = asyncHandler(async (req: Request, res: Response) => {

@@ -1,3 +1,4 @@
+
 import express, { Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -11,7 +12,8 @@ import { connectDB } from './config/db';
 // Load and validate environment variables
 // ---------------------------------------------------------------------------
 
-dotenv.config();
+import './config/validateEnv'; // validate required vars
+// Ensure critical secrets are present
 
 function ensureEnv(varName: string): string {
   const value = process.env[varName];
