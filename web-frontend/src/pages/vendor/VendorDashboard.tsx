@@ -1,32 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { 
-  ShoppingBag, Users, BarChart3, TrendingUp, 
-  Clock, CheckCircle2, ChevronRight, AlertCircle,
-  Crown, Star, UserCheck, Home
+  Bell, CheckCircle2, Info, AlertTriangle, XCircle, MoreVertical, Check, Trash2, Loader2, ArrowRight, X, FileText, ShoppingBag, Users, BarChart3, TrendingUp, Clock, AlertCircle, Crown, Star, UserCheck, Home 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import api from '../../services/axiosConfig';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 
 export const VendorDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
-  const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [topCustomers, setTopCustomers] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { notifications } = useSelector((state: RootState) => state.notifications);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await api.get('/vendor/dashboard');
-        if (response.data.success) {
-          setStats(response.data.data.stats);
-          setRecentBookings(response.data.data.recentBookings);
-          setTopCustomers(response.data.data.topCustomers);
+        const dashboardRes = await api.get('/vendor/dashboard');
+        if (dashboardRes.data.success) {
+          setStats(dashboardRes.data.data.stats);
+          setRecentActivities(dashboardRes.data.data.recentBookings);
+          setTopCustomers(dashboardRes.data.data.topCustomers);
+        }
+        const transactionsRes = await api.get('/vendor/transactions');
+        if (transactionsRes.data.success) {
+          setTransactions(transactionsRes.data.data);
         }
       } catch (err) {
-        console.error('Error fetching dashboard stats:', err);
+        console.error('Error fetching dashboard data:', err);
       } finally {
         setLoading(false);
       }
@@ -92,134 +96,119 @@ export const VendorDashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity Table */}
-        <div className="lg:col-span-2 bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6 px-1">
-            <div>
-              <h3 className="text-[14px] font-bold text-slate-900 leading-none">Recent Activity</h3>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">Latest service fulfillment</p>
-            </div>
-            <button className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">Full Report</button>
+    {/* Recent Transactions Section */}
+    <div className="lg:col-span-2 bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm mt-6">
+      <div className="flex items-center justify-between mb-4 px-1">
+        <h3 className="text-[14px] font-bold text-slate-900">Recent Transactions</h3>
+        <button className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">
+          Full Report
+        </button>
+      </div>
+      {loading ? (
+        <div className="flex justify-center p-4"><Loader2 size={24} className="animate-spin text-blue-600" /></div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left table-auto">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="p-2 text-[10px] font-medium text-slate-600">Invoice ID</th>
+                <th className="p-2 text-[10px] font-medium text-slate-600">Customer</th>
+                <th className="p-2 text-[10px] font-medium text-slate-600">Amount</th>
+                <th className="p-2 text-[10px] font-medium text-slate-600">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.slice(0, 5).map((tx, i) => (
+                <tr key={i} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <td className="p-2 text-[11px] font-medium text-slate-900">
+                    <Link to={`/invoice/${tx.bookingId || tx.id}`} className="text-blue-600 hover:underline">
+                      {tx.id}
+                    </Link>
+                  </td>
+                  <td className="p-2 text-[11px] text-slate-800">{tx.cust}</td>
+                  <td className="p-2 text-[11px] font-bold text-emerald-600">{tx.amt}</td>
+                  <td className="p-2 text-[11px] text-slate-600">{tx.date}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+
+    {/* Recent Activity Section */}
+    <div className="lg:col-span-1 bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm mt-6">
+      <div className="flex items-center justify-between mb-4 px-1">
+        <h3 className="text-[14px] font-bold text-slate-900">Recent Activity</h3>
+        <button className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">
+          Full Report
+        </button>
+      </div>
+      {loading ? (
+        <div className="flex justify-center p-4"><Loader2 size={20} className="animate-spin text-blue-600" /></div>
+      ) : (
+        <ul className="space-y-2 max-h-48 overflow-y-auto">
+          {recentActivities.slice(0,5).map((act, idx) => (
+            <li key={idx} className="flex items-center text-[11px] text-slate-700">
+              <span className="mr-2 font-medium">{act.activityType}</span>
+              <span>{JSON.stringify(act).slice(0, 40)}...</span>
+              <span className="ml-auto text-xs text-slate-500">{new Date(act.createdAt || act.timestamp).toLocaleString()}</span>
+            </li>
+          ))}
+          {recentActivities.length === 0 && <li className="text-slate-500">No recent activity.</li>}
+        </ul>
+      )}
+    </div>
+  </div>
+
+      {/* Top Customers Leaderboard (enhanced) */}
+      <div className="bg-slate-900 rounded-[32px] p-6 shadow-xl shadow-slate-200 text-white flex flex-col mt-6">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 bg-amber-400/10 text-amber-400 rounded-xl flex items-center justify-center">
+            <Crown size={20} />
           </div>
-          
-          <div className="space-y-2">
-            {recentBookings.length > 0 ? (
-              [...recentBookings]
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                .slice(0, 5)
-                .map((bk, i) => (
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  key={i} 
-                  className="flex items-center justify-between p-3.5 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group border border-transparent hover:border-slate-100"
-                >
-                  <div className="flex items-center gap-4 min-w-0 flex-1">
-                    {bk.isPlanPurchase ? (
-                      <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all shrink-0">
-                        <Crown size={18} />
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">
-                        <UserCheck size={18} />
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-[12px] font-bold text-slate-900 truncate leading-tight flex items-center gap-2">
-                        {bk.customer?.fullName || 'Walk-in Customer'}
-                        {bk.isPlanPurchase ? (
-                          <span className="bg-amber-100 text-amber-800 text-[8px] px-1 rounded flex items-center gap-0.5 uppercase tracking-widest font-black">
-                            👑 Plan
-                          </span>
-                        ) : bk.serviceType === 'Home' && (
-                          <span className="bg-purple-100 text-purple-700 text-[8px] px-1 rounded flex items-center gap-0.5 uppercase tracking-widest font-bold">
-                            <Home size={8} /> Home
-                          </span>
-                        )}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{bk.service?.name || 'Standard Wash'}</span>
-                        <span className="w-1 h-1 bg-slate-200 rounded-full" />
-                        <span className={`text-[9px] font-bold uppercase tracking-widest ${bk.isPlanPurchase ? 'text-amber-600' : 'text-blue-600'}`}>
-                          {bk.isPlanPurchase ? 'Prepaid Plan' : bk.slot?.time || '09:00 AM'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[12px] font-bold text-slate-900 mb-1">₹{bk.totalAmount || bk.service?.price}</p>
-                    <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-1 rounded-md ${
-                      bk.isPlanPurchase 
-                        ? 'bg-amber-50 text-amber-600' 
-                        : bk.status === 'Completed' 
-                          ? 'bg-emerald-50 text-emerald-600' 
-                          : 'bg-amber-50 text-amber-600'
-                    }`}>
-                      {bk.isPlanPurchase ? 'Active' : bk.status}
-                    </span>
-                  </div>
-                </motion.div>
-              ))
-            ) : (
-              <div className="text-center py-16 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
-                <AlertCircle size={32} className="mx-auto text-slate-200 mb-3" />
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">No Recent Bookings Found</p>
-                <p className="text-[9px] text-slate-300 mt-1">Activity will appear here as customers book slots</p>
-              </div>
-            )}
+          <div>
+            <h3 className="text-[14px] font-bold tracking-tight">Top Customers</h3>
+            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">High-Value Leaders</p>
           </div>
         </div>
 
-        {/* Top Customers Leaderboard */}
-        <div className="bg-slate-900 rounded-[32px] p-6 shadow-xl shadow-slate-200 text-white flex flex-col">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-amber-400/10 text-amber-400 rounded-xl flex items-center justify-center">
-              <Crown size={20} />
+        <div className="space-y-4 flex-1">
+          {topCustomers.length > 0 ? topCustomers.map((customer, i) => (
+            <div key={i} className="flex items-center justify-between group">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-white/5 rounded-lg flex items-center justify-center text-[11px] font-bold text-slate-400 group-hover:bg-amber-400 group-hover:text-slate-900 transition-all shrink-0">
+                  {i + 1}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold text-white truncate leading-tight group-hover:text-amber-400 transition-colors">
+                    {customer.customerDetails?.fullName}
+                  </p>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                    {customer.bookingsCount} Visits
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[11px] font-bold text-amber-400">₹{customer.totalSpent}</p>
+              </div>
             </div>
+          )) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-10 opacity-40">
+              <Star size={32} className="mb-3 text-slate-600" />
+              <p className="text-[10px] font-bold uppercase tracking-widest">Initializing Leaderboard</p>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-white/5">
+          <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between">
             <div>
-              <h3 className="text-[14px] font-bold tracking-tight">Top Customers</h3>
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">High-Value Leaders</p>
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Monthly Growth</p>
+              <p className="text-[14px] font-bold text-emerald-400">+24.5%</p>
             </div>
-          </div>
-
-          <div className="space-y-4 flex-1">
-            {topCustomers.length > 0 ? topCustomers.map((customer, i) => (
-              <div key={i} className="flex items-center justify-between group">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-white/5 rounded-lg flex items-center justify-center text-[11px] font-bold text-slate-400 group-hover:bg-amber-400 group-hover:text-slate-900 transition-all shrink-0">
-                    {i + 1}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-bold text-white truncate leading-tight group-hover:text-amber-400 transition-colors">
-                      {customer.customerDetails?.fullName}
-                    </p>
-                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                      {customer.bookingsCount} Visits
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-[11px] font-bold text-amber-400">₹{customer.totalSpent}</p>
-                </div>
-              </div>
-            )) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center py-10 opacity-40">
-                <Star size={32} className="mb-3 text-slate-600" />
-                <p className="text-[10px] font-bold uppercase tracking-widest">Initializing Leaderboard</p>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-white/5">
-            <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between">
-               <div>
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Monthly Growth</p>
-                  <p className="text-[14px] font-bold text-emerald-400">+24.5%</p>
-               </div>
-               <div className="w-8 h-8 bg-emerald-500/20 text-emerald-500 rounded-lg flex items-center justify-center">
-                  <TrendingUp size={16} />
-               </div>
+            <div className="w-8 h-8 bg-emerald-500/20 text-emerald-500 rounded-lg flex items-center justify-center">
+              <TrendingUp size={16} />
             </div>
           </div>
         </div>

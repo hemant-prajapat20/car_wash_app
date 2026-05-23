@@ -19,10 +19,9 @@ export const InvoicePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const invoiceRef = useRef<HTMLDivElement>(null);
 
-  // Intelligent Redirect based on Role
   const getBackPath = () => {
     if (!user) return '/';
-    if (user.role === 'vendor') return '/vendor/transactions';
+    if (user.role === 'vendor') return '/vendor/dashboard';
     if (user.role === 'customer') return '/customer/my-bookings';
     return '/';
   };
@@ -192,7 +191,9 @@ export const InvoicePage: React.FC = () => {
             <div className="space-y-3">
                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <span className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-1">Payment Method</span>
-                  <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{data.paymentMode === 'Cash' ? '💵 Cash on Delivery' : '💳 Online / UPI / Card'}</p>
+                  <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">
+                  {data.paymentMode?.toLowerCase() === 'cash' ? '💵 Cash' : '💳 Online / UPI / Card'}
+                </p>
                </div>
                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <span className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-1">Amount In Words</span>
