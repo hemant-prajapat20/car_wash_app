@@ -88,6 +88,22 @@ export const VendorReports: React.FC = () => {
 
   const { summary, monthlyTrend, topServices, topCustomers, planDetails, recentTxns, paymentModeBreakdown, serviceTypeBreakdown } = data;
 
+  // Calculate cash vs online/UPI totals for payment mode display
+  const cashData = paymentModeBreakdown.find((pm: any) => pm._id.toLowerCase() === 'cash') || { _id: 'Cash', count: 0, revenue: 0, uniqueCustomers: 0 };
+  const onlineData = paymentModeBreakdown.filter((pm: any) => pm._id.toLowerCase() !== 'cash').reduce((acc: any, pm: any) => {
+    acc.count += pm.count || 0;
+    acc.revenue += pm.revenue || 0;
+    acc.uniqueCustomers += pm.uniqueCustomers || 0;
+    return acc;
+  }, { _id: 'Online', count: 0, revenue: 0, uniqueCustomers: 0 });
+
+  const pieData = cashData.revenue === 0 && onlineData.revenue === 0
+    ? [{ name: 'No Data', value: 1, fill: '#f1f5f9' }]
+    : [
+        { name: 'Online', value: onlineData.revenue, fill: '#3b82f6' },
+        { name: 'Cash', value: cashData.revenue, fill: '#f59e0b' }
+      ].filter(d => d.value > 0);
+
   const COLORS = ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#3b82f6'];
 
   return (
@@ -389,9 +405,15 @@ export const VendorReports: React.FC = () => {
           {/* Transactions Summary log */}
           {activeTab === 'all' && (
             <motion.div layout className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-4">
-              <div>
-                <h3 className="text-[13px] font-bold text-slate-900 uppercase tracking-wider">Recent Financial Activity</h3>
-                <p className="text-[9px] font-medium text-slate-400">Log of the last 15 billing and service transaction events</p>
+              <div className="flex justify-between items-center px-1">
+                <div>
+                  <h3 className="text-[13px] font-bold text-slate-900 uppercase tracking-wider">Recent Financial Activity</h3>
+                  <p className="text-[9px] font-medium text-slate-400">Log of the last 15 billing and service transaction events</p>
+                </div>
+                <div className="text-right bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-100">
+                  <p className="text-[9px] font-bold uppercase tracking-wider">Recent Total</p>
+                  <p className="text-[14px] font-black">₹{recentTxns?.reduce((sum: number, tx: any) => sum + (tx.totalAmount || 0), 0).toLocaleString()}</p>
+                </div>
               </div>
               <div className="overflow-x-auto max-w-full">
                 <table className="w-full text-left border-collapse">
@@ -535,28 +557,53 @@ export const VendorReports: React.FC = () => {
           {activeTab === 'all' && (
             <motion.div layout className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-4">
               <div>
-                <h3 className="text-[13px] font-bold text-slate-900 uppercase tracking-wider">Channel Payments</h3>
-                <p className="text-[9px] font-medium text-slate-400">Revenue split between Online and Cash</p>
+                <h3 className="text-[13px] font-bold text-slate-900 uppercase tracking-wider">Payment Modes</h3>
+                <p className="text-[9px] font-medium text-slate-400">Cash vs Online/UPI breakdown</p>
               </div>
+              <ResponsiveContainer width="100%" height={250}>
+                <RePieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    dataKey="value"
+                    nameKey="name"
+                  >
+                    {pieData.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ fontSize: '10px', borderRadius: '8px' }} 
+                    formatter={(value: any, name: string) => name === 'No Data' ? ['No Transactions', ''] : [`₹${value.toLocaleString()}`, name]} 
+                  />
+                </RePieChart>
+              </ResponsiveContainer>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="font-bold text-slate-800 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div> Cash</span>
+                    <span className="font-black text-slate-900">₹{cashData.revenue.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+                    <span>{cashData.count} Transactions</span>
+                    <span>{cashData.uniqueCustomers} Customers</span>
+                  </div>
+                </div>
 
-              <div className="space-y-3">
-                {paymentModeBreakdown && paymentModeBreakdown.map((pm: any, index: number) => {
-                  const percentage = ((pm.revenue / summary.bookingRevenue) * 100).toFixed(0);
-                  return (
-                    <div key={index} className="space-y-1.5">
-                      <div className="flex justify-between items-baseline text-[11px] font-bold text-slate-700">
-                        <span className="uppercase tracking-wider text-[10px]">{pm._id}</span>
-                        <span>₹{pm.revenue.toLocaleString()} ({percentage}%)</span>
-                      </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full rounded-full ${pm._id === 'Online' ? 'bg-blue-500' : 'bg-emerald-500'}`} 
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="font-bold text-slate-800 flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Online/UPI</span>
+                    <span className="font-black text-slate-900">₹{onlineData.revenue.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+                    <span>{onlineData.count} Transactions</span>
+                    <span>{onlineData.uniqueCustomers} Customers</span>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}

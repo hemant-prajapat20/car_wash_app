@@ -87,10 +87,6 @@ export const VendorDashboard: React.FC = () => {
             </div>
             <div className="flex items-end justify-between">
               <h3 className="text-[16px] font-bold text-slate-900 truncate pr-1">{stat.val}</h3>
-              <div className="flex items-center gap-0.5 text-emerald-600">
-                <TrendingUp size={10} />
-                <span className="text-[9px] font-bold">12%</span>
-              </div>
             </div>
           </motion.div>
         ))}
@@ -215,47 +211,42 @@ export const VendorDashboard: React.FC = () => {
             <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">High-Value Leaders</p>
           </div>
         </div>
-
         <div className="space-y-4 flex-1">
-          {topCustomers.length > 0 ? topCustomers.map((customer, i) => (
-            <div key={i} className="flex items-center justify-between group">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-white/5 rounded-lg flex items-center justify-center text-[11px] font-bold text-slate-400 group-hover:bg-amber-400 group-hover:text-slate-900 transition-all shrink-0">
-                  {i + 1}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-bold text-white truncate leading-tight group-hover:text-amber-400 transition-colors">
-                    {customer.customerDetails?.fullName}
-                  </p>
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                    {customer.bookingsCount} Visits
-                  </p>
+          {topCustomers.length > 0 ? (
+            topCustomers.slice(0, 3).map((customer, i) => (
+              <div key={i} className="flex items-center justify-between group">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 bg-white/5 rounded-lg flex items-center justify-center text-[11px] font-bold text-slate-400 group-hover:bg-amber-400 group-hover:text-slate-900 transition-all shrink-0">
+                    {i + 1}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold text-white truncate leading-tight group-hover:text-amber-400 transition-colors">
+                      {customer.name || customer.customerDetails?.fullName || 'Customer'}
+                    </p>
+                    <p className="text-[9px] font-medium text-slate-400 truncate mt-0.5">
+                      {customer.email || customer.customerDetails?.email || 'No email provided'}
+                    </p>
+                    <div className="flex gap-2 mt-1">
+                      <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">
+                        ₹{(customer.totalSpent || customer.spent || 0).toLocaleString()}
+                      </p>
+                      <span className="text-[9px] font-bold text-slate-600">•</span>
+                      <p className="text-[9px] font-bold text-amber-400 uppercase tracking-widest">
+                        {customer.bookingsCount || customer.count || 0} Bookings
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-[11px] font-bold text-amber-400">₹{customer.totalSpent}</p>
-              </div>
-            </div>
-          )) : (
+            ))
+          ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center py-10 opacity-40">
               <Star size={32} className="mb-3 text-slate-600" />
               <p className="text-[10px] font-bold uppercase tracking-widest">Initializing Leaderboard</p>
             </div>
           )}
         </div>
-
-        <div className="mt-8 pt-6 border-t border-white/5">
-          <div className="bg-white/5 rounded-2xl p-4 flex items-center justify-between">
-            <div>
-              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Monthly Growth</p>
-              <p className="text-[14px] font-bold text-emerald-400">+24.5%</p>
-            </div>
-            <div className="w-8 h-8 bg-emerald-500/20 text-emerald-500 rounded-lg flex items-center justify-center">
-              <TrendingUp size={16} />
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
+  </div>
   );
 };

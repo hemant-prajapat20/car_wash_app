@@ -42,7 +42,7 @@ export const ManageBookings: React.FC = () => {
     try {
       const res = await api.get('/vendor/dashboard');
       if (res.data.success) {
-        setBookings(res.data.data.recentBookings);
+        setBookings(res.data.data.rawBookings || []);
       }
     } catch (err) {
       console.error('Error fetching bookings:', err);
@@ -98,10 +98,10 @@ export const ManageBookings: React.FC = () => {
                 key={booking._id}
                 layout
                 className={cn(
-                  "border rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group cursor-pointer relative overflow-hidden",
+                  "border rounded-[20px] p-5 shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer relative overflow-hidden",
                   isPlan 
-                    ? "bg-gradient-to-br from-white to-amber-50/20 border-amber-200/60 hover:border-amber-300 shadow-amber-50/10" 
-                    : "bg-white border-slate-100 hover:border-blue-100"
+                    ? "bg-gradient-to-br from-amber-50/50 to-white border-amber-200 hover:border-amber-400 shadow-amber-100/20" 
+                    : "bg-gradient-to-br from-slate-50 to-white border-slate-200 hover:border-blue-400 hover:shadow-blue-100/40"
                 )}
                 onClick={() => setSelectedBooking(booking)}
               >
@@ -204,7 +204,7 @@ export const ManageBookings: React.FC = () => {
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleStatusUpdate(booking._id, 'Confirmed'); }}
                         disabled={!!actionLoading}
-                        className="flex-1 py-2 bg-blue-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+                        className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:shadow-lg hover:shadow-blue-500/30 transition-all flex items-center justify-center gap-2"
                       >
                         {actionLoading === booking._id ? <Loader2 size={10} className="animate-spin" /> : <PlayCircle size={12}/>}
                         Accept
@@ -222,7 +222,7 @@ export const ManageBookings: React.FC = () => {
                   {!isPlan && booking.status === 'Confirmed' && (
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleStatusUpdate(booking._id, 'In Progress'); }}
-                      className="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-indigo-700 transition-all"
+                      className="flex-1 py-2.5 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:shadow-lg hover:shadow-blue-500/30 transition-all"
                     >
                       Start Service
                     </button>
@@ -231,7 +231,7 @@ export const ManageBookings: React.FC = () => {
                   {!isPlan && booking.status === 'In Progress' && (
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleStatusUpdate(booking._id, 'Completed'); }}
-                      className="flex-1 py-2 bg-emerald-600 text-white rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-emerald-700 transition-all"
+                      className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
                     >
                       Mark as Completed
                     </button>

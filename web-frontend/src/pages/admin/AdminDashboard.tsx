@@ -126,10 +126,13 @@ export const AdminDashboard: React.FC = () => {
   }
 
   const statCards = [
-    { name: 'Total Vendors', value: stats?.totalVendors || 0, icon: Users, color: 'blue', trend: '+12%' },
-    { name: 'Active Vendors', value: stats?.activeVendors || 0, icon: UserCheck, color: 'emerald', trend: '+5%' },
-    { name: 'Today Reg.', value: stats?.todayRegistrations || 0, icon: UserPlus, color: 'amber', trend: 'Live' },
-    { name: 'Pending Requests', value: stats?.pendingRequests || 0, icon: Clock, color: 'indigo', trend: 'Critical' },
+    { name: 'Total Vendors', value: stats?.totalVendors || 0, icon: Users, color: 'blue', trend: 'Vendors' },
+    { name: 'Active Vendors', value: stats?.activeVendors || 0, icon: UserCheck, color: 'emerald', trend: 'Active' },
+    { name: 'Total Bookings', value: stats?.totalBookings || 0, icon: CalendarCheck, color: 'indigo', trend: 'Bookings' },
+    { name: 'Total Customers', value: stats?.totalCustomers || 0, icon: Users, color: 'blue', trend: 'Customers' },
+    { name: 'Total Revenue', value: `₹${stats?.totalRevenue || 0}`, icon: Banknote, color: 'emerald', trend: 'Revenue' },
+    { name: 'Today Reg.', value: stats?.todayRegistrations || 0, icon: UserPlus, color: 'amber', trend: 'Today' },
+    { name: 'Pending Requests', value: stats?.pendingRequests || 0, icon: Clock, color: 'rose', trend: 'Pending' },
   ];
 
   return (
@@ -198,42 +201,6 @@ export const AdminDashboard: React.FC = () => {
           </button>
         </div>
 
-        {/* Small Analytics Widget */}
-        <div className="bg-slate-900 rounded-[32px] p-8 text-white flex flex-col relative overflow-hidden">
-          <div className="relative z-10">
-            <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Service Health</h4>
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between text-[11px] font-bold mb-2">
-                  <span>Server Status</span>
-                  <span className="text-emerald-400">99.9%</span>
-                </div>
-                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full w-[99.9%] bg-emerald-400 rounded-full" />
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-[11px] font-bold mb-2">
-                  <span>API Response</span>
-                  <span className="text-blue-400">120ms</span>
-                </div>
-                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full w-[85%] bg-blue-400 rounded-full" />
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-12 p-6 bg-slate-800/50 rounded-2xl border border-white/5">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">System Load</p>
-              <h5 className="text-2xl font-bold tracking-tight">Optimal</h5>
-              <p className="text-xs font-medium text-slate-400 mt-2 leading-relaxed">Infrastructure is currently performing at peak efficiency.</p>
-            </div>
-          </div>
-          
-          {/* Abstract Design Elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl -mr-16 -mt-16" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-600/10 blur-3xl -ml-16 -mb-16" />
-        </div>
       </div>
     </div>
   );

@@ -35,14 +35,14 @@ export const getVendorDashboard = asyncHandler(async (req: any, res: Response) =
     // Most Popular Slot Aggregation
     const popularSlotResult = await Booking.aggregate([
       { $match: { vendor: vendorObjectId } },
-      { $group: { _id: '$slot.startTime', count: { $sum: 1 } } },
+      { $group: { _id: '$slot.time', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 1 }
     ]);
 
     // Top Customers Aggregation (Highest Payers)
     const topCustomersResult = await Booking.aggregate([
-      { $match: { vendor: vendorObjectId, status: 'Completed' } },
+      { $match: { vendor: vendorObjectId } },
       { $group: { 
           _id: '$customer', 
           totalSpent: { $sum: '$totalAmount' },
@@ -198,7 +198,8 @@ export const getVendorDashboard = asyncHandler(async (req: any, res: Response) =
           popularSlot: popularSlotResult[0]?._id || 'N/A'
         },
         topCustomers: topCustomersResult,
-        recentBookings: allActivities
+        recentBookings: allActivities,
+        rawBookings: recentBookings
       }
     });
   } catch (err: any) {
@@ -798,7 +799,7 @@ export const getVendorReports = asyncHandler(async (req: any, res: Response) => 
 
     // ── Booking revenue ────────────────────────────────────
     const bookingRevenueAgg = await Booking.aggregate([
-      { $match: { vendor: vendorObjectId, status: 'Completed' } },
+      { $match: { vendor: vendorObjectId } },
       { $group: { _id: null, total: { $sum: '$totalAmount' } } }
     ]);
     const bookingRevenue = bookingRevenueAgg[0]?.total || 0;
@@ -868,9 +869,9 @@ export const getVendorReports = asyncHandler(async (req: any, res: Response) => 
 
     // ── Top customers ──────────────────────────────────────
     const topCustomers = await Booking.aggregate([
-      { $match: { vendor: vendorObjectId, status: 'Completed' } },
+      { $match: { vendor: vendorObjectId } },
       { $group: { _id: '$customer', spent: { $sum: '$totalAmount' }, count: { $sum: 1 } } },
-      { $sort: { spent: -1 } },
+      { $sort: { count: -1 } },
       { $limit: 8 },
       { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'u' } },
       { $unwind: '$u' },
@@ -898,10 +899,36 @@ export const getVendorReports = asyncHandler(async (req: any, res: Response) => 
       .select('customer service totalAmount status paymentStatus createdAt transactionId');
 
     // ── Payment mode breakdown ─────────────────────────────
-    const paymentModeAgg = await Booking.aggregate([
-      { $match: { vendor: vendorObjectId, status: 'Completed' } },
-      { $group: { _id: '$paymentMode', count: { $sum: 1 }, revenue: { $sum: '$totalAmount' } } }
+    const bookingPaymentModeAgg = await Booking.aggregate([
+      { $match: { vendor: vendorObjectId } },
+      { $group: { _id: '$paymentMode', count: { $sum: 1 }, revenue: { $sum: '$totalAmount' }, customers: { $addToSet: '$customer' } } }
     ]);
+
+    const planPaymentModeAgg = await CustomerPlan.aggregate([
+      { $match: { vendor: vendorObjectId, paymentStatus: 'Success' } },
+      { $lookup: { from: 'serviceplans', localField: 'servicePlan', foreignField: '_id', as: 'sp' } },
+      { $unwind: '$sp' },
+      { $group: { _id: 'Online', count: { $sum: 1 }, revenue: { $sum: '$sp.price' }, customers: { $addToSet: '$customer' } } }
+    ]);
+
+    const paymentModeMap = new Map();
+    [...bookingPaymentModeAgg, ...planPaymentModeAgg].forEach(agg => {
+      const mode = agg._id || 'Online';
+      if (!paymentModeMap.has(mode)) {
+        paymentModeMap.set(mode, { _id: mode, count: 0, revenue: 0, customersSet: new Set() });
+      }
+      const existing = paymentModeMap.get(mode);
+      existing.count += agg.count;
+      existing.revenue += agg.revenue;
+      agg.customers.forEach((c: any) => existing.customersSet.add(c.toString()));
+    });
+
+    const paymentModeAgg = Array.from(paymentModeMap.values()).map(item => ({
+      _id: item._id,
+      count: item.count,
+      revenue: item.revenue,
+      uniqueCustomers: item.customersSet.size
+    }));
 
     // ── Service type breakdown ─────────────────────────────
     const serviceTypeAgg = await Booking.aggregate([

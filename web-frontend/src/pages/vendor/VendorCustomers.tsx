@@ -169,9 +169,9 @@ export const VendorCustomers: React.FC = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-md rounded-[32px] overflow-hidden shadow-2xl relative z-10"
+              className="bg-white w-full max-w-sm rounded-[32px] overflow-hidden shadow-2xl relative z-10"
             >
-              <div className="h-24 bg-gradient-to-r from-blue-600 to-indigo-600 relative">
+              <div className="h-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative">
                 <button 
                   onClick={() => setSelectedCustomer(null)}
                   className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-all"
@@ -181,7 +181,7 @@ export const VendorCustomers: React.FC = () => {
               </div>
               <div className="px-8 pb-8 relative">
                 <div className="flex justify-center -mt-12 mb-4">
-                  <div className="w-24 h-24 bg-white rounded-[2rem] p-1.5 shadow-xl">
+                  <div className="w-20 h-20 bg-white rounded-[2rem] p-1.5 shadow-xl">
                     <div className="w-full h-full bg-slate-50 rounded-[1.6rem] overflow-hidden flex items-center justify-center text-slate-300">
                       {selectedCustomer.avatar ? <img src={selectedCustomer.avatar} className="w-full h-full object-cover" alt="" /> : <User size={40} />}
                     </div>
