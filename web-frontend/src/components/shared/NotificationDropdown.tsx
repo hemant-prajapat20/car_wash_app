@@ -146,21 +146,30 @@ export const NotificationDropdown: React.FC = () => {
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute right-0 mt-3 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100]"
+            className="fixed left-3 right-3 top-[60px] sm:absolute sm:top-auto sm:left-auto sm:right-0 sm:mt-3 sm:w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100]"
           >
             <div className="p-4 border-b border-slate-50 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-slate-900">Notifications</h3>
                 <p className="text-[10px] text-slate-400 font-medium">You have {unreadCount} unread alerts</p>
               </div>
-              {unreadCount > 0 && (
+              <div className="flex items-center gap-3">
+                {unreadCount > 0 && (
+                  <button 
+                    onClick={handleMarkAllRead}
+                    className="text-[10px] font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-widest"
+                  >
+                    Mark all read
+                  </button>
+                )}
                 <button 
-                  onClick={handleMarkAllRead}
-                  className="text-[10px] font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-widest"
+                  onClick={() => setIsOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 p-1.5 rounded-lg transition-colors"
+                  aria-label="Close notifications"
                 >
-                  Mark all read
+                  <X size={14} />
                 </button>
-              )}
+              </div>
             </div>
 
             <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
