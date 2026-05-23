@@ -4,7 +4,7 @@ import {
   Settings, Camera, Lock, 
   Mail, Phone, Globe, Edit2,
   ArrowRight, CheckCircle2, Loader2,
-  Image as ImageIcon, Trash2, Upload, Calendar, FileText
+  Image as ImageIcon, Trash2, Upload, Calendar, FileText, X
 } from 'lucide-react';
 import api from '../../services/axiosConfig';
 import toast from 'react-hot-toast';
@@ -13,10 +13,12 @@ export const VendorProfile: React.FC = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [availabilitySaving, setAvailabilitySaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState<any>({});
+  const [selectedImage, setSelectedImage] = useState<any>(null);
   const [availabilityForm, setAvailabilityForm] = useState({
     isAvailable: true,
     reason: '',
@@ -53,7 +55,7 @@ export const VendorProfile: React.FC = () => {
   }, []);
 
   const handleAvailabilityUpdate = async () => {
-    setSaving(true);
+    setAvailabilitySaving(true);
     try {
       const res = await api.patch('/vendor/availability', availabilityForm);
       if (res.data.success) {
@@ -63,7 +65,7 @@ export const VendorProfile: React.FC = () => {
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to update availability');
     } finally {
-      setSaving(false);
+      setAvailabilitySaving(false);
     }
   };
 
@@ -257,7 +259,7 @@ export const VendorProfile: React.FC = () => {
                 onClick={handleAvailabilityUpdate}
                 className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase hover:bg-slate-800 transition-all flex items-center gap-2"
               >
-                {saving && <Loader2 size={10} className="animate-spin" />} Update Availability
+                {availabilitySaving && <Loader2 size={10} className="animate-spin" />} Update Availability
               </button>
             </div>
           </div>
@@ -359,16 +361,13 @@ export const VendorProfile: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {profile?.gallery?.length > 0 ? (
               profile.gallery.map((img: any) => (
-                <div key={img.publicId} className="relative group rounded-xl overflow-hidden aspect-square border border-slate-100 bg-slate-50 shadow-sm">
+                <div 
+                  key={img.publicId} 
+                  className="relative group rounded-xl overflow-hidden aspect-square border border-slate-100 bg-slate-50 shadow-sm cursor-pointer"
+                  onClick={() => setSelectedImage(img)}
+                >
                   <img src={img.url} alt="Gallery" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button 
-                      onClick={() => handleImageDelete(img.publicId)}
-                      className="bg-rose-500 text-white p-2 rounded-full hover:bg-rose-600 transition-colors transform hover:scale-110"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+                  <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/20 transition-colors" />
                 </div>
               ))
             ) : (
@@ -381,6 +380,37 @@ export const VendorProfile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Lightbox Modal */}
+      {selectedImage && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-200">
+          <div className="relative max-w-2xl w-full flex flex-col items-center">
+            <div className="absolute -top-12 right-0 flex items-center gap-4">
+              <button 
+                onClick={() => {
+                  handleImageDelete(selectedImage.publicId);
+                  setSelectedImage(null);
+                }}
+                className="text-white hover:text-rose-500 transition-colors flex items-center gap-2 text-[12px] font-bold uppercase tracking-widest bg-slate-800/50 px-3 py-1.5 rounded-lg"
+              >
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Delete Image
+              </button>
+              <button 
+                onClick={() => setSelectedImage(null)}
+                className="text-white hover:text-slate-300 transition-colors bg-slate-800/50 p-1.5 rounded-lg"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <img 
+              src={selectedImage.url} 
+              alt="Gallery Full" 
+              className="w-full object-contain rounded-xl shadow-2xl bg-black/50"
+              style={{ maxHeight: '70vh' }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
