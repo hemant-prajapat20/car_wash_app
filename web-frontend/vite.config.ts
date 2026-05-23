@@ -20,4 +20,9 @@ export default defineConfig({
       },
     },
   },
+  // Increase the warning limit because the app bundles a few heavy libs (e.g., Cloudinary, Razorpay).
+  // Default is 250KB; raising to 500KB removes the warning while still keeping a reasonable size.
+  build: {
+    chunkSizeWarningLimit: 500, // size in KB
+  },
 });

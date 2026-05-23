@@ -18,6 +18,7 @@ export interface IUser extends Document {
   companyName?: string;
   businessLocation?: string;
   serviceArea?: string;
+  avatar?: string;
   // New subscription & payment fields
   planName?: string;
   subscriptionStart?: Date;
@@ -80,6 +81,7 @@ const UserSchema: Schema = new Schema({
   companyName: { type: String },
   businessLocation: { type: String },
   serviceArea: { type: String },
+  avatar: { type: String },
   // Subscription & Payment fields
   planName: { type: String },
   subscriptionStart: { type: Date },

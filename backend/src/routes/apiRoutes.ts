@@ -23,6 +23,7 @@ import {
   getVendorReports,
   uploadGalleryImages,
   deleteGalleryImage,
+  uploadProfileImage,
   updateAvailability
 } from '../controllers/vendorController';
 import { 
@@ -81,6 +82,8 @@ router.patch('/vendor/bookings/:id/status', protect, authorize('vendor'), update
 router.route('/vendor/profile')
   .get(protect, authorize('vendor'), getVendorProfile)
   .put(protect, authorize('vendor'), updateVendorProfile);
+
+router.post('/vendor/profile-image', protect, authorize('vendor'), uploadImage.single('image'), uploadProfileImage);
 
 router.patch('/vendor/availability', protect, authorize('vendor'), updateAvailability);
 

@@ -278,6 +278,24 @@ export const uploadGalleryImages = asyncHandler(async (req: any, res: Response) 
   res.json({ success: true, data: user.gallery, message: 'Images uploaded successfully' });
 });
 
+export const uploadProfileImage = asyncHandler(async (req: any, res: Response) => {
+  const user = await User.findById(req.user._id);
+  if (!user) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No image provided' });
+  }
+
+  const uploadedImage = await uploadToCloudinary(req.file.buffer, 'chakachak/profiles');
+  
+  // optionally delete the old avatar from cloudinary if user.avatar exists
+  // but let's keep it simple and just overwrite the URL
+  user.avatar = uploadedImage.url;
+  
+  await user.save();
+  res.json({ success: true, data: user.avatar, message: 'Profile image updated successfully' });
+});
+
 export const deleteGalleryImage = asyncHandler(async (req: any, res: Response) => {
   const { publicId } = req.body;
   const user = await User.findById(req.user._id);
