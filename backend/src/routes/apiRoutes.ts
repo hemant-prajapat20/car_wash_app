@@ -38,7 +38,8 @@ import {
   deleteVehicle,
   addAddress,
   getAddresses,
-  deleteAddress
+  deleteAddress,
+  uploadCustomerProfileImage
 } from '../controllers/customerController';
 import { 
   createRazorpayOrder, 
@@ -129,6 +130,8 @@ router.route('/customer/addresses')
   .get(protect, authorize('customer'), getAddresses)
   .post(protect, authorize('customer'), addAddress);
 router.delete('/customer/addresses/:addressId', protect, authorize('customer'), deleteAddress);
+
+router.post('/customer/profile-image', protect, authorize('customer'), uploadImage.single('image'), uploadCustomerProfileImage);
 
 // PAYMENT ROUTES (Protected)
 router.post('/payment/create-order', protect, authorize('customer'), createRazorpayOrder);

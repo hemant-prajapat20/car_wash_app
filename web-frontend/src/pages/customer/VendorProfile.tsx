@@ -16,6 +16,10 @@ export const VendorProfile: React.FC = () => {
   const [buyLoading, setBuyLoading] = useState(false);
   const [buyError, setBuyError] = useState('');
   const [vehicle, setVehicle] = useState({ make: '', model: '', plateNumber: '' });
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submitReviewLoading, setSubmitReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState('');
 
   useEffect(() => {
     const fetchVendorDetails = async () => {
@@ -59,6 +63,35 @@ export const VendorProfile: React.FC = () => {
 
   const { vendor, services, slots, reviews } = data;
   const startingPrice = services.length > 0 ? Math.min(...services.map((s: any) => s.price)) : 0;
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewRating) {
+      setReviewError('Please select a rating');
+      return;
+    }
+    setSubmitReviewLoading(true);
+    setReviewError('');
+    try {
+      const res = await api.post('/customer/reviews', {
+        vendorId,
+        rating: reviewRating,
+        comment: reviewComment
+      });
+      if (res.data.success) {
+        setData({
+          ...data,
+          reviews: [res.data.data, ...data.reviews]
+        });
+        setReviewRating(0);
+        setReviewComment('');
+      }
+    } catch (err: any) {
+      setReviewError(err.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setSubmitReviewLoading(false);
+    }
+  };
 
   const handleBuyPlan = async () => {
     if (!vehicle.make || !vehicle.model || !vehicle.plateNumber) {
@@ -240,30 +273,7 @@ export const VendorProfile: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest flex items-center justify-between">
-                Recent Reviews
-                <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-md">{reviews.length}</span>
-              </h3>
-              {reviews.length === 0 ? (
-                <p className="text-slate-400 italic text-xs text-center py-4">No reviews yet.</p>
-              ) : (
-                <div className="space-y-4">
-                  {reviews.map((r: any) => (
-                    <div key={r._id} className="pb-4 border-b border-slate-50 last:border-0 last:pb-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-slate-900">{r.customer?.fullName || 'Customer'}</span>
-                        <div className="flex items-center gap-0.5">
-                          <Star size={10} className="fill-amber-400 text-amber-400" />
-                          <span className="text-[10px] font-bold text-slate-600">{r.rating}</span>
-                        </div>
-                      </div>
-                      <p className="text-[11px] text-slate-500 leading-relaxed">{r.comment}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+
           </div>
         </div>
 
@@ -357,6 +367,80 @@ export const VendorProfile: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Reviews Section — full width below plans */}
+        <div className="bg-white border border-slate-100 rounded-[2.5rem] p-6 sm:p-8 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest flex items-center justify-between">
+                Write a Review
+              </h3>
+              <form onSubmit={handleSubmitReview} className="space-y-3">
+                <div>
+                  <div className="flex gap-1 mb-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        className="focus:outline-none transition-transform hover:scale-110"
+                      >
+                        <Star
+                          size={20}
+                          className={`${
+                            star <= reviewRating
+                              ? 'fill-amber-400 text-amber-400'
+                              : 'text-slate-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Share your experience..."
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[80px]"
+                    maxLength={300}
+                  />
+                </div>
+                {reviewError && <p className="text-xs text-rose-600 font-semibold">{reviewError}</p>}
+                <button
+                  type="submit"
+                  disabled={submitReviewLoading}
+                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {submitReviewLoading ? <Loader2 size={14} className="animate-spin" /> : 'Submit Review'}
+                </button>
+              </form>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest flex items-center justify-between">
+                Recent Reviews
+                <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-md">{reviews.length}</span>
+              </h3>
+              {reviews.length === 0 ? (
+                <p className="text-slate-400 italic text-xs text-center py-4">No reviews yet.</p>
+              ) : (
+                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                  {reviews.map((r: any) => (
+                    <div key={r._id} className="pb-4 border-b border-slate-50 last:border-0 last:pb-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold text-slate-900">{r.customer?.fullName || 'Customer'}</span>
+                        <div className="flex items-center gap-0.5">
+                          <Star size={10} className="fill-amber-400 text-amber-400" />
+                          <span className="text-[10px] font-bold text-slate-600">{r.rating}</span>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">{r.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
       </div>
       {/* ── End Main Content ────────────────────────────────── */}

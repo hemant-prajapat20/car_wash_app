@@ -4,7 +4,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IReview extends Document {
   customer: mongoose.Types.ObjectId;
   vendor: mongoose.Types.ObjectId;
-  booking: mongoose.Types.ObjectId;
+  booking?: mongoose.Types.ObjectId;
   rating: number;
   comment: string;
 }
@@ -12,7 +12,7 @@ export interface IReview extends Document {
 const ReviewSchema: Schema = new Schema({
   customer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   vendor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  booking: { type: Schema.Types.ObjectId, ref: 'Booking', required: true },
+  booking: { type: Schema.Types.ObjectId, ref: 'Booking' }, // made optional
   rating: { type: Number, required: true, min: 1, max: 5 },
   comment: { type: String }
 }, { timestamps: true });

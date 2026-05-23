@@ -1,18 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   User, Mail, Phone, MapPin, 
   Car, Plus, ShieldCheck, Camera,
-  Loader2, Trash2, Edit2
+  Loader2, Trash2, Edit2, X
 } from 'lucide-react';
 import api from '../../services/axiosConfig';
 
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
 export const CustomerProfile: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +25,11 @@ export const CustomerProfile: React.FC = () => {
   const [newAddress, setNewAddress] = useState({ label: '', address: '', city: '' });
   
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Profile image state
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar || null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchData = async () => {
     try {
@@ -43,6 +49,46 @@ export const CustomerProfile: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Handle profile image upload
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be smaller than 5MB');
+      return;
+    }
+
+    const formDataObj = new FormData();
+    formDataObj.append('image', file);
+
+    setAvatarUploading(true);
+    try {
+      const res = await api.post('/customer/profile-image', formDataObj, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setAvatarUrl(res.data.data);
+        // Update user in localStorage so avatar persists across page refreshes
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            parsed.avatar = res.data.data;
+            localStorage.setItem('user', JSON.stringify(parsed));
+          } catch {}
+        }
+        toast.success('Profile image updated!');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to upload image');
+    } finally {
+      setAvatarUploading(false);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   const handleAddVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,16 +166,42 @@ export const CustomerProfile: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1 space-y-4">
            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-8 text-center shadow-sm">
-             <div className="relative mx-auto w-24 h-24 mb-4">
-               <div className="w-full h-full bg-slate-50 rounded-[2rem] flex items-center justify-center text-slate-300 border-4 border-white shadow-inner">
-                 {user?.avatar ? (
-                   <img src={user.avatar} className="w-full h-full object-cover rounded-[2rem]" alt="" />
+             <div className="relative mx-auto w-24 h-24 mb-4 group">
+               <div className="w-full h-full bg-slate-50 rounded-[2rem] flex items-center justify-center text-slate-300 border-4 border-white shadow-inner overflow-hidden">
+                 {avatarUrl ? (
+                   <img src={avatarUrl} className="w-full h-full object-cover" alt="Profile" />
                  ) : (
                    <User size={40} />
                  )}
                </div>
-               <button className="absolute -bottom-1 -right-1 p-2.5 bg-blue-600 text-white rounded-2xl shadow-xl hover:bg-blue-700 transition-all border-4 border-white">
-                 <Camera size={16} />
+               {/* Upload overlay on hover */}
+               <label className="absolute inset-0 bg-slate-900/40 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-[2rem] flex flex-col items-center justify-center cursor-pointer gap-1">
+                 {avatarUploading ? (
+                   <Loader2 size={20} className="animate-spin" />
+                 ) : (
+                   <>
+                     <Camera size={18} />
+                     <span className="text-[8px] font-bold uppercase tracking-widest">
+                       {avatarUrl ? 'Change' : 'Upload'}
+                     </span>
+                   </>
+                 )}
+                 <input 
+                   ref={fileInputRef}
+                   type="file" 
+                   accept="image/*" 
+                   className="hidden" 
+                   onChange={handleAvatarUpload} 
+                   disabled={avatarUploading} 
+                 />
+               </label>
+               {/* Camera badge button */}
+               <button 
+                 onClick={() => fileInputRef.current?.click()}
+                 disabled={avatarUploading}
+                 className="absolute -bottom-1 -right-1 p-2.5 bg-blue-600 text-white rounded-2xl shadow-xl hover:bg-blue-700 transition-all border-4 border-white active:scale-90 disabled:opacity-50"
+               >
+                 {avatarUploading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
                </button>
              </div>
              <h3 className="text-[16px] font-black text-slate-900">{user?.fullName}</h3>

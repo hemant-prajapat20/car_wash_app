@@ -5,6 +5,7 @@ import Slot from '../models/Slot';
 import { Review } from '../models/Others';
 import { asyncHandler, AuthRequest } from '../middleware/auth';
 import { createNotification } from './notificationController';
+import { uploadToCloudinary } from '../utils/cloudinary';
 
 import Service from '../models/Service';
 import ServicePlan from '../models/ServicePlan';
@@ -226,24 +227,35 @@ export const deleteBooking = asyncHandler(async (req: AuthRequest, res: Response
 });
 
 export const submitReview = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const { bookingId, rating, comment } = req.body;
+  const { vendorId, bookingId, rating, comment } = req.body;
 
-  const booking = await Booking.findById(bookingId);
-  if (!booking || booking.status !== 'Completed') {
-    return res.status(400).json({ success: false, message: 'Reviews only allowed for completed bookings' });
+  let vendorTarget = vendorId;
+
+  if (bookingId) {
+    const booking = await Booking.findById(bookingId);
+    if (!booking || booking.status !== 'Completed') {
+      return res.status(400).json({ success: false, message: 'Reviews only allowed for completed bookings' });
+    }
+    vendorTarget = booking.vendor;
+  }
+
+  if (!vendorTarget) {
+    return res.status(400).json({ success: false, message: 'Vendor ID is required to submit a review' });
   }
 
   const review = await Review.create({
     customer: req.user?._id,
-    vendor: booking.vendor,
-    booking: bookingId,
+    vendor: vendorTarget,
+    booking: bookingId || undefined,
     rating,
     comment
   });
 
+  await review.populate('customer', 'fullName');
+
   // Create Notification for Vendor
   await createNotification({
-    receiverId: booking.vendor,
+    receiverId: vendorTarget,
     receiverRole: 'vendor',
     title: 'New Review Received',
     message: `A customer has left a ${rating}-star review for your service.`,
@@ -304,4 +316,20 @@ export const deleteAddress = asyncHandler(async (req: AuthRequest, res: Response
   await user.save();
 
   res.json({ success: true, data: user.addresses, message: 'Address removed' });
+});
+
+export const uploadCustomerProfileImage = asyncHandler(async (req: any, res: Response) => {
+  const user = await User.findById(req.user._id);
+  if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No image provided' });
+  }
+
+  const uploadedImage = await uploadToCloudinary(req.file.buffer, 'chakachak/profiles');
+
+  user.avatar = uploadedImage.url;
+  await user.save();
+
+  res.json({ success: true, data: user.avatar, message: 'Profile image updated successfully' });
 });
