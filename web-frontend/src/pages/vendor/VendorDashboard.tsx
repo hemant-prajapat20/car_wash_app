@@ -14,6 +14,7 @@ export const VendorDashboard: React.FC = () => {
   const [topCustomers, setTopCustomers] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllActivities, setShowAllActivities] = useState(false);
   const { notifications } = useSelector((state: RootState) => state.notifications);
 
   useEffect(() => {
@@ -22,7 +23,7 @@ export const VendorDashboard: React.FC = () => {
         const dashboardRes = await api.get('/vendor/dashboard');
         if (dashboardRes.data.success) {
           setStats(dashboardRes.data.data.stats);
-          setRecentActivities(dashboardRes.data.data.recentBookings);
+          setRecentActivities(dashboardRes.data.data.recentBookings || []);
           setTopCustomers(dashboardRes.data.data.topCustomers);
         }
         const transactionsRes = await api.get('/vendor/transactions');
@@ -95,7 +96,7 @@ export const VendorDashboard: React.FC = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
     {/* Recent Transactions Section */}
     <div className="lg:col-span-2 bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm mt-6">
       <div className="flex items-center justify-between mb-4 px-1">
@@ -140,29 +141,71 @@ export const VendorDashboard: React.FC = () => {
     <div className="lg:col-span-1 bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm mt-6">
       <div className="flex items-center justify-between mb-4 px-1">
         <h3 className="text-[14px] font-bold text-slate-900">Recent Activity</h3>
-        <button className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">
-          Full Report
+        <button 
+          onClick={() => setShowAllActivities(!showAllActivities)}
+          className="text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+        >
+          {showAllActivities ? 'Show Less' : 'Full Report'}
         </button>
       </div>
       {loading ? (
-        <div className="flex justify-center p-4"><Loader2 size={20} className="animate-spin text-blue-600" /></div>
+        <div className="flex justify-center p-4">
+          <Loader2 size={20} className="animate-spin text-blue-600" />
+        </div>
       ) : (
-        <ul className="space-y-2 max-h-48 overflow-y-auto">
-          {recentActivities.slice(0,5).map((act, idx) => (
-            <li key={idx} className="flex items-center text-[11px] text-slate-700">
-              <span className="mr-2 font-medium">{act.activityType}</span>
-              <span>{JSON.stringify(act).slice(0, 40)}...</span>
-              <span className="ml-auto text-xs text-slate-500">{new Date(act.createdAt || act.timestamp).toLocaleString()}</span>
-            </li>
-          ))}
-          {recentActivities.length === 0 && <li className="text-slate-500">No recent activity.</li>}
-        </ul>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left table-auto">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="p-2 text-[10px] font-medium text-slate-600">Type</th>
+                <th className="p-2 text-[10px] font-medium text-slate-600">Role</th>
+                <th className="p-2 text-[10px] font-medium text-slate-600">Name</th>
+                <th className="p-2 text-[10px] font-medium text-slate-600">Details</th>
+                <th className="p-2 text-[10px] font-medium text-slate-600">Date & Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(recentActivities || []).slice(0, showAllActivities ? recentActivities.length : 8).map((act, idx) => (
+                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <td className="p-2 text-[11px]">
+                    <span className={`inline-block font-bold text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-md whitespace-nowrap ${
+                      act.activityType === 'Payment' ? 'bg-emerald-50 text-emerald-600'
+                      : act.activityType === 'Cancelled' ? 'bg-red-50 text-red-600'
+                      : act.activityType === 'Staff Added' ? 'bg-purple-50 text-purple-600'
+                      : act.activityType === 'Staff Removed' ? 'bg-orange-50 text-orange-600'
+                      : act.activityType === 'Staff Updated' ? 'bg-amber-50 text-amber-600'
+                      : act.activityType === 'Service Done' ? 'bg-indigo-50 text-indigo-600'
+                      : act.activityType === 'Feedback' ? 'bg-pink-50 text-pink-600'
+                      : 'bg-blue-50 text-blue-600'
+                    }`}>{act.activityType}</span>
+                  </td>
+                  <td className="p-2 text-[11px] text-slate-600">
+                    <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                      act.role === 'Staff' ? 'bg-purple-50 text-purple-500' : 'bg-sky-50 text-sky-500'
+                    }`}>{act.role || 'Customer'}</span>
+                  </td>
+                  <td className="p-2 text-[11px] font-medium text-slate-800">{act.name || 'Unknown'}</td>
+                  <td className="p-2 text-[11px] text-slate-700">{act.details || ''}</td>
+                  <td className="p-2 text-[11px] text-slate-500 whitespace-nowrap">{new Date(act.createdAt).toLocaleString()}</td>
+                </tr>
+              ))}
+              {recentActivities.length === 0 && (
+                <tr><td colSpan={5} className="p-4 text-center text-slate-400 text-[11px]">No recent activity.</td></tr>
+              )}
+            </tbody>
+          </table>
+          {!showAllActivities && recentActivities.length > 8 && (
+            <div className="text-center pt-3 pb-1">
+              <span className="text-[10px] text-slate-400">Showing 8 of {recentActivities.length} activities</span>
+            </div>
+          )}
+        </div>
       )}
     </div>
   </div>
 
       {/* Top Customers Leaderboard (enhanced) */}
-      <div className="bg-slate-900 rounded-[32px] p-6 shadow-xl shadow-slate-200 text-white flex flex-col mt-6">
+       <div className="bg-slate-900 rounded-[32px] p-6 shadow-xl shadow-slate-200 text-white flex flex-col mt-6">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 bg-amber-400/10 text-amber-400 rounded-xl flex items-center justify-center">
             <Crown size={20} />

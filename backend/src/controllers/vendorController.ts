@@ -6,6 +6,8 @@ import Worker from '../models/Worker';
 import Booking from '../models/Booking';
 import User from '../models/User';
 import CustomerPlan from '../models/CustomerPlan';
+import { Review } from '../models/Others';
+import Notification from '../models/Notification';
 import { asyncHandler } from '../middleware/auth';
 import { createNotification } from './notificationController';
 
@@ -83,46 +85,105 @@ export const getVendorDashboard = asyncHandler(async (req: any, res: Response) =
     const totalRevenue = bookingRevenue + planRevenue;
 
     const recentBookings = await Booking.find({ vendor: vendorObjectId })
-      .populate('customer', 'fullName email')
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(20)
+      .populate('customer', 'fullName email avatar');
 
-    const recentPlans = await CustomerPlan.find({ vendor: vendorObjectId, paymentStatus: 'Success' })
-      .populate('customer', 'fullName email')
-      .populate('servicePlan', 'title price')
+    const recentPlans = await CustomerPlan.find({ vendor: vendorObjectId })
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(20)
+      .populate('customer', 'fullName email avatar')
+      .populate('servicePlan');
 
-    const mappedBookings = recentBookings.map(bk => ({
-      ...bk.toObject(),
-      isPlanPurchase: false,
-      activityType: 'Booking'
+    // Worker events from notifications
+    const workerNotifs = await Notification.find({ 
+      receiverId: vendorObjectId, 
+      type: 'worker_assignment' 
+    }).sort({ createdAt: -1 }).limit(20);
+
+    // Customer reviews/feedback
+    const recentReviews = await Review.find({ vendor: vendorObjectId })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .populate('customer', 'fullName');
+
+    // --- Map Bookings ---
+    const mappedBookings = recentBookings.map(b => ({
+      activityType: 'Booking',
+      role: 'Customer',
+      name: (b.customer as any)?.fullName || 'Unknown',
+      details: `${b.vehicle?.make || ''} ${b.vehicle?.model || ''} (${b.vehicle?.plateNumber || ''})`.trim(),
+      createdAt: b.createdAt
     }));
 
-    const mappedPlans = recentPlans.map(pl => {
-      const plObj = pl.toObject();
+    // --- Map Completed Services ---
+    const doneBookings = recentBookings.filter(b => b.status === 'Completed');
+    const mappedCompleted = doneBookings.map(b => ({
+      activityType: 'Service Done',
+      role: 'Customer',
+      name: (b.customer as any)?.fullName || 'Unknown',
+      details: `${b.service?.name || 'Service'} – ₹${b.totalAmount}`,
+      createdAt: b.completedAt || b.createdAt
+    }));
+
+    // --- Map Payments ---
+    const paidBookings = recentBookings.filter(b => b.paymentStatus === 'Success');
+    const mappedPayments = paidBookings.map(b => ({
+      activityType: 'Payment',
+      role: 'Customer',
+      name: (b.customer as any)?.fullName || 'Unknown',
+      details: `₹${b.totalAmount} via ${b.paymentMode || 'Online'}`,
+      createdAt: b.completedAt || b.createdAt
+    }));
+
+    // --- Map Cancellations / Refunds ---
+    const cancelledBookings = recentBookings.filter(b => b.status === 'Cancelled');
+    const mappedCancelled = cancelledBookings.map(b => ({
+      activityType: 'Cancelled',
+      role: 'Customer',
+      name: (b.customer as any)?.fullName || 'Unknown',
+      details: `${b.service?.name || 'Service'} – ₹${b.totalAmount}`,
+      createdAt: b.updatedAt || b.createdAt
+    }));
+
+    // --- Map Subscription Plans ---
+    const mappedPlans = recentPlans.map(pl => ({
+      activityType: 'Subscription Plan',
+      role: 'Customer',
+      name: (pl.customer as any)?.fullName || 'Unknown',
+      details: `${(pl.servicePlan as any)?.title || 'Plan'} – ₹${(pl.servicePlan as any)?.price || 0}`,
+      createdAt: pl.createdAt
+    }));
+
+    // --- Map Worker Events ---
+    const mappedWorkers = workerNotifs.map(notif => {
+      const isAdded = notif.message.includes('added');
+      const isRemoved = notif.message.includes('removed');
+      const workerName = notif.message.match(/"([^"]+)"/)?.[1] || 'Staff';
       return {
-        ...plObj,
-        bookingId: `PLN-${(pl as any)._id.toString().slice(-6).toUpperCase()}`,
-        service: {
-          name: (pl.servicePlan as any)?.title || 'Service Plan',
-          price: (pl.servicePlan as any)?.price || 0,
-          duration: 0
-        },
-        slot: {
-          date: pl.purchasedAt || pl.createdAt,
-          time: 'N/A'
-        },
-        status: pl.status === 'Active' ? 'Confirmed' : pl.status === 'Completed' ? 'Completed' : 'Pending',
-        isPlanPurchase: true,
-        activityType: 'Subscription Plan',
-        totalServices: pl.totalServices,
-        remainingServices: pl.remainingServices
+        activityType: isAdded ? 'Staff Added' : isRemoved ? 'Staff Removed' : 'Staff Updated',
+        role: 'Staff',
+        name: workerName,
+        details: isAdded ? 'Added to team' : isRemoved ? 'Removed from team' : 'Profile updated',
+        createdAt: notif.createdAt
       };
     });
 
-    const combinedActivities = [...mappedBookings, ...mappedPlans].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    // --- Map Feedback ---
+    const mappedFeedback = recentReviews.map(fb => ({
+      activityType: 'Feedback',
+      role: 'Customer',
+      name: (fb.customer as any)?.fullName || 'Customer',
+      details: `${fb.rating}★ – "${fb.comment || 'No comment'}"`,
+      createdAt: (fb as any).createdAt
+    }));
+
+    // --- Combine, sort newest first ---
+    const allActivities = [
+      ...mappedBookings, ...mappedCompleted, ...mappedPayments,
+      ...mappedCancelled, ...mappedPlans, ...mappedWorkers, ...mappedFeedback
+    ].sort((a: any, b: any) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
 
     res.json({
@@ -137,7 +198,7 @@ export const getVendorDashboard = asyncHandler(async (req: any, res: Response) =
           popularSlot: popularSlotResult[0]?._id || 'N/A'
         },
         topCustomers: topCustomersResult,
-        recentBookings: combinedActivities
+        recentBookings: allActivities
       }
     });
   } catch (err: any) {
