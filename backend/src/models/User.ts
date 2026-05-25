@@ -45,6 +45,12 @@ export interface IUser extends Document {
     reason?: string;
     unavailableUntil?: Date;
   };
+  businessHours?: Array<{
+    day: string;
+    isOpen: boolean;
+    openTime: string;
+    closeTime: string;
+  }>;
   
   // Customer Specific Fields
   vehicles?: Array<{
@@ -109,6 +115,12 @@ const UserSchema: Schema = new Schema({
     reason: { type: String },
     unavailableUntil: { type: Date }
   },
+  businessHours: [{
+    day: { type: String, enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] },
+    isOpen: { type: Boolean, default: true },
+    openTime: { type: String, default: '09:00' },
+    closeTime: { type: String, default: '18:00' }
+  }],
   
   // Customer Fields
   vehicles: [{

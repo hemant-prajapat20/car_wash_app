@@ -14,7 +14,14 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const StatusBadge = ({ status }: { status: string }) => {
+const StatusBadge = ({ status, isExpired }: { status: string, isExpired?: boolean }) => {
+  if (isExpired) {
+    return (
+      <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100">
+        Expired
+      </span>
+    );
+  }
   const styles: Record<string, string> = {
     'Pending': 'text-slate-400 bg-slate-50',
     'Confirmed': 'text-blue-600 bg-blue-50',
@@ -94,13 +101,22 @@ export const MyBookings: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {bookings.length > 0 ? bookings.map((booking, i) => (
+        {bookings.length > 0 ? [...bookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((booking, i) => {
+          const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+          const currentISTDateStr = nowIST.getFullYear() + '-' + String(nowIST.getMonth() + 1).padStart(2, '0') + '-' + String(nowIST.getDate()).padStart(2, '0');
+          const bookingDateStr = booking.slot?.date ? new Date(booking.slot.date).toISOString().split('T')[0] : '';
+          const isExpired = !!(!booking.isPlanPurchase && bookingDateStr && bookingDateStr < currentISTDateStr && ['Pending', 'Confirmed'].includes(booking.status));
+
+          return (
           <motion.div 
             key={booking._id}
             initial={{ opacity: 0, x: -5 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="bg-white border border-slate-100 rounded-2xl p-3 shadow-sm hover:shadow-md transition-all group"
+            className={cn(
+              "bg-white border rounded-2xl p-3 shadow-sm hover:shadow-md transition-all group",
+              isExpired ? "border-slate-100 opacity-70" : "border-slate-100"
+            )}
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2.5 min-w-0">
@@ -112,7 +128,7 @@ export const MyBookings: React.FC = () => {
                   <p className="text-[10px] font-medium text-slate-400 truncate">{booking.service?.name}</p>
                 </div>
               </div>
-              <StatusBadge status={booking.status} />
+              <StatusBadge status={booking.status} isExpired={isExpired} />
             </div>
 
              <div className="flex items-center justify-between pt-3 border-t border-slate-50">
@@ -150,9 +166,9 @@ export const MyBookings: React.FC = () => {
                  )}
                  <ChevronRight size={14} className="text-slate-300 group-hover:text-slate-600" />
               </div>
-            </div>
+             </div>
           </motion.div>
-        )) : (
+        )}) : (
           <div className="col-span-full py-16 text-center text-slate-300">
             <AlertCircle size={32} className="mx-auto mb-2 opacity-20" />
             <p className="text-[10px] font-bold uppercase tracking-widest">No bookings found</p>

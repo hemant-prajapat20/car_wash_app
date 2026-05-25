@@ -25,6 +25,16 @@ export const SlotManagement: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingSlot, setEditingSlot] = useState<Slot | null>(null);
 
+  const formatAMPM = (timeStr: string) => {
+    if (!timeStr) return '';
+    const [hourStr, minStr] = timeStr.split(':');
+    let hour = parseInt(hourStr);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    hour = hour ? hour : 12;
+    return `${hour.toString().padStart(2, '0')}:${minStr} ${ampm}`;
+  };
+
   const [formData, setFormData] = useState({
     startTime: '09:00',
     endTime: '10:00',
@@ -142,7 +152,9 @@ export const SlotManagement: React.FC = () => {
                 </div>
 
                 <div className="mb-4">
-                  <h3 className="text-[14px] font-bold text-slate-900 leading-none mb-2">{slot.startTime} - {slot.endTime}</h3>
+                  <h3 className="text-[14px] font-bold text-slate-900 leading-none mb-2">
+                    {formatAMPM(slot.startTime)} - {formatAMPM(slot.endTime)}
+                  </h3>
                   <div className="flex items-center gap-2">
                     <span className="text-[8px] font-bold text-blue-600 uppercase tracking-widest px-1.5 py-0.5 bg-blue-50 rounded-md">
                       {slot.dayOfWeek}

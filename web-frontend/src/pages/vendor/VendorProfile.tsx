@@ -4,7 +4,7 @@ import {
   Settings, Camera, Lock, 
   Mail, Phone, Globe, Edit2,
   ArrowRight, CheckCircle2, Loader2,
-  Image as ImageIcon, Trash2, Upload, Calendar, FileText, X
+  Image as ImageIcon, Trash2, Upload, Calendar, FileText, X, Clock
 } from 'lucide-react';
 import api from '../../services/axiosConfig';
 import toast from 'react-hot-toast';
@@ -25,6 +25,27 @@ export const VendorProfile: React.FC = () => {
     unavailableUntil: ''
   });
 
+  const defaultHours = [
+    { day: 'Monday', isOpen: true, openTime: '09:00', closeTime: '18:00' },
+    { day: 'Tuesday', isOpen: true, openTime: '09:00', closeTime: '18:00' },
+    { day: 'Wednesday', isOpen: true, openTime: '09:00', closeTime: '18:00' },
+    { day: 'Thursday', isOpen: true, openTime: '09:00', closeTime: '18:00' },
+    { day: 'Friday', isOpen: true, openTime: '09:00', closeTime: '18:00' },
+    { day: 'Saturday', isOpen: true, openTime: '09:00', closeTime: '18:00' },
+    { day: 'Sunday', isOpen: false, openTime: '09:00', closeTime: '18:00' }
+  ];
+  const [businessHours, setBusinessHours] = useState<any[]>(defaultHours);
+
+  const formatAMPM = (timeStr: string) => {
+    if (!timeStr) return '';
+    const [hourStr, minStr] = timeStr.split(':');
+    let hour = parseInt(hourStr);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    hour = hour ? hour : 12;
+    return `${hour.toString().padStart(2, '0')}:${minStr} ${ampm}`;
+  };
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -43,6 +64,9 @@ export const VendorProfile: React.FC = () => {
               reason: res.data.data.availability.reason || '',
               unavailableUntil: res.data.data.availability.unavailableUntil ? new Date(res.data.data.availability.unavailableUntil).toISOString().split('T')[0] : ''
             });
+          }
+          if (res.data.data.businessHours && res.data.data.businessHours.length > 0) {
+            setBusinessHours(res.data.data.businessHours);
           }
         }
       } catch (err) {
@@ -94,7 +118,8 @@ export const VendorProfile: React.FC = () => {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      const res = await api.put('/vendor/profile', formData);
+      const payload = { ...formData, businessHours };
+      const res = await api.put('/vendor/profile', payload);
       if (res.data.success) {
         setProfile(res.data.data);
         setEditMode(false);
@@ -338,6 +363,90 @@ export const VendorProfile: React.FC = () => {
               </div>
 
            </div>
+        </div>
+
+        {/* Business Hours Chart */}
+        <div className="md:col-span-3 bg-white border border-slate-100 rounded-2xl p-4 shadow-sm mt-4">
+          <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
+            <div>
+              <h3 className="text-[12px] font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                <Clock size={14} className="text-blue-500" /> Business Hours
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-0.5">Set your daily opening and closing times.</p>
+            </div>
+            <button 
+              onClick={() => editMode ? handleSaveProfile() : setEditMode(true)}
+              className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase hover:bg-blue-600 transition-all flex items-center gap-1"
+            >
+              {saving ? <Loader2 size={10} className="animate-spin" /> : editMode ? <CheckCircle2 size={10} /> : <Edit2 size={10} />}
+              {editMode ? 'Save Details' : 'Edit Hours'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {businessHours.map((bh, idx) => (
+              <div key={bh.day} className={`p-3 rounded-xl border ${bh.isOpen ? 'bg-white border-blue-100 shadow-sm' : 'bg-slate-50 border-slate-100'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-[11px] font-bold uppercase tracking-widest ${bh.isOpen ? 'text-slate-900' : 'text-slate-400'}`}>
+                    {bh.day}
+                  </span>
+                  {editMode ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newHours = [...businessHours];
+                        newHours[idx].isOpen = !newHours[idx].isOpen;
+                        setBusinessHours(newHours);
+                      }}
+                      className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-200 focus:outline-none flex items-center ${
+                        bh.isOpen ? 'bg-blue-600' : 'bg-slate-300'
+                      }`}
+                    >
+                      <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-200 ${bh.isOpen ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
+                  ) : (
+                    <span className={`text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded ${bh.isOpen ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                      {bh.isOpen ? 'Open' : 'Closed'}
+                    </span>
+                  )}
+                </div>
+
+                {bh.isOpen && (
+                  <div className="flex items-center gap-2 mt-2">
+                    {editMode ? (
+                      <>
+                        <input 
+                          type="time" 
+                          value={bh.openTime}
+                          onChange={(e) => {
+                            const newHours = [...businessHours];
+                            newHours[idx].openTime = e.target.value;
+                            setBusinessHours(newHours);
+                          }}
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold text-slate-700 outline-none"
+                        />
+                        <span className="text-slate-300 text-xs">-</span>
+                        <input 
+                          type="time" 
+                          value={bh.closeTime}
+                          onChange={(e) => {
+                            const newHours = [...businessHours];
+                            newHours[idx].closeTime = e.target.value;
+                            setBusinessHours(newHours);
+                          }}
+                          className="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-[10px] font-bold text-slate-700 outline-none"
+                        />
+                      </>
+                    ) : (
+                      <p className="text-[11px] font-bold text-slate-600 w-full text-center py-1.5 bg-blue-50/50 rounded-lg">
+                        {formatAMPM(bh.openTime)} - {formatAMPM(bh.closeTime)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Gallery Section */}

@@ -144,9 +144,9 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
         {statCards.map((card) => (
-          <div key={card.name} className="bg-white p-5 rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md transition-shadow group">
+          <div key={card.name} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-shadow group h-full flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className={`p-2.5 rounded-2xl bg-${card.color}-50 text-${card.color}-600 group-hover:scale-110 transition-transform`}>
                 <card.icon size={20} />
@@ -155,16 +155,18 @@ export const AdminDashboard: React.FC = () => {
                 {card.trend}
               </span>
             </div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-2">{card.name}</p>
-            <h3 className="text-xl font-bold text-slate-900">{card.value}</h3>
+            <div className="mt-auto">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-2">{card.name}</p>
+              <h3 className="text-xl font-bold text-slate-900">{card.value}</h3>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
         {/* Operation History */}
-        <div className="lg:col-span-2 bg-white rounded-[32px] border border-slate-100 shadow-sm p-8">
+        <div className="lg:col-span-3 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 h-full flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <h4 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Clock size={18} className="text-blue-600" />
@@ -176,7 +178,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
           
-          <div className="space-y-6">
+          <div className="space-y-6 flex-1">
             {recentActivity.map((op, i) => (
               <div key={i} className="flex items-start justify-between group">
                 <div className="flex gap-4">
@@ -196,7 +198,7 @@ export const AdminDashboard: React.FC = () => {
             ))}
           </div>
 
-          <button className="w-full mt-10 py-3 bg-slate-50 hover:bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-colors">
+          <button className="w-full mt-10 py-4 bg-slate-50 hover:bg-slate-100 text-slate-500 text-[11px] font-bold uppercase tracking-widest rounded-2xl transition-colors mt-auto">
             Download Global Operations Log
           </button>
         </div>

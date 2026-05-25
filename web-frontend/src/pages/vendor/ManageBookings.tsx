@@ -93,6 +93,32 @@ export const ManageBookings: React.FC = () => {
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .map((booking) => {
             const isPlan = booking.isPlanPurchase;
+
+            // IST Time calculations
+            const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+            const currentISTDateStr = nowIST.getFullYear() + '-' + String(nowIST.getMonth() + 1).padStart(2, '0') + '-' + String(nowIST.getDate()).padStart(2, '0');
+            const currentISTTotalMins = nowIST.getHours() * 60 + nowIST.getMinutes();
+
+            let bookingDateStr = '';
+            let bookingTotalMins = 0;
+            if (booking.slot?.date) {
+              bookingDateStr = new Date(booking.slot.date).toISOString().split('T')[0];
+            }
+            if (booking.slot?.time) {
+              const timeMatch = booking.slot.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+              if (timeMatch) {
+                let [_, h, m, period] = timeMatch;
+                let hour = parseInt(h);
+                if (period.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+                if (period.toUpperCase() === 'AM' && hour === 12) hour = 0;
+                bookingTotalMins = hour * 60 + parseInt(m);
+              }
+            }
+
+            const isExpired = !isPlan && bookingDateStr && bookingDateStr < currentISTDateStr && ['Pending', 'Confirmed'].includes(booking.status);
+            const isFutureDate = !isPlan && bookingDateStr && bookingDateStr > currentISTDateStr;
+            const isFutureTimeToday = !isPlan && bookingDateStr === currentISTDateStr && currentISTTotalMins < bookingTotalMins;
+            const cannotStartYet = isFutureDate || isFutureTimeToday;
             return (
               <motion.div 
                 key={booking._id}
@@ -136,6 +162,10 @@ export const ManageBookings: React.FC = () => {
                         booking.remainingServices === 0 ? "text-slate-500 bg-slate-100" : "text-amber-700 bg-amber-50"
                       )}>
                         {booking.remainingServices === 0 ? 'Completed' : 'Active'}
+                      </span>
+                    ) : isExpired ? (
+                      <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest text-slate-500 bg-slate-100">
+                        Expired
                       </span>
                     ) : (
                       <StatusBadge status={booking.status} />
@@ -199,7 +229,11 @@ export const ManageBookings: React.FC = () => {
                     <div className="w-full py-2 bg-amber-50 border border-amber-200/50 text-amber-700 rounded-xl text-[9px] font-black uppercase tracking-widest text-center">
                       Subscription Active
                     </div>
-                  ) : booking.status === 'Pending' && (
+                  ) : isExpired ? (
+                    <div className="w-full py-2 bg-slate-50 text-slate-400 rounded-xl text-[9px] font-bold uppercase tracking-widest text-center">
+                      Request Expired
+                    </div>
+                  ) : booking.status === 'Pending' ? (
                     <>
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleStatusUpdate(booking._id, 'Confirmed'); }}
@@ -217,31 +251,35 @@ export const ManageBookings: React.FC = () => {
                         <XCircle size={14}/>
                       </button>
                     </>
-                  )}
-
-                  {!isPlan && booking.status === 'Confirmed' && (
+                  ) : booking.status === 'Confirmed' ? (
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleStatusUpdate(booking._id, 'In Progress'); }}
-                      className="flex-1 py-2.5 bg-gradient-to-r from-indigo-500 to-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:shadow-lg hover:shadow-blue-500/30 transition-all"
+                      disabled={cannotStartYet}
+                      className={cn(
+                        "flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        cannotStartYet 
+                          ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                          : "bg-gradient-to-r from-indigo-500 to-blue-600 text-white hover:shadow-lg hover:shadow-blue-500/30"
+                      )}
                     >
-                      Start Service
+                      {cannotStartYet ? `Starts at ${booking.slot.time}` : 'Start Service'}
                     </button>
-                  )}
-
-                  {!isPlan && booking.status === 'In Progress' && (
+                  ) : booking.status === 'In Progress' ? (
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleStatusUpdate(booking._id, 'Completed'); }}
                       className="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
                     >
                       Mark as Completed
                     </button>
-                  )}
-
-                  {!isPlan && booking.status === 'Completed' && (
+                  ) : booking.status === 'Completed' ? (
                     <div className="w-full py-2 bg-slate-50 text-slate-400 rounded-xl text-[9px] font-bold uppercase tracking-widest text-center">
                       Closed Request
                     </div>
-                  )}
+                  ) : booking.status === 'Cancelled' ? (
+                    <div className="w-full py-2 bg-rose-50 text-rose-400 rounded-xl text-[9px] font-bold uppercase tracking-widest text-center">
+                      Cancelled
+                    </div>
+                  ) : null}
                 </div>
               </motion.div>
             );
@@ -316,9 +354,20 @@ export const ManageBookings: React.FC = () => {
                         )}>
                           {selectedBooking.remainingServices === 0 ? 'Exhausted' : 'Active Subscription'}
                         </span>
-                      ) : (
-                        <StatusBadge status={selectedBooking.status} />
-                      )}
+                      ) : (() => {
+                          const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+                          const currentISTDateStr = nowIST.getFullYear() + '-' + String(nowIST.getMonth() + 1).padStart(2, '0') + '-' + String(nowIST.getDate()).padStart(2, '0');
+                          const bookingDateStr = selectedBooking.slot?.date ? new Date(selectedBooking.slot.date).toISOString().split('T')[0] : '';
+                          const isExpiredModal = bookingDateStr && bookingDateStr < currentISTDateStr && ['Pending', 'Confirmed'].includes(selectedBooking.status);
+                          
+                          return isExpiredModal ? (
+                            <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-slate-100 text-slate-500">
+                              Expired
+                            </span>
+                          ) : (
+                            <StatusBadge status={selectedBooking.status} />
+                          );
+                      })()}
                     </div>
                     <div className="text-right">
                       <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">Total Paid</p>

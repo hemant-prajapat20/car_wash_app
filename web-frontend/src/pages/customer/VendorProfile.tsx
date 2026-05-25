@@ -64,6 +64,16 @@ export const VendorProfile: React.FC = () => {
   const { vendor, services, slots, reviews } = data;
   const startingPrice = services.length > 0 ? Math.min(...services.map((s: any) => s.price)) : 0;
 
+  const formatAMPM = (timeStr: string) => {
+    if (!timeStr) return '';
+    const [hourStr, minStr] = timeStr.split(':');
+    let hour = parseInt(hourStr);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    hour = hour ? hour : 12;
+    return `${hour.toString().padStart(2, '0')}:${minStr} ${ampm}`;
+  };
+
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewRating) {
@@ -138,7 +148,7 @@ export const VendorProfile: React.FC = () => {
   return (
     <>
       {/* ── Main Page Content ─────────────────────────────── */}
-      <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 font-inter pb-20">
+      <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-500 font-inter pb-20">
 
         {/* Back Button */}
         <button
@@ -203,243 +213,246 @@ export const VendorProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Services + Info Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Service Packages */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white border border-slate-100 rounded-[2.5rem] p-6 sm:p-8 shadow-sm">
-              <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                Service Packages <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-xs">{services.length}</span>
-              </h2>
-              {services.length === 0 ? (
-                <p className="text-slate-400 italic text-sm">No services configured by this vendor.</p>
-              ) : (
-                <div className="space-y-4">
-                  {services.map((service: any) => (
-                    <div key={service._id} className="p-5 border border-slate-100 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all group">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="text-[15px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{service.name}</h3>
-                          <p className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-md inline-block mt-1">{service.category}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-emerald-600">&#8377;{service.price}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-end gap-1 mt-1">
-                            <Clock size={10} /> {service.duration} Mins
-                          </p>
-                        </div>
-                      </div>
-                      <p className="text-sm text-slate-500 mb-4">{service.description}</p>
-                      {service.features && service.features.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-50">
-                          {service.features.map((f: string, i: number) => (
-                            <div key={i} className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                              <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
-                              <span>{f}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Contact + Reviews */}
-          <div className="space-y-6">
-            <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest">Contact Info</h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
-                  <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
-                    <Mail size={14} className="text-slate-400" />
-                  </div>
-                  <span className="truncate">{vendor.email}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
-                  <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
-                    <Phone size={14} className="text-slate-400" />
-                  </div>
-                  <span>{vendor.phone}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
-                  <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
-                    <Info size={14} className="text-slate-400" />
-                  </div>
-                  <span>Active Operating Status</span>
-                </div>
-              </div>
-            </div>
-
-
-          </div>
-        </div>
-
-        {/* Vendor Gallery Section */}
-        {vendor.gallery && vendor.gallery.length > 0 && (
-          <div className="bg-white border border-slate-100 rounded-[2.5rem] p-6 sm:p-8 shadow-sm">
+        {/* Grid Layout for Content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          
+          {/* Row 1: Service Packages */}
+          <div className="bg-white border border-slate-100 rounded-[2.5rem] p-6 sm:p-8 shadow-sm h-full flex flex-col">
             <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <ImageIcon size={20} className="text-blue-500" /> Image Gallery
-              <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-xs">{vendor.gallery.length}</span>
+              Service Packages <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-xs">{services.length}</span>
             </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {vendor.gallery.map((img: any) => (
-                <div key={img.publicId} className="relative group rounded-2xl overflow-hidden aspect-square border border-slate-100 shadow-sm cursor-pointer">
-                  <img src={img.url} alt="Gallery" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/30 transition-colors" />
-                </div>
-              ))}
-            </div>
+            {services.length === 0 ? (
+              <p className="text-slate-400 italic text-sm flex-1">No services configured by this vendor.</p>
+            ) : (
+              <div className="space-y-4 flex-1">
+                {services.map((service: any) => (
+                  <div key={service._id} className="p-5 border border-slate-100 rounded-2xl hover:border-blue-200 hover:shadow-md transition-all group">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="text-[15px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{service.name}</h3>
+                        <p className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-md inline-block mt-1">{service.category}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-emerald-600">&#8377;{service.price}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-end gap-1 mt-1">
+                          <Clock size={10} /> {service.duration} Mins
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-500 mb-4">{service.description}</p>
+                    {service.features && service.features.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-50">
+                        {service.features.map((f: string, i: number) => (
+                          <div key={i} className="flex items-center gap-2 text-xs font-medium text-slate-600">
+                            <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                            <span>{f}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
 
-        {/* Subscription Plans — full width below grid */}
-        {plans.length > 0 && (
-          <div className="bg-white border border-slate-100 rounded-[2.5rem] p-6 sm:p-8 shadow-sm">
+          {/* Row 1: Subscription Plans */}
+          <div className="bg-white border border-slate-100 rounded-[2.5rem] p-6 sm:p-8 shadow-sm h-full flex flex-col">
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
                 <CreditCard size={20} className="text-blue-600" />
                 Subscription Plans
                 <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md text-xs font-semibold">{plans.length}</span>
               </h2>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-1">Prepaid service packs — buy once, use multiple times</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-1">Prepaid service packs — buy once</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {plans.map((plan: any) => (
-                <div
-                  key={plan._id}
-                  className="relative flex flex-col rounded-2xl border border-slate-100 bg-gradient-to-br from-white via-slate-50/40 to-blue-50/30 hover:border-blue-200 hover:shadow-xl transition-all duration-200 overflow-hidden group"
-                >
-                  <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-indigo-500" />
-                  <div className="p-5 flex flex-col flex-1">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <span className="inline-block bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg text-[11px] font-semibold mb-2">
-                          {plan.tenure.value} {plan.tenure.unit}
-                        </span>
-                        <h3 className="text-[17px] font-semibold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{plan.title}</h3>
-                      </div>
-                      <div className="text-right shrink-0 ml-3">
-                        <p className="text-2xl font-bold text-slate-900">&#8377;{plan.price}</p>
-                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">one-time</p>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-slate-500 leading-relaxed mb-4">{plan.description}</p>
-
-                    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 mb-4">
-                      <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
-                      <span className="text-sm font-semibold text-emerald-700">{plan.servicesIncluded} Services Included</span>
-                    </div>
-
-                    {plan.features && plan.features.length > 0 && (
-                      <div className="space-y-2 mb-4">
-                        {plan.features.map((f: string, i: number) => (
-                          <div key={i} className="flex items-center gap-2 text-xs text-slate-600">
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-                            <span className="font-semibold">{f}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {plan.supportedVehicles && plan.supportedVehicles.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-5">
-                        {plan.supportedVehicles.map((v: string, i: number) => (
-                          <span key={i} className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-semibold rounded-lg">{v}</span>
-                        ))}
-                      </div>
-                    )}
-
-                    <button
-                      onClick={() => { setSelectedPlan(plan); setBuyError(''); setVehicle({ make: '', model: '', plateNumber: '' }); }}
-                      className="mt-auto w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                    >
-                      <CreditCard size={15} />
-                      Buy This Plan
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Reviews Section — full width below plans */}
-        <div className="bg-white border border-slate-100 rounded-[2.5rem] p-6 sm:p-8 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest flex items-center justify-between">
-                Write a Review
-              </h3>
-              <form onSubmit={handleSubmitReview} className="space-y-3">
-                <div>
-                  <div className="flex gap-1 mb-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setReviewRating(star)}
-                        className="focus:outline-none transition-transform hover:scale-110"
-                      >
-                        <Star
-                          size={20}
-                          className={`${
-                            star <= reviewRating
-                              ? 'fill-amber-400 text-amber-400'
-                              : 'text-slate-300'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
-                  <textarea
-                    value={reviewComment}
-                    onChange={(e) => setReviewComment(e.target.value)}
-                    placeholder="Share your experience..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[80px]"
-                    maxLength={300}
-                  />
-                </div>
-                {reviewError && <p className="text-xs text-rose-600 font-semibold">{reviewError}</p>}
-                <button
-                  type="submit"
-                  disabled={submitReviewLoading}
-                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {submitReviewLoading ? <Loader2 size={14} className="animate-spin" /> : 'Submit Review'}
-                </button>
-              </form>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest flex items-center justify-between">
-                Recent Reviews
-                <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-md">{reviews.length}</span>
-              </h3>
-              {reviews.length === 0 ? (
-                <p className="text-slate-400 italic text-xs text-center py-4">No reviews yet.</p>
-              ) : (
-                <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
-                  {reviews.map((r: any) => (
-                    <div key={r._id} className="pb-4 border-b border-slate-50 last:border-0 last:pb-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-bold text-slate-900">{r.customer?.fullName || 'Customer'}</span>
-                        <div className="flex items-center gap-0.5">
-                          <Star size={10} className="fill-amber-400 text-amber-400" />
-                          <span className="text-[10px] font-bold text-slate-600">{r.rating}</span>
+            {plans.length === 0 ? (
+              <p className="text-slate-400 italic text-sm flex-1">No subscription plans available.</p>
+            ) : (
+              <div className="grid grid-cols-1 gap-5 flex-1">
+                {plans.map((plan: any) => (
+                  <div
+                    key={plan._id}
+                    className="relative flex flex-col rounded-2xl border border-slate-100 bg-gradient-to-br from-white via-slate-50/40 to-blue-50/30 hover:border-blue-200 hover:shadow-xl transition-all duration-200 overflow-hidden group"
+                  >
+                    <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-indigo-500" />
+                    <div className="p-5 flex flex-col flex-1">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <span className="inline-block bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg text-[11px] font-semibold mb-2">
+                            {plan.tenure.value} {plan.tenure.unit}
+                          </span>
+                          <h3 className="text-[17px] font-semibold text-slate-900 leading-tight group-hover:text-blue-600 transition-colors">{plan.title}</h3>
+                        </div>
+                        <div className="text-right shrink-0 ml-3">
+                          <p className="text-2xl font-bold text-slate-900">&#8377;{plan.price}</p>
+                          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">one-time</p>
                         </div>
                       </div>
-                      <p className="text-[11px] text-slate-500 leading-relaxed">{r.comment}</p>
+
+                      <p className="text-sm text-slate-500 leading-relaxed mb-4">{plan.description}</p>
+
+                      <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2 mb-4">
+                        <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                        <span className="text-sm font-semibold text-emerald-700">{plan.servicesIncluded} Services Included</span>
+                      </div>
+
+                      <button
+                        onClick={() => { setSelectedPlan(plan); setBuyError(''); setVehicle({ make: '', model: '', plateNumber: '' }); }}
+                        className="mt-auto w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                      >
+                        <CreditCard size={15} />
+                        Buy This Plan
+                      </button>
                     </div>
-                  ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Row 2: Business Hours */}
+          <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm h-full flex flex-col">
+            <h3 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest">Business Hours</h3>
+            {(!vendor.businessHours || vendor.businessHours.length === 0) ? (
+              <p className="text-slate-400 italic text-sm flex-1">Hours not specified.</p>
+            ) : (
+              <div className="space-y-3 flex-1">
+                {vendor.businessHours.map((bh: any) => (
+                  <div key={bh.day} className="flex justify-between items-center text-sm font-medium">
+                    <span className="text-slate-600">{bh.day}</span>
+                    {bh.isOpen ? (
+                      <span className="text-slate-900 font-bold">{formatAMPM(bh.openTime)} - {formatAMPM(bh.closeTime)}</span>
+                    ) : (
+                      <span className="text-rose-500 font-bold text-xs uppercase tracking-widest">Closed</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Row 2: Contact Info */}
+          <div className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm h-full flex flex-col">
+            <h3 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest">Contact & About</h3>
+            <div className="space-y-4 flex-1">
+              <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
+                  <Mail size={14} className="text-slate-400" />
                 </div>
-              )}
+                <span className="truncate">{vendor.email}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
+                  <Phone size={14} className="text-slate-400" />
+                </div>
+                <span>{vendor.phone}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
+                  <MapPin size={14} className="text-slate-400" />
+                </div>
+                <span>{vendor.businessLocation}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
+                  <Info size={14} className="text-slate-400" />
+                </div>
+                <span>Active Operating Status</span>
+              </div>
             </div>
           </div>
+
+          {/* Row 3: Vendor Gallery Section (Full Width) */}
+          {vendor.gallery && vendor.gallery.length > 0 && (
+            <div className="md:col-span-2 bg-white border border-slate-100 rounded-[2.5rem] p-6 sm:p-8 shadow-sm">
+              <h2 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <ImageIcon size={20} className="text-blue-500" /> Image Gallery
+                <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md text-xs">{vendor.gallery.length}</span>
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {vendor.gallery.map((img: any) => (
+                  <div key={img.publicId} className="relative group rounded-2xl overflow-hidden aspect-square border border-slate-100 shadow-sm cursor-pointer">
+                    <img src={img.url} alt="Gallery" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/30 transition-colors" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Row 4: Write a Review */}
+          <div className="bg-white border border-slate-100 rounded-[2rem] p-6 sm:p-8 shadow-sm h-full flex flex-col">
+            <h3 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest flex items-center justify-between">
+              Write a Review
+            </h3>
+            <form onSubmit={handleSubmitReview} className="space-y-3 flex flex-col flex-1">
+              <div className="flex-1">
+                <div className="flex gap-1 mb-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      className="focus:outline-none transition-transform hover:scale-110"
+                    >
+                      <Star
+                        size={20}
+                        className={`${
+                          star <= reviewRating
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-slate-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Share your experience..."
+                  className="w-full h-32 px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                  maxLength={300}
+                />
+              </div>
+              {reviewError && <p className="text-xs text-rose-600 font-semibold">{reviewError}</p>}
+              <button
+                type="submit"
+                disabled={submitReviewLoading}
+                className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-auto"
+              >
+                {submitReviewLoading ? <Loader2 size={14} className="animate-spin" /> : 'Submit Review'}
+              </button>
+            </form>
+          </div>
+
+          {/* Row 4: Recent Reviews */}
+          <div className="bg-white border border-slate-100 rounded-[2rem] p-6 sm:p-8 shadow-sm h-full flex flex-col">
+            <h3 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-widest flex items-center justify-between">
+              Recent Reviews
+              <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-md">{reviews.length}</span>
+            </h3>
+            {reviews.length === 0 ? (
+              <p className="text-slate-400 italic text-xs text-center py-4 flex-1">No reviews yet.</p>
+            ) : (
+              <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 flex-1">
+                {reviews.map((r: any) => (
+                  <div key={r._id} className="pb-4 border-b border-slate-50 last:border-0 last:pb-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-slate-900">{r.customer?.fullName || 'Customer'}</span>
+                      <div className="flex items-center gap-0.5">
+                        <Star size={10} className="fill-amber-400 text-amber-400" />
+                        <span className="text-[10px] font-bold text-slate-600">{r.rating}</span>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">{r.comment}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
         </div>
 
       </div>

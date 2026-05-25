@@ -89,6 +89,87 @@ export const getVendorDashboard = asyncHandler(async (req: any, res: Response) =
       .limit(20)
       .populate('customer', 'fullName email avatar');
 
+    // Dynamic Notification Generation for Vendor Profile
+    const nowIST = new Date(new Date().getTime() + 5.5 * 3600000);
+    const currentISTDateStr = nowIST.toISOString().split('T')[0];
+    const currentISTTotalMins = nowIST.getUTCHours() * 60 + nowIST.getUTCMinutes();
+
+    for (const b of recentBookings) {
+      let bookingTotalMins = 0;
+      const bookingDateStr = b.slot?.date ? new Date(b.slot.date).toISOString().split('T')[0] : '';
+      
+      if (b.slot?.time) {
+        const timeMatch = b.slot.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (timeMatch) {
+          let [_, h, m, period] = timeMatch;
+          let hour = parseInt(h);
+          if (period.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+          if (period.toUpperCase() === 'AM' && hour === 12) hour = 0;
+          bookingTotalMins = hour * 60 + parseInt(m);
+        }
+      }
+
+      // Expired Booking Alert
+      if (['Pending', 'Confirmed'].includes(b.status) && bookingDateStr && bookingDateStr < currentISTDateStr) {
+        await Notification.updateOne(
+          { receiverId: vendorObjectId, bookingId: b.bookingId, title: 'Booking Expired' },
+          { $setOnInsert: {
+              receiverId: vendorObjectId,
+              receiverRole: 'vendor',
+              title: 'Booking Expired',
+              message: `Booking ${b.bookingId} has expired without being started.`,
+              type: 'system_alert',
+              status: 'warning',
+              bookingId: b.bookingId,
+              isRead: false
+            }
+          },
+          { upsert: true }
+        );
+      }
+      
+      // 1-Hour Alert
+      if (b.status === 'Confirmed' && bookingDateStr === currentISTDateStr) {
+        const diffMins = bookingTotalMins - currentISTTotalMins;
+        if (diffMins > 0 && diffMins <= 60) {
+          await Notification.updateOne(
+            { receiverId: vendorObjectId, bookingId: b.bookingId, title: 'Service Starts Soon' },
+            { $setOnInsert: {
+                receiverId: vendorObjectId,
+                receiverRole: 'vendor',
+                title: 'Service Starts Soon',
+                message: `Booking ${b.bookingId} starts in less than an hour!`,
+                type: 'system_alert',
+                status: 'info',
+                bookingId: b.bookingId,
+                isRead: false
+              }
+            },
+            { upsert: true }
+          );
+        }
+      }
+
+      // Pending Alert
+      if (b.status === 'Pending') {
+        await Notification.updateOne(
+          { receiverId: vendorObjectId, bookingId: b.bookingId, title: 'Pending Booking' },
+          { $setOnInsert: {
+              receiverId: vendorObjectId,
+              receiverRole: 'vendor',
+              title: 'Pending Booking',
+              message: `Booking ${b.bookingId} is pending your approval.`,
+              type: 'system_alert',
+              status: 'info',
+              bookingId: b.bookingId,
+              isRead: false
+            }
+          },
+          { upsert: true }
+        );
+      }
+    }
+
     const recentPlans = await CustomerPlan.find({ vendor: vendorObjectId })
       .sort({ createdAt: -1 })
       .limit(20)
@@ -214,37 +295,44 @@ export const updateBookingStatus = asyncHandler(async (req: any, res: Response) 
   const currentBooking = await Booking.findOne({ _id: id, vendor: req.user._id });
   if (!currentBooking) return res.status(404).json({ success: false, message: 'Booking not found' });
 
-  if (status === 'In Progress') {
-    const currentDate = new Date();
-    const bookingDate = new Date(currentBooking.slot.date);
-    
-    currentDate.setHours(0, 0, 0, 0);
-    bookingDate.setHours(0, 0, 0, 0);
+  // IST Time Calculation for strict validation
+  const now = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 mins
+  const nowIST = new Date(now.getTime() + istOffset);
+  const currentISTDateStr = nowIST.toISOString().split('T')[0];
+  const currentISTHour = nowIST.getUTCHours();
+  const currentISTMin = nowIST.getUTCMinutes();
+  const currentISTTotalMins = currentISTHour * 60 + currentISTMin;
 
-    if (currentDate.getTime() !== bookingDate.getTime()) {
-      return res.status(400).json({ success: false, message: 'Service can only be started on the scheduled date.' });
+  // Booking Date String (Assuming saved as UTC midnight for that specific date)
+  const bookingDateStr = new Date(currentBooking.slot.date).toISOString().split('T')[0];
+
+  // Parse booking time (e.g., "10:30 AM") to 24hr minutes
+  let bookingTotalMins = 0;
+  if (currentBooking.slot.time) {
+    const timeMatch = currentBooking.slot.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (timeMatch) {
+      let [_, h, m, period] = timeMatch;
+      let hour = parseInt(h);
+      if (period.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+      if (period.toUpperCase() === 'AM' && hour === 12) hour = 0;
+      bookingTotalMins = hour * 60 + parseInt(m);
     }
+  }
 
-    const slotDoc = await Slot.findOne({ vendorId: req.user._id, startTime: currentBooking.slot.time });
-    if (slotDoc) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const currentMin = now.getMinutes();
-      const currentMinutes = currentHour * 60 + currentMin;
+  // Reject progression of past expired bookings
+  if (bookingDateStr < currentISTDateStr && ['Confirmed', 'In Progress', 'Completed'].includes(status) && currentBooking.status !== status) {
+    return res.status(400).json({ success: false, message: 'This booking date has passed. It is expired.' });
+  }
 
-      const [startHour, startMin] = slotDoc.startTime.split(':').map(Number);
-      const startMinutes = startHour * 60 + startMin;
-      
-      const [endHour, endMin] = slotDoc.endTime.split(':').map(Number);
-      const endMinutes = endHour * 60 + endMin;
-
-      if (currentMinutes < startMinutes - 15) {
-        return res.status(400).json({ success: false, message: `Cannot start service yet. The allotted time slot is ${slotDoc.startTime} - ${slotDoc.endTime}.` });
-      }
-
-      if (currentMinutes > endMinutes) {
-        return res.status(400).json({ success: false, message: `Cannot start service. The allotted time slot (${slotDoc.startTime} - ${slotDoc.endTime}) has already passed.` });
-      }
+  if (status === 'In Progress') {
+    if (bookingDateStr > currentISTDateStr) {
+      return res.status(400).json({ success: false, message: 'Cannot start service before the scheduled date.' });
+    }
+    
+    // It's today. Check if the time has arrived.
+    if (currentISTTotalMins < bookingTotalMins) {
+      return res.status(400).json({ success: false, message: `Cannot start service yet. Scheduled for ${currentBooking.slot.time}.` });
     }
   }
 
@@ -280,11 +368,12 @@ export const updateBookingStatus = asyncHandler(async (req: any, res: Response) 
     notificationType = 'booking_confirmed';
   } else if (status === 'In Progress') {
     notificationTitle = 'Service Started';
-    notificationMessage = 'Your car wash service has just started!';
+    notificationMessage = 'your service is started & in progress';
     notificationType = 'service_started';
   } else if (status === 'Completed') {
     notificationTitle = 'Service Completed';
-    notificationMessage = 'Great news! Your car wash service is complete. Please rate your experience.';
+    const completionTimeStr = new Date(new Date().getTime() + 5.5 * 3600000).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+    notificationMessage = `your service is completed with ${completionTimeStr}`;
     notificationType = 'booking_completed';
   } else if (status === 'Cancelled') {
     notificationTitle = 'Booking Cancelled';
